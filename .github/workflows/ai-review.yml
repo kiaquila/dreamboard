@@ -13,6 +13,10 @@ on:
         description: Pull request number to route and validate
         required: true
         type: string
+      trigger_mode:
+        description: Review gate trigger mode
+        required: false
+        type: string
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -30,7 +34,11 @@ jobs:
   ai-review:
     if: >
       github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.draft == false
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.draft == false &&
+        (vars.AI_REVIEW_AGENT == '' || vars.AI_REVIEW_AGENT == 'gemini')
+      )
     name: AI Review
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -58,8 +66,14 @@ jobs:
             selected="gemini"
           fi
 
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            trigger_mode="${{ inputs.trigger_mode || 'skip' }}"
+          else
+            trigger_mode="comment"
+          fi
+
           echo "selected_agent=$selected" >> "$GITHUB_OUTPUT"
-          echo "trigger_mode=comment" >> "$GITHUB_OUTPUT"
+          echo "trigger_mode=$trigger_mode" >> "$GITHUB_OUTPUT"
 
       - name: Mark native review start
         id: start
