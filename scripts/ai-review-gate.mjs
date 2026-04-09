@@ -66,38 +66,7 @@ const appendSummary = (lines) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const listPaginated = async (path) => {
-  const items = [];
-  let nextPath = path;
-
-  while (nextPath) {
-    const response = await fetch(`https://api.github.com${nextPath}`, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`GET ${nextPath} failed: ${response.status} ${body}`);
-    }
-
-    const data = await response.json();
-    items.push(...data);
-
-    const link = response.headers.get("link") || "";
-    const nextMatch = link.match(/<([^>]+)>;\s*rel="next"/);
-    nextPath = nextMatch
-      ? new URL(nextMatch[1]).pathname + new URL(nextMatch[1]).search
-      : "";
-  }
-
-  return items;
-};
-
-const request = async (path, init = {}) => {
+const apiFetch = async (path, init = {}) => {
   const response = await fetch(`https://api.github.com${path}`, {
     ...init,
     headers: {
@@ -116,12 +85,67 @@ const request = async (path, init = {}) => {
     );
   }
 
+  return response;
+};
+
+const getPaginationPath = (linkHeader, rel) => {
+  const match = (linkHeader || "").match(
+    new RegExp(`<([^>]+)>;\\s*rel="${rel}"`),
+  );
+
+  return match ? new URL(match[1]).pathname + new URL(match[1]).search : "";
+};
+
+const listPaginated = async (path) => {
+  const items = [];
+  let nextPath = path;
+
+  while (nextPath) {
+    const response = await apiFetch(nextPath);
+    const data = await response.json();
+    items.push(...data);
+    nextPath = getPaginationPath(response.headers.get("link"), "next");
+  }
+
+  return items;
+};
+
+const listNewestPullReviews = async (path) => {
+  const firstResponse = await apiFetch(path);
+  const lastPath = getPaginationPath(firstResponse.headers.get("link"), "last");
+
+  if (!lastPath || lastPath === path) {
+    return firstResponse.json();
+  }
+
+  const lastResponse = await apiFetch(lastPath);
+  return lastResponse.json();
+};
+
+const request = async (path, init = {}) => {
+  const response = await apiFetch(path, init);
+
   if (response.status === 204) {
     return null;
   }
 
   return response.json();
 };
+
+const buildSinceQuery = (timestamp) =>
+  timestamp
+    ? `&since=${encodeURIComponent(new Date(timestamp).toISOString())}`
+    : "";
+
+const buildIssueCommentsPath = (sinceTimestamp) =>
+  `/repos/${owner}/${repo}/issues/${prNumber}/comments?per_page=100&sort=updated&direction=desc${buildSinceQuery(
+    sinceTimestamp,
+  )}`;
+
+const buildPullReviewCommentsPath = (sinceTimestamp) =>
+  `/repos/${owner}/${repo}/pulls/${prNumber}/comments?per_page=100&sort=updated&direction=desc${buildSinceQuery(
+    sinceTimestamp,
+  )}`;
 
 const prNumber =
   explicitPrNumber ||
@@ -315,7 +339,9 @@ const classifyCodexReview = async (review) => {
   }
 
   const reviewComments = await listPaginated(
-    `/repos/${owner}/${repo}/pulls/${prNumber}/comments?per_page=100`,
+    buildPullReviewCommentsPath(
+      review.submitted_at ? new Date(review.submitted_at).getTime() : 0,
+    ),
   );
   const commentsForReview = reviewComments.filter(
     (comment) => comment.pull_request_review_id === review.id,
@@ -402,7 +428,9 @@ const classifyGeminiReview = async (review) => {
   }
 
   const reviewComments = await listPaginated(
-    `/repos/${owner}/${repo}/pulls/${prNumber}/comments?per_page=100`,
+    buildPullReviewCommentsPath(
+      review.submitted_at ? new Date(review.submitted_at).getTime() : 0,
+    ),
   );
   const commentsForReview = reviewComments.filter(
     (comment) => comment.pull_request_review_id === review.id,
@@ -503,7 +531,7 @@ const deadline = Date.now() + maxWaitMs;
 while (Date.now() < deadline) {
   if (selectedAgent === "claude") {
     const issueComments = await listPaginated(
-      `/repos/${owner}/${repo}/issues/${prNumber}/comments?per_page=100`,
+      buildIssueCommentsPath(triggerMode === "skip" ? 0 : triggerTime),
     );
     const recentComments = issueComments.filter(
       (comment) =>
@@ -550,7 +578,7 @@ while (Date.now() < deadline) {
       }
     }
   } else if (selectedAgent === "codex") {
-    const reviews = await listPaginated(
+    const reviews = await listNewestPullReviews(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
     const recentReviews = reviews.filter(
@@ -591,7 +619,7 @@ while (Date.now() < deadline) {
     }
 
     const issueComments = await listPaginated(
-      `/repos/${owner}/${repo}/issues/${prNumber}/comments?per_page=100`,
+      buildIssueCommentsPath(triggerMode === "skip" ? 0 : triggerTime),
     );
     const recentIssueComments = issueComments.filter(
       (comment) => new Date(comment.created_at || 0).getTime() >= triggerTime,
@@ -631,11 +659,8 @@ while (Date.now() < deadline) {
       }
     }
 
-    const issueCommentsForSetup = await listPaginated(
-      `/repos/${owner}/${repo}/issues/${prNumber}/comments?per_page=100`,
-    );
     const recentConnectorReply =
-      issueCommentsForSetup
+      issueComments
         .filter(
           (comment) =>
             codexReviewerLogins.has(comment.user?.login || "") &&
@@ -672,7 +697,7 @@ while (Date.now() < deadline) {
       throw new Error(classification.reason);
     }
   } else {
-    const reviews = await listPaginated(
+    const reviews = await listNewestPullReviews(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
     const recentReviews = reviews.filter(
