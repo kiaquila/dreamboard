@@ -2,7 +2,10 @@ import { translations } from "./i18n.js";
 import { LANDING_PHOTO_JACKET } from "./landing-photo.js";
 
 const LANG_KEYS = Object.keys(translations);
-let currentLang = LANG_KEYS[0] || "RU";
+const browserLang = navigator.language.split("-")[0].toUpperCase();
+let currentLang = LANG_KEYS.includes(browserLang)
+  ? browserLang
+  : LANG_KEYS[0] || "RU";
 const MOBILE_BREAKPOINT = 900;
 
 const landingView = document.getElementById("landingView");
@@ -467,9 +470,6 @@ function duplicateSelectedText() {
 }
 
 function createPlaceholders() {
-  placeholders.forEach((p) => canvas.remove(p));
-  placeholders = [];
-
   const w = canvas.width;
   const h = canvas.height;
   const langData = translations[currentLang].sectors;
@@ -486,7 +486,21 @@ function createPlaceholders() {
     { t: langData[8], x: (3 * w) / 4, y: h / 4.5 },
   ];
 
-  positions.forEach((item) => {
+  if (placeholders.length === positions.length) {
+    positions.forEach((item, index) => {
+      placeholders[index].set({
+        left: item.x,
+        top: item.y,
+        text: item.t,
+      });
+      canvas.sendToBack(placeholders[index]);
+    });
+    canvas.renderAll();
+    return;
+  }
+
+  placeholders.forEach((placeholder) => canvas.remove(placeholder));
+  placeholders = positions.map((item) => {
     const text = new fabric.Text(item.t, {
       left: item.x,
       top: item.y,
@@ -500,10 +514,11 @@ function createPlaceholders() {
       evented: false,
       isPlaceholder: true,
     });
-    placeholders.push(text);
     canvas.add(text);
     canvas.sendToBack(text);
+    return text;
   });
+  canvas.renderAll();
 }
 
 function enforceTextOnTop() {
@@ -800,7 +815,6 @@ omTextColor.addEventListener("input", () => {
   const obj = canvas.getActiveObject();
   if (!obj || !(obj.type === "i-text" || obj.type === "text")) return;
   obj.set("fill", omTextColor.value);
-  enforceTextOnTop();
   canvas.renderAll();
   positionObjectMenu();
 });
@@ -928,7 +942,7 @@ window.addEventListener("resize", () => {
   if (!isMobileLayout()) {
     closeSidebar();
   }
-  if (editorView.style.display === "block") {
+  if (!editorResizeObserver && editorView.style.display === "block") {
     resizeCanvasToViewport();
   }
 });
@@ -936,5 +950,4 @@ window.addEventListener("resize", () => {
 // init
 updateLandingViewportVars();
 setLandingPhotos();
-createPlaceholders();
 applyLanguageUI();
