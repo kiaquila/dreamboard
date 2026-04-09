@@ -7,7 +7,6 @@ const MOBILE_BREAKPOINT = 900;
 const landingView = document.getElementById("landingView");
 const editorView = document.getElementById("editorView");
 const canvasArea = document.querySelector(".canvas-area");
-const footerEl = document.getElementById("appFooter");
 const heroGoButton = document.getElementById("l-go-btn");
 const finalGoButton = document.getElementById("l-final-btn");
 const landingLangButton = document.getElementById("langBtn");
@@ -603,6 +602,7 @@ fileInput?.addEventListener("change", (e) => {
   Promise.all(loadPromises).then((imgs) => {
     layoutBatchImages(imgs);
     if (isMobileLayout()) closeSidebar();
+    e.target.value = "";
   });
 });
 
@@ -644,7 +644,6 @@ function changeZIndex(direction) {
   direction === "forward"
     ? canvas.bringForward(obj)
     : canvas.sendBackwards(obj);
-  placeholders.forEach((p) => canvas.sendToBack(p));
   enforceTextOnTop();
   positionObjectMenu();
 }
@@ -831,8 +830,13 @@ canvas.on("mouse:down", () => {
 window.addEventListener("keydown", (e) => {
   const active = canvas.getActiveObject();
   const editingText = active && active.type === "i-text" && active.isEditing;
+  const modalOpen = donateOverlay && donateOverlay.style.display === "flex";
 
-  if ((e.key === "Delete" || e.key === "Backspace") && !editingText) {
+  if (
+    (e.key === "Delete" || e.key === "Backspace") &&
+    !editingText &&
+    !modalOpen
+  ) {
     deleteSelected();
   }
 });
@@ -917,10 +921,6 @@ const editorResizeObserver =
 
 if (editorResizeObserver && canvasArea) {
   editorResizeObserver.observe(canvasArea);
-}
-
-if (editorResizeObserver && footerEl) {
-  editorResizeObserver.observe(footerEl);
 }
 
 window.addEventListener("resize", () => {
