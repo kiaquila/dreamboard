@@ -110,7 +110,11 @@ jobs:
             ) || defaults[kind];
 
             if (selectedAgent === requestedAgent) {
-              if (kind === "review" && context.payload.issue?.number) {
+              if (
+                kind === "review" &&
+                requestedAgent !== "gemini" &&
+                context.payload.issue?.number
+              ) {
                 await github.rest.actions.createWorkflowDispatch({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -122,6 +126,12 @@ jobs:
                   },
                 });
                 core.info(`Dispatched AI Review for PR #${context.payload.issue.number}`);
+              }
+
+              if (kind === "review" && requestedAgent === "gemini") {
+                core.info(
+                  "Gemini review comments stay native-only to avoid canceling the PR-linked AI Review check.",
+                );
               }
 
               core.info(`Command matches ${kind} policy: ${requestedAgent}`);

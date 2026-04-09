@@ -265,6 +265,15 @@ const pickLatestClaudeComment = (comments) =>
         new Date(a.updated_at || a.created_at || 0).getTime(),
     )[0] || null;
 
+const findLatestCurrentHeadClaudeComment = (comments) =>
+  pickLatestClaudeComment(comments);
+
+const findLatestCurrentHeadCodexReview = (reviews) =>
+  pickLatestCodexReview(reviews);
+
+const findLatestCurrentHeadGeminiReview = (reviews) =>
+  pickLatestGeminiReview(reviews);
+
 const classifyCodexSetupReply = (comment) => {
   const body = (comment.body || "").trim();
 
@@ -542,7 +551,11 @@ while (Date.now() < deadline) {
     );
     const candidateComments =
       triggerMode === "skip" ? issueComments : recentComments;
-    const matchedComment = pickLatestClaudeComment(candidateComments);
+    const matchedComment =
+      pickLatestClaudeComment(candidateComments) ||
+      (triggerMode === "skip"
+        ? null
+        : findLatestCurrentHeadClaudeComment(issueComments));
 
     if (matchedComment) {
       const mapped = classifyClaudeComment(matchedComment);
@@ -585,7 +598,11 @@ while (Date.now() < deadline) {
       (review) => new Date(review.submitted_at || 0).getTime() >= triggerTime,
     );
     const candidateReviews = triggerMode === "skip" ? reviews : recentReviews;
-    const matchedReview = pickLatestCodexReview(candidateReviews);
+    const matchedReview =
+      pickLatestCodexReview(candidateReviews) ||
+      (triggerMode === "skip"
+        ? null
+        : findLatestCurrentHeadCodexReview(reviews));
 
     if (matchedReview) {
       const mapped = await classifyCodexReview(matchedReview);
@@ -704,7 +721,11 @@ while (Date.now() < deadline) {
       (review) => new Date(review.submitted_at || 0).getTime() >= triggerTime,
     );
     const candidateReviews = triggerMode === "skip" ? reviews : recentReviews;
-    const matchedReview = pickLatestGeminiReview(candidateReviews);
+    const matchedReview =
+      pickLatestGeminiReview(candidateReviews) ||
+      (triggerMode === "skip"
+        ? null
+        : findLatestCurrentHeadGeminiReview(reviews));
 
     if (matchedReview) {
       const mapped = await classifyGeminiReview(matchedReview);
