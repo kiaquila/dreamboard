@@ -600,7 +600,7 @@ fileInput?.addEventListener("change", (e) => {
   });
 
   Promise.all(loadPromises).then((imgs) => {
-    layoutBatchImages(imgs);
+    layoutBatchImages(imgs.filter(Boolean));
     if (isMobileLayout()) closeSidebar();
     e.target.value = "";
   });
@@ -627,7 +627,6 @@ function addText() {
 
   setTimeout(() => {
     text.enterEditing();
-    if (text.hiddenTextarea) text.hiddenTextarea.focus();
   }, 0);
 }
 
@@ -828,6 +827,8 @@ canvas.on("mouse:down", () => {
 });
 
 window.addEventListener("keydown", (e) => {
+  if (editorView.style.display !== "block") return;
+
   const active = canvas.getActiveObject();
   const editingText = active && active.type === "i-text" && active.isEditing;
   const modalOpen = donateOverlay && donateOverlay.style.display === "flex";
@@ -924,6 +925,7 @@ if (editorResizeObserver && canvasArea) {
 }
 
 window.addEventListener("resize", () => {
+  updateLandingViewportVars();
   if (!isMobileLayout()) {
     closeSidebar();
   }
@@ -934,7 +936,6 @@ window.addEventListener("resize", () => {
 
 // init
 updateLandingViewportVars();
-window.addEventListener("resize", updateLandingViewportVars);
 setLandingPhotos();
 createPlaceholders();
 applyLanguageUI();
