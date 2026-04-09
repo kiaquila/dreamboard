@@ -24,6 +24,7 @@ export const translations = {
     ttUnderline: "Подчёркнутый",
     ttColor: "Цвет текста",
     ttFont: "Шрифт",
+    defaultText: "Мечта",
 
     landingHero: "Создай свою карту желаний бесплатно, без регистрации",
     landingGo: "Вперед",
@@ -71,6 +72,7 @@ export const translations = {
     ttUnderline: "Underline",
     ttColor: "Text color",
     ttFont: "Font",
+    defaultText: "Dream",
 
     landingHero: "Create your vision board for free — no registration",
     landingGo: "Go",
@@ -119,6 +121,7 @@ export const translations = {
     ttUnderline: "Subrayado",
     ttColor: "Color del texto",
     ttFont: "Fuente",
+    defaultText: "Sueño",
 
     landingHero: "Creá tu tablero de deseos gratis — sin registro",
     landingGo: "Ir",

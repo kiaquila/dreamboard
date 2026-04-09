@@ -201,7 +201,14 @@ h1 {
 
 /* Fullscreen background image for slide 1 and 4 */
 .landing-section.bg-hero {
-  background-image: url("http://wallpapercave.com/wp/wp13132019.jpg");
+  background-image:
+    radial-gradient(
+      circle at top,
+      rgba(255, 255, 255, 0.5),
+      rgba(255, 255, 255, 0.08) 32%,
+      rgba(24, 24, 24, 0.1) 100%
+    ),
+    linear-gradient(135deg, #ebe5dc 0%, #d8d4cc 48%, #c1b8ac 100%);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
