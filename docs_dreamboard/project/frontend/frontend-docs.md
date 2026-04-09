@@ -6,7 +6,9 @@ The current application is still a static frontend, but it is no longer entirely
 
 - [index.html](/Users/kristina.kurashova/projects/dreamboard/index.html) for the app shell and semantic markup
 - [app.css](/Users/kristina.kurashova/projects/dreamboard/src/styles/app.css) for the full visual layer
-- [app.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/app.js) for landing, editor, i18n, and Fabric.js orchestration
+- [app.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/app.js) for landing and editor orchestration
+- [i18n.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/i18n.js) for locale dictionaries
+- [landing-photo.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/landing-photo.js) for the embedded landing media asset
 
 This keeps the repo deployable as a static site while making future extraction to components and a typed frontend stack much safer.
 
@@ -34,7 +36,7 @@ The recommended target architecture for the next phase is:
 - `Vite + React + TypeScript`
 - dedicated components for landing and editor shells
 - extracted locales, assets, and editor services
-- removal of inline action handlers in favor of bound module listeners
+- removal of remaining inline action handlers in favor of bound module listeners
 - a dedicated mobile editor interaction model instead of desktop controls squeezed into a phone viewport
 
 Until that migration happens, all changes should keep the static app functioning and deployable.
