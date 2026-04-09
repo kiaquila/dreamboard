@@ -23,7 +23,7 @@ Before refactoring the application itself, the repository must follow the standa
 
 1. PR-only changes
 2. required checks in GitHub
-3. AI review routing through repository policy
+3. AI review routing through repository policy with Gemini as the default reviewer
 4. Vercel preview deploys on PR
 5. Vercel production deploys on merge to `main`
 

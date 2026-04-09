@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
           selected="${{ vars.AI_REVIEW_AGENT }}"
           if [ -z "$selected" ]; then
-            selected="codex"
+            selected="gemini"
           fi
 
           echo "selected_agent=$selected" >> "$GITHUB_OUTPUT"

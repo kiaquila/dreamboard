@@ -26,6 +26,8 @@ The repository declares:
 
 `npm run build` must always produce a deployable static artifact under `dist/`.
 
+The repository also keeps Gemini review configuration in `.gemini/` so review behavior stays versioned together with the app and workflow contract.
+
 ## Operational Rule
 
 Do not treat manual dashboard edits as the delivery path. Product behavior should change through:

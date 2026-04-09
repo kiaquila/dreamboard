@@ -10,7 +10,7 @@ The orchestration layer reads:
 If a variable is unset, the workflows fall back to repository defaults:
 
 - implementation: `codex`
-- review: `codex`
+- review: `gemini`
 
 ## Claude Requirements
 
@@ -29,6 +29,7 @@ If the secret is missing and Claude is selected, the workflow fails closed with 
   - `AI_REVIEW_AGENT: claude`
   - `AI_REVIEW_SHA: <head sha>`
   - `AI_REVIEW_OUTCOME: pass|advisory|block`
+- Gemini path waits for native GitHub PR review output from `gemini-code-assist[bot]` and classifies inline review comments by `Critical`, `High`, `Medium`, and `Low` severity markers.
 
 The gate passes on:
 
@@ -36,10 +37,14 @@ The gate passes on:
 - Codex advisory-only review
 - Claude `pass`
 - Claude `advisory`
+- Gemini approval
+- Gemini advisory-only review
 
 The gate fails on:
 
 - Codex `CHANGES_REQUESTED`
 - Codex inline findings with highest severity `P0`, `P1`, or `P2`
 - Claude `block`
+- Gemini `CHANGES_REQUESTED`
+- Gemini inline findings with highest severity `Critical`, `High`, or `Medium`
 - setup/runtime failures for the selected backend

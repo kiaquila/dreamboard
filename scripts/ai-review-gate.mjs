@@ -19,6 +19,7 @@ const outputPath = process.env.GITHUB_OUTPUT;
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 const claudeReviewerLogins = new Set(["claude[bot]"]);
 const codexReviewerLogins = new Set(["chatgpt-codex-connector[bot]"]);
+const geminiReviewerLogins = new Set(["gemini-code-assist[bot]"]);
 
 if (!token) {
   throw new Error("GITHUB_TOKEN is required");
@@ -32,9 +33,9 @@ if (!eventPath) {
   throw new Error("GITHUB_EVENT_PATH is required");
 }
 
-if (!["claude", "codex"].includes(selectedAgent)) {
+if (!["claude", "codex", "gemini"].includes(selectedAgent)) {
   throw new Error(
-    `AI_REVIEW_AGENT must be one of "claude" or "codex", received "${selectedAgent}"`,
+    `AI_REVIEW_AGENT must be one of "claude", "codex", or "gemini", received "${selectedAgent}"`,
   );
 }
 
@@ -152,6 +153,16 @@ const buildTriggerComment = () => {
     ].join("\n");
   }
 
+  if (selectedAgent === "gemini") {
+    return [
+      "/gemini review",
+      "",
+      `Please review PR #${prNumber} at head commit \`${headSha}\`.`,
+      "",
+      metadataMarker,
+    ].join("\n");
+  }
+
   return [
     "@claude review once",
     "",
@@ -200,6 +211,10 @@ const matchesCodexSummaryComment = (comment) =>
   codexReviewerLogins.has(comment.user?.login || "") &&
   /^Codex Review:/i.test((comment.body || "").trim());
 
+const matchesGeminiReview = (review) =>
+  review.commit_id === headSha &&
+  geminiReviewerLogins.has(review.user?.login || "");
+
 const extractClaudeOutcome = (body) => {
   const match = body.match(/^AI_REVIEW_OUTCOME:\s*(pass|advisory|block)\s*$/im);
   return match ? match[1].toLowerCase() : null;
@@ -221,6 +236,15 @@ const pickLatestCodexReview = (reviews) =>
     .sort(
       (a, b) =>
         new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
+    )[0] || null;
+
+const pickLatestGeminiReview = (reviews) =>
+  reviews
+    .filter((review) => review.submitted_at && matchesGeminiReview(review))
+    .sort(
+      (left, right) =>
+        new Date(right.submitted_at).getTime() -
+        new Date(left.submitted_at).getTime(),
     )[0] || null;
 
 const pickLatestClaudeComment = (comments) =>
@@ -353,6 +377,103 @@ const classifyCodexReview = async (review) => {
   };
 };
 
+const extractGeminiSeverity = (body) => {
+  const altMatch = body.match(/!\[(critical|high|medium|low)\]/i);
+  if (altMatch) {
+    return altMatch[1].toLowerCase();
+  }
+
+  const wordMatch = body.match(/\b(critical|high|medium|low)\b/i);
+  if (wordMatch) {
+    return wordMatch[1].toLowerCase();
+  }
+
+  return null;
+};
+
+const classifyGeminiReview = async (review) => {
+  if (review.state === "APPROVED") {
+    return {
+      outcome: "pass",
+      reason: "Gemini approved the PR with no blocking findings.",
+      details: [],
+    };
+  }
+
+  if (review.state === "CHANGES_REQUESTED") {
+    return {
+      outcome: "fail",
+      reason: "Gemini requested changes on the PR.",
+      details: [],
+    };
+  }
+
+  if (review.state !== "COMMENTED") {
+    return {
+      outcome: "pending",
+      reason: `Gemini produced unsupported review state "${review.state}".`,
+      details: [],
+    };
+  }
+
+  const reviewComments = await listPaginated(
+    `/repos/${owner}/${repo}/pulls/${prNumber}/comments?per_page=100`,
+  );
+  const commentsForReview = reviewComments.filter(
+    (comment) => comment.pull_request_review_id === review.id,
+  );
+
+  if (commentsForReview.length === 0) {
+    return {
+      outcome: "pass",
+      reason: "Gemini completed a comment review without inline findings.",
+      details: [review.html_url],
+    };
+  }
+
+  const severities = commentsForReview
+    .map((comment) => extractGeminiSeverity(comment.body || ""))
+    .filter((severity) => severity !== null);
+  const untaggedComments = commentsForReview.filter(
+    (comment) => extractGeminiSeverity(comment.body || "") === null,
+  );
+
+  if (untaggedComments.length > 0) {
+    return {
+      outcome: "fail",
+      reason:
+        "Gemini submitted inline findings without recognized Critical/High/Medium/Low severity markers.",
+      details: untaggedComments.map((comment) => comment.html_url),
+    };
+  }
+
+  const priority = {
+    critical: 0,
+    high: 1,
+    medium: 2,
+    low: 3,
+  };
+
+  const highestSeverity = severities.reduce(
+    (best, current) => (priority[current] < priority[best] ? current : best),
+    "low",
+  );
+
+  if (priority[highestSeverity] <= 2) {
+    return {
+      outcome: "fail",
+      reason: `Gemini reported blocking findings with highest severity ${highestSeverity}.`,
+      details: commentsForReview.map((comment) => comment.html_url),
+    };
+  }
+
+  return {
+    outcome: "pass",
+    reason: "Gemini reported advisory-only findings.",
+    details: commentsForReview.map((comment) => comment.html_url),
+  };
+};
+
 const classifyClaudeComment = (comment) => {
   const outcome = extractClaudeOutcome(comment.body || "");
 
@@ -443,7 +564,7 @@ while (Date.now() < deadline) {
         process.exit(0);
       }
     }
-  } else {
+  } else if (selectedAgent === "codex") {
     const reviews = await listPaginated(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
@@ -565,6 +686,50 @@ while (Date.now() < deadline) {
 
       throw new Error(classification.reason);
     }
+  } else {
+    const reviews = await listPaginated(
+      `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
+    );
+    const recentReviews = reviews.filter(
+      (review) => new Date(review.submitted_at || 0).getTime() >= triggerTime,
+    );
+    const candidateReviews = triggerMode === "skip" ? reviews : recentReviews;
+    const matchedReview = pickLatestGeminiReview(candidateReviews);
+
+    if (matchedReview) {
+      const mapped = await classifyGeminiReview(matchedReview);
+
+      if (mapped.outcome !== "pending") {
+        setOutput("review_agent", selectedAgent);
+        setOutput("review_state", matchedReview.state);
+        setOutput("review_url", matchedReview.html_url);
+        setOutput("review_id", matchedReview.id);
+
+        appendSummary([
+          "## AI Review Gate",
+          "",
+          `- Selected reviewer: \`${selectedAgent}\``,
+          `- Trigger source: ${
+            triggerComment
+              ? triggerComment.html_url
+              : "inline native workflow invocation"
+          }`,
+          `- Matched review: ${matchedReview.html_url}`,
+          `- Review state: \`${matchedReview.state}\``,
+          `- Result: ${mapped.reason}`,
+          ...(mapped.details?.length
+            ? [`- Evidence: ${mapped.details.join(", ")}`]
+            : []),
+        ]);
+
+        if (mapped.outcome === "fail") {
+          throw new Error(mapped.reason);
+        }
+
+        console.log(mapped.reason);
+        process.exit(0);
+      }
+    }
   }
 
   await sleep(pollIntervalMs);
@@ -580,5 +745,5 @@ appendSummary([
 ]);
 
 throw new Error(
-  `Timed out waiting for ${selectedAgent} review output for PR #${prNumber} at ${headSha}.`,
+  `AI Review gate timed out: PR #${prNumber} (SHA: ${headSha}) did not receive output from ${selectedAgent} within ${maxWaitMs}ms.`,
 );

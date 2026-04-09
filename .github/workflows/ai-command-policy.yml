@@ -17,7 +17,9 @@ jobs:
       github.event.comment.user.type == 'User' &&
       (
         contains(github.event.comment.body, '@claude') ||
-        contains(github.event.comment.body, '@codex')
+        contains(github.event.comment.body, '@codex') ||
+        contains(github.event.comment.body, '/gemini review') ||
+        contains(github.event.comment.body, '@gemini-code-assist review')
       )
     name: ai-command-policy
     runs-on: ubuntu-latest
@@ -31,7 +33,7 @@ jobs:
         with:
           script: |
             const body = (context.payload.comment?.body || "").toLowerCase();
-            const defaults = { implementation: "codex", review: "codex" };
+            const defaults = { implementation: "codex", review: "gemini" };
             const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 
             let kind = null;
@@ -43,6 +45,9 @@ jobs:
             } else if (body.includes("@codex review")) {
               kind = "review";
               requestedAgent = "codex";
+            } else if (body.includes("/gemini review") || body.includes("@gemini-code-assist review")) {
+              kind = "review";
+              requestedAgent = "gemini";
             } else if (body.includes("@claude")) {
               kind = "implementation";
               requestedAgent = "claude";
@@ -109,7 +114,13 @@ jobs:
             }
 
             const expectedCommand = kind === "review"
-              ? (selectedAgent === "claude" ? "@claude review once" : "@codex review")
+              ? (
+                  selectedAgent === "claude"
+                    ? "@claude review once"
+                    : selectedAgent === "gemini"
+                      ? "/gemini review"
+                      : "@codex review"
+                )
               : (selectedAgent === "claude" ? "@claude <task brief>" : "start the Codex task from Codex app or Codex web");
 
             const scopeLabel = kind === "review" ? "review" : "implementation";

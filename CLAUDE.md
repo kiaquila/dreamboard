@@ -8,6 +8,7 @@
 - Fabric.js через CDN
 - Vercel Git integration для preview и production deploy
 - GitHub Actions для CI, guard и AI review orchestration
+- Gemini Code Assist как default review backend
 
 ## Важные правила
 
