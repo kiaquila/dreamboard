@@ -1,0 +1,17 @@
+{
+  "name": "dreamboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-static.mjs",
+    "check:repo": "node scripts/check-static-baseline.mjs",
+    "check:html": "html-validate index.html",
+    "format:check": "prettier --check \"index.html\" \"AGENTS.md\" \"CLAUDE.md\" \"docs_dreamboard/**/*.md\" \".github/workflows/*.{yml,yaml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\"",
+    "ci": "npm run check:repo && npm run check:html && npm run build && npm run format:check"
+  },
+  "devDependencies": {
+    "html-validate": "^10.11.3",
+    "prettier": "^3.8.1"
+  }
+}

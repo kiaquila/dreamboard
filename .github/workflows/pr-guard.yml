@@ -1,0 +1,93 @@
+name: PR Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to check
+        required: false
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || github.event.pull_request.head.sha }}
+
+      - name: Check docs coverage for product and infra changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          changed=$(git diff --name-only "$base"...HEAD)
+
+          echo "Changed files:"
+          echo "$changed"
+
+          tracked_change=false
+          while IFS= read -r f; do
+            case "$f" in
+              index.html|package.json|package-lock.json|vercel.json|scripts/*.mjs|scripts/**/*.mjs|src/*|src/**/*|public/*|public/**/*|assets/*|assets/**/*)
+                tracked_change=true
+                break
+                ;;
+            esac
+          done <<< "$changed"
+
+          if [ "$tracked_change" = "false" ]; then
+            echo "No tracked app/build changes — guard passes."
+            exit 0
+          fi
+
+          docs_updated=false
+          while IFS= read -r f; do
+            case "$f" in
+              docs_dreamboard/*.md|docs_dreamboard/**/*.md|AGENTS.md|CLAUDE.md|.github/workflows/*.yml|.github/workflows/*.yaml)
+                docs_updated=true
+                break
+                ;;
+            esac
+          done <<< "$changed"
+
+          if [ "$docs_updated" = "false" ]; then
+            echo ""
+            echo "ERROR: Product or infra changes landed without any durable docs update."
+            echo ""
+            echo "When modifying index.html, scripts/, build config, or future app source — update at least one of:"
+            echo "  - docs_dreamboard/"
+            echo "  - AGENTS.md or CLAUDE.md"
+            echo "  - .github/workflows/ (if orchestration changed)"
+            echo ""
+            exit 1
+          fi
+
+          echo "Docs coverage OK."
+
+      - name: Verify required baseline files exist
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate baseline files
+        run: npm run check:repo
