@@ -53,7 +53,8 @@ dreamboard/
   - `AI_REVIEW_AGENT`
 - Default policy for this repository is:
   - implementation: `codex`
-  - review: `codex`
+  - review: `gemini`
+- Gemini review is the default because it is installed on the repository and can run natively on GitHub PRs.
 - Claude paths remain available but require `ANTHROPIC_API_KEY` to be configured before switching policy.
 - Only trusted repository actors may trigger AI workflows.
 - Trusted actors are `OWNER`, `MEMBER`, and `COLLABORATOR`.
@@ -62,6 +63,7 @@ dreamboard/
 
 - Codex review uses native GitHub PR review output plus `P0-P3` inline severity badges.
 - Claude review uses a top-level `claude[bot]` comment with marker lines, not a formal GitHub PR review.
+- Gemini review uses native GitHub PR review output from `gemini-code-assist[bot]` plus inline severity markers such as `Critical`, `High`, `Medium`, and `Low`.
 - When a Claude review request includes `AI_REVIEW_AGENT`, `AI_REVIEW_SHA`, and `AI_REVIEW_OUTCOME`, preserve those lines exactly at the start of the final top-level Claude comment.
 - `AI_REVIEW_OUTCOME=pass` means no material findings.
 - `AI_REVIEW_OUTCOME=advisory` means advisory-only findings that should not block merge.
@@ -81,7 +83,11 @@ When updating `index.html`, `scripts/`, workflow behavior, or deployment configu
 
 Even while the app is still a single-file prototype, changes must keep `npm run build` producing a deployable `dist/index.html` artifact for Vercel.
 
-### 4. Frontend changes should improve mobile, not patch around it
+### 4. Gemini review config is repository-owned
+
+Gemini review behavior is configured through `.gemini/config.yaml` and `.gemini/styleguide.md`. Keep those files in sync with the repository review contract.
+
+### 5. Frontend changes should improve mobile, not patch around it
 
 Avoid adding more fixed-size offsets and viewport hacks unless strictly necessary. Prefer layout systems that can survive later migration to a modular frontend app.
 

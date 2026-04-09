@@ -11,6 +11,8 @@ const requiredFiles = [
   "index.html",
   "package.json",
   "vercel.json",
+  ".gemini/config.yaml",
+  ".gemini/styleguide.md",
   "docs_dreamboard/project-idea.md",
   "docs_dreamboard/project/frontend/frontend-docs.md",
   "docs_dreamboard/project/devops/ai-orchestration-protocol.md",
@@ -37,7 +39,7 @@ if (missing.length > 0) {
 
 const html = readFileSync(resolve(root, "index.html"), "utf8");
 
-if (!/<meta[^>]+name=["']viewport["']/i.test(html)) {
+if (!/<meta[^>]+name=["']viewport["'][^>]*>/i.test(html)) {
   console.error("index.html must include a viewport meta tag.");
   process.exit(1);
 }

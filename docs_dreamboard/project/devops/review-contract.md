@@ -7,6 +7,13 @@
 - `P3`-only findings are advisory
 - `P0` to `P2` findings block merge
 
+## Gemini Review
+
+- Native GitHub PR review surface from `gemini-code-assist[bot]`
+- Inline findings are expected to carry `Critical`, `High`, `Medium`, or `Low`
+- `Low`-only findings are advisory
+- `Critical`, `High`, and `Medium` findings block merge
+
 ## Claude Review
 
 - Final result is a top-level comment, not a formal GitHub review state

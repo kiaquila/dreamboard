@@ -19,11 +19,14 @@ Agent routing is controlled by repository variables:
 
 - `codex`
 - `claude`
+- `gemini`
 
 Default policy in this repository:
 
 - implementation: `codex`
-- review: `codex`
+- review: `gemini`
+
+Gemini is the canonical default review backend for this repository because it is already installed on GitHub and runs natively on pull requests.
 
 Claude remains supported as an optional backend when `ANTHROPIC_API_KEY` is configured and the repository variable is switched.
 
@@ -33,6 +36,7 @@ Claude remains supported as an optional backend when `ANTHROPIC_API_KEY` is conf
 - Codex review: `@codex review` on a top-level PR comment
 - Claude implementation: `@claude <task brief>` on a trusted issue/PR comment
 - Claude review: `@claude review once` on a top-level PR comment
+- Gemini review: `/gemini review` on a top-level PR comment
 
 Only trusted actors may trigger AI workflows:
 
