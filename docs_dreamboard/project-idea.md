@@ -10,12 +10,12 @@
 
 ## Current Product State
 
-The current app is a strong prototype, but not yet a maintainable production-grade frontend:
+The current app is a strong prototype, and the repository is now on a safer refactor path:
 
-- the entire product lives in one `index.html`
-- landing, editor, i18n, styles, and Fabric.js logic are mixed together
-- mobile adaptation exists only partially
-- there is no modular build system yet
+- the static app is deployed through Vercel-backed CI/CD
+- AI orchestration and review policy now follow the standard repository flow
+- the frontend has been split into HTML shell + external CSS/JS modules
+- editor responsiveness is improving, but the mobile experience still needs a dedicated product pass
 
 ## Infra Goal
 
@@ -31,6 +31,6 @@ Before refactoring the application itself, the repository must follow the standa
 
 After infra stabilization, the next implementation phase should:
 
-- improve mobile adaptation for the editor
-- split the current monolithic page into maintainable units
+- keep improving mobile adaptation for the editor and landing
+- continue decomposing the current static app into maintainable units
 - prepare the repo for migration to a modular frontend app

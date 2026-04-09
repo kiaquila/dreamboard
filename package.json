@@ -7,7 +7,7 @@
     "build": "node scripts/build-static.mjs",
     "check:repo": "node scripts/check-static-baseline.mjs",
     "check:html": "html-validate index.html",
-    "format:check": "prettier --check \"index.html\" \"AGENTS.md\" \"CLAUDE.md\" \"docs_dreamboard/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
+    "format:check": "prettier --check \"index.html\" \"src/**/*.{css,js}\" \"AGENTS.md\" \"CLAUDE.md\" \"docs_dreamboard/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
     "ci": "npm run check:repo && npm run check:html && npm run build && npm run format:check"
   },
   "devDependencies": {
