@@ -1,0 +1,77 @@
+name: AI Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to route and validate
+        required: true
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ai-review:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.draft == false
+    name: AI Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Resolve PR context
+        id: pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AI_REVIEW_PR_NUMBER: ${{ inputs.pr_number }}
+        run: node scripts/resolve-pr-context.mjs
+
+      - name: Resolve selected review policy
+        id: policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          selected="${{ vars.AI_REVIEW_AGENT }}"
+          if [ -z "$selected" ]; then
+            selected="codex"
+          fi
+
+          echo "selected_agent=$selected" >> "$GITHUB_OUTPUT"
+          echo "trigger_mode=comment" >> "$GITHUB_OUTPUT"
+
+      - name: Mark native review start
+        id: start
+        run: echo "triggered_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Route and validate selected native review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AI_REVIEW_AGENT: ${{ steps.policy.outputs.selected_agent }}
+          AI_REVIEW_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          AI_REVIEW_TRIGGER_MODE: ${{ steps.policy.outputs.trigger_mode }}
+          AI_REVIEW_TRIGGERED_AT: ${{ steps.start.outputs.triggered_at }}
+          AI_REVIEW_WAIT_MS: "900000"
+          AI_REVIEW_POLL_MS: "15000"
+        run: node scripts/ai-review-gate.mjs

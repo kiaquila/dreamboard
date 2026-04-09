@@ -1,0 +1,132 @@
+name: AI Command Policy
+
+on:
+  issue_comment:
+    types: [created]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  policy:
+    if: >
+      github.event.comment.user.type == 'User' &&
+      (
+        contains(github.event.comment.body, '@claude') ||
+        contains(github.event.comment.body, '@codex')
+      )
+    name: ai-command-policy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate command against repository policy
+        uses: actions/github-script@v8
+        env:
+          AI_IMPLEMENTATION_AGENT: ${{ vars.AI_IMPLEMENTATION_AGENT }}
+          AI_REVIEW_AGENT: ${{ vars.AI_REVIEW_AGENT }}
+        with:
+          script: |
+            const body = (context.payload.comment?.body || "").toLowerCase();
+            const defaults = { implementation: "codex", review: "codex" };
+            const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+
+            let kind = null;
+            let requestedAgent = null;
+
+            if (body.includes("@claude review once")) {
+              kind = "review";
+              requestedAgent = "claude";
+            } else if (body.includes("@codex review")) {
+              kind = "review";
+              requestedAgent = "codex";
+            } else if (body.includes("@claude")) {
+              kind = "implementation";
+              requestedAgent = "claude";
+            } else if (body.includes("@codex")) {
+              kind = "implementation";
+              requestedAgent = "codex";
+            }
+
+            if (!kind || !requestedAgent) {
+              return;
+            }
+
+            const authorAssociation = context.payload.comment?.author_association || "NONE";
+
+            if (!trustedAssociations.has(authorAssociation)) {
+              const message = [
+                "AI command rejected.",
+                "",
+                `Comments from \`${authorAssociation}\` are not allowed to trigger repository AI workflows.`,
+                "Use a trusted repository actor account (owner, member, or collaborator).",
+              ].join("\n");
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message,
+              });
+
+              core.setFailed(message);
+              return;
+            }
+
+            const isPullRequestContext =
+              context.eventName === "issue_comment" &&
+              Boolean(context.payload.issue?.pull_request);
+
+            if (kind === "review" && !isPullRequestContext) {
+              const message = [
+                "Invalid review command context.",
+                "",
+                "Review commands are only valid as top-level pull request comments.",
+                "Use `@claude review once` or `@codex review` on the target pull request.",
+              ].join("\n");
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message,
+              });
+
+              core.setFailed(message);
+              return;
+            }
+
+            const selectedAgent = (
+              kind === "review" ? process.env.AI_REVIEW_AGENT : process.env.AI_IMPLEMENTATION_AGENT
+            ) || defaults[kind];
+
+            if (selectedAgent === requestedAgent) {
+              core.info(`Command matches ${kind} policy: ${requestedAgent}`);
+              return;
+            }
+
+            const expectedCommand = kind === "review"
+              ? (selectedAgent === "claude" ? "@claude review once" : "@codex review")
+              : (selectedAgent === "claude" ? "@claude <task brief>" : "start the Codex task from Codex app or Codex web");
+
+            const scopeLabel = kind === "review" ? "review" : "implementation";
+            const message = [
+              "Policy mismatch for AI command routing.",
+              "",
+              `Requested ${scopeLabel} agent: \`${requestedAgent}\``,
+              `Selected ${scopeLabel} agent from repository policy: \`${selectedAgent}\``,
+              "",
+              `Use ${selectedAgent === "codex" && kind === "implementation" ? expectedCommand : `\`${expectedCommand}\``} or update the repository variable before rerunning the command.`,
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message,
+            });
+
+            core.setFailed(message);
