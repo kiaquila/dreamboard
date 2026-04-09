@@ -48,3 +48,14 @@ The gate fails on:
 - Gemini `CHANGES_REQUESTED`
 - Gemini inline findings with highest severity `Critical`, `High`, or `Medium`
 - setup/runtime failures for the selected backend
+
+## Gemini Operational Note
+
+Manual Gemini comments such as `/gemini review` or `@gemini-code-assist review`
+stay native-only in this repository.
+
+- they do not dispatch `ai-review.yml`
+- this avoids canceling the PR-linked `AI Review` check
+- if Gemini has already reviewed the current PR head SHA, rerunning the
+  PR-linked `AI Review` check is enough for the gate to accept that same-head
+  review output
