@@ -1,7 +1,8 @@
 import { translations } from "./i18n.js";
 import { LANDING_PHOTO_JACKET } from "./landing-photo.js";
 
-let currentLang = "RU";
+const LANG_KEYS = Object.keys(translations);
+let currentLang = LANG_KEYS[0] || "RU";
 const MOBILE_BREAKPOINT = 900;
 
 const landingView = document.getElementById("landingView");
@@ -157,17 +158,15 @@ function applyLanguageUI() {
   document.getElementById("langBtnEditor").innerText = currentLang;
 
   // html lang
-  document.documentElement.lang =
-    currentLang === "RU" ? "ru" : currentLang === "EN" ? "en" : "es";
+  document.documentElement.lang = currentLang.toLowerCase();
 
   createPlaceholders();
   applyToolbarTooltips();
 }
 
 function toggleLang() {
-  // cycle: RU -> EN -> ES -> RU
-  currentLang =
-    currentLang === "RU" ? "EN" : currentLang === "EN" ? "ES" : "RU";
+  const currentIndex = LANG_KEYS.indexOf(currentLang);
+  currentLang = LANG_KEYS[(currentIndex + 1) % LANG_KEYS.length];
   applyLanguageUI();
 }
 
@@ -607,7 +606,7 @@ fileInput?.addEventListener("change", (e) => {
 });
 
 function addText() {
-  const text = new fabric.IText("Dream", {
+  const text = new fabric.IText(translations[currentLang].defaultText, {
     left: canvas.width / 2,
     top: canvas.height / 2,
     fontFamily: "DM Sans",
