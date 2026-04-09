@@ -25,9 +25,7 @@
         <div class="sidebar-header">
           <h1>DREAM <span style="color: var(--pantone-yellow)">BOARD</span></h1>
           <div class="lang-switcher">
-            <button type="button" onclick="toggleLang()" id="langBtn">
-              RU
-            </button>
+            <button type="button" id="langBtn">RU</button>
           </div>
         </div>
       </header>
@@ -43,12 +41,7 @@
             >
               Создай свою карту желаний бесплатно, без регистрации
             </h2>
-            <button
-              type="button"
-              class="cta-btn cta-btn-center"
-              id="l-go-btn"
-              onclick="goToEditor()"
-            >
+            <button type="button" class="cta-btn cta-btn-center" id="l-go-btn">
               Вперед
             </button>
           </div>
@@ -109,7 +102,6 @@
               type="button"
               class="cta-btn cta-btn-center"
               id="l-final-btn"
-              onclick="goToEditor()"
             >
               Вперед
             </button>
@@ -138,9 +130,7 @@
               DREAM <span style="color: var(--pantone-yellow)">BOARD</span>
             </h1>
             <div class="lang-switcher">
-              <button type="button" onclick="toggleLang()" id="langBtnEditor">
-                RU
-              </button>
+              <button type="button" id="langBtnEditor">RU</button>
             </div>
           </div>
 
@@ -152,12 +142,8 @@
               >Загрузить изображения</label
             >
             <input type="file" id="fileInput" multiple accept="image/*" />
-            <button type="button" onclick="addText()" id="t-addtext">
-              Добавить текст
-            </button>
-            <button type="button" onclick="exportBoard()" id="t-download">
-              Скачать PNG
-            </button>
+            <button type="button" id="t-addtext">Добавить текст</button>
+            <button type="button" id="t-download">Скачать PNG</button>
           </div>
         </aside>
 
@@ -171,7 +157,6 @@
                 type="button"
                 class="om-btn om-icon-btn"
                 id="om-forward"
-                onclick="changeZIndex('forward')"
                 aria-label="Forward"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -184,7 +169,6 @@
                 type="button"
                 class="om-btn om-icon-btn"
                 id="om-backward"
-                onclick="changeZIndex('backward')"
                 aria-label="Backward"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -229,7 +213,6 @@
                 type="button"
                 class="om-btn om-icon-btn om-texttool-btn"
                 id="om-bold"
-                onclick="toggleBold()"
                 style="display: none"
                 aria-label="Bold"
               >
@@ -240,7 +223,6 @@
                 type="button"
                 class="om-btn om-icon-btn om-texttool-btn"
                 id="om-italic"
-                onclick="toggleItalic()"
                 style="display: none"
                 aria-label="Italic"
               >
@@ -255,7 +237,6 @@
                 type="button"
                 class="om-btn om-icon-btn om-texttool-btn"
                 id="om-underline"
-                onclick="toggleUnderline()"
                 style="display: none"
                 aria-label="Underline"
               >
@@ -271,7 +252,6 @@
                 type="button"
                 class="om-btn om-icon-btn"
                 id="om-copy"
-                onclick="duplicateSelectedText()"
                 aria-label="Copy"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -285,7 +265,6 @@
                 type="button"
                 class="om-btn om-icon-btn"
                 id="om-delete"
-                onclick="deleteSelected()"
                 aria-label="Delete"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
