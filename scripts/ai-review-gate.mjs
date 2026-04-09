@@ -180,22 +180,7 @@ const buildTriggerComment = () => {
   ].join("\n");
 };
 
-const findExistingTriggerComment = async () => {
-  const comments = await listPaginated(
-    `/repos/${owner}/${repo}/issues/${prNumber}/comments?per_page=100`,
-  );
-  return (
-    comments.find((comment) => (comment.body || "").includes(metadataMarker)) ||
-    null
-  );
-};
-
 const ensureTriggerComment = async () => {
-  const existing = await findExistingTriggerComment();
-  if (existing) {
-    return existing;
-  }
-
   return request(`/repos/${owner}/${repo}/issues/${prNumber}/comments`, {
     method: "POST",
     body: JSON.stringify({ body: buildTriggerComment() }),

@@ -8,6 +8,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 permissions:
+  actions: write
   pull-requests: write
   issues: write
 
@@ -109,6 +110,20 @@ jobs:
             ) || defaults[kind];
 
             if (selectedAgent === requestedAgent) {
+              if (kind === "review" && context.payload.issue?.number) {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: "ai-review.yml",
+                  ref: context.payload.repository.default_branch,
+                  inputs: {
+                    pr_number: String(context.payload.issue.number),
+                    trigger_mode: "skip",
+                  },
+                });
+                core.info(`Dispatched AI Review for PR #${context.payload.issue.number}`);
+              }
+
               core.info(`Command matches ${kind} policy: ${requestedAgent}`);
               return;
             }

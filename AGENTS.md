@@ -56,6 +56,7 @@ dreamboard/
   - review: `gemini`
 - Gemini review is the default because it is installed on the repository and can run natively on GitHub PRs.
 - Claude paths remain available but require `ANTHROPIC_API_KEY` to be configured before switching policy.
+- Trusted human review commands also dispatch the shared `AI Review` normalization workflow, so `gemini`, `codex`, and `claude` can all be routed through the same gate contract.
 - Only trusted repository actors may trigger AI workflows.
 - Trusted actors are `OWNER`, `MEMBER`, and `COLLABORATOR`.
 

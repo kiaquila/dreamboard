@@ -38,6 +38,12 @@ Claude remains supported as an optional backend when `ANTHROPIC_API_KEY` is conf
 - Claude review: `@claude review once` on a top-level PR comment
 - Gemini review: `/gemini review` on a top-level PR comment
 
+Review normalization behavior:
+
+- `gemini` is the default automatic pull-request reviewer
+- trusted human review commands also dispatch the shared `AI Review` gate via `workflow_dispatch`
+- this keeps manual backends such as `codex` and `claude` usable without relying on bot-authored trigger comments
+
 Only trusted actors may trigger AI workflows:
 
 - `OWNER`
