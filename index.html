@@ -112,15 +112,27 @@
 
     <!-- EDITOR VIEW -->
     <div class="editor-view" id="editorView">
-      <!-- Mobile menu button -->
-      <button
-        class="mobile-menu-btn"
-        id="mobileMenuBtn"
-        type="button"
-        aria-label="Menu"
-      >
-        ☰
-      </button>
+      <div class="editor-mobile-topbar">
+        <button
+          class="mobile-menu-btn"
+          id="mobileMenuBtn"
+          type="button"
+          aria-label="Open tools"
+        >
+          ☰
+        </button>
+        <div class="editor-mobile-brand" aria-hidden="true">
+          DREAM <span style="color: var(--pantone-yellow)">BOARD</span>
+        </div>
+        <button
+          type="button"
+          class="editor-mobile-lang"
+          id="langBtnEditorMobile"
+          aria-label="Switch language"
+        >
+          RU
+        </button>
+      </div>
       <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
       <div class="app-container">

@@ -15,7 +15,7 @@ The current app is a strong prototype, and the repository is now on a safer refa
 - the static app is deployed through Vercel-backed CI/CD
 - AI orchestration and review policy now follow the standard repository flow
 - the frontend has been split into HTML shell + external CSS/JS modules
-- editor responsiveness is improving, but the mobile experience still needs a dedicated product pass
+- the editor has entered a dedicated mobile adaptation phase with its own phone-first interaction model
 
 ## Infra Goal
 
