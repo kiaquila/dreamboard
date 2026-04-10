@@ -266,13 +266,31 @@ const pickLatestClaudeComment = (comments) =>
     )[0] || null;
 
 const findLatestCurrentHeadClaudeComment = (comments) =>
-  pickLatestClaudeComment(comments);
+  comments
+    .filter((comment) => matchesClaudeComment(comment))
+    .sort(
+      (left, right) =>
+        new Date(right.updated_at || right.created_at || 0).getTime() -
+        new Date(left.updated_at || left.created_at || 0).getTime(),
+    )[0] || null;
 
 const findLatestCurrentHeadCodexReview = (reviews) =>
-  pickLatestCodexReview(reviews);
+  reviews
+    .filter((review) => review.submitted_at && matchesCodexReview(review))
+    .sort(
+      (left, right) =>
+        new Date(right.submitted_at).getTime() -
+        new Date(left.submitted_at).getTime(),
+    )[0] || null;
 
 const findLatestCurrentHeadGeminiReview = (reviews) =>
-  pickLatestGeminiReview(reviews);
+  reviews
+    .filter((review) => review.submitted_at && matchesGeminiReview(review))
+    .sort(
+      (left, right) =>
+        new Date(right.submitted_at).getTime() -
+        new Date(left.submitted_at).getTime(),
+    )[0] || null;
 
 const classifyCodexSetupReply = (comment) => {
   const body = (comment.body || "").trim();
