@@ -25,6 +25,13 @@ export const translations = {
     ttColor: "Цвет текста",
     ttFont: "Шрифт",
     defaultText: "Мечта",
+    backHome: "На старт",
+    saveIdle: "Черновик в этом браузере",
+    saveSaving: "Сохраняем черновик...",
+    saveSaved: "Черновик сохранён",
+    saveError: "Не удалось сохранить черновик",
+    rotateHintTitle: "Поверни телефон горизонтально",
+    rotateHintText: "Так редактору хватает места для canvas, меню и текста.",
 
     landingHero: "Создай свою карту желаний бесплатно, без регистрации",
     landingGo: "Вперед",
@@ -73,6 +80,14 @@ export const translations = {
     ttColor: "Text color",
     ttFont: "Font",
     defaultText: "Dream",
+    backHome: "Back home",
+    saveIdle: "Draft stays in this browser",
+    saveSaving: "Saving draft...",
+    saveSaved: "Draft saved",
+    saveError: "Draft could not be saved",
+    rotateHintTitle: "Rotate your phone to landscape",
+    rotateHintText:
+      "The editor needs a little more room for the canvas, tools, and text.",
 
     landingHero: "Create your vision board for free — no registration",
     landingGo: "Go",
@@ -122,6 +137,14 @@ export const translations = {
     ttColor: "Color del texto",
     ttFont: "Fuente",
     defaultText: "Sueño",
+    backHome: "Volver al inicio",
+    saveIdle: "El borrador queda en este navegador",
+    saveSaving: "Guardando borrador...",
+    saveSaved: "Borrador guardado",
+    saveError: "No se pudo guardar el borrador",
+    rotateHintTitle: "Girando el teléfono a horizontal se ve mejor",
+    rotateHintText:
+      "Así el editor tiene más espacio para el canvas, las herramientas y el texto.",
 
     landingHero: "Creá tu tablero de deseos gratis — sin registro",
     landingGo: "Ir",

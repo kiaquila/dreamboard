@@ -1,5 +1,6 @@
 import { translations } from "./i18n.js";
 import { LANDING_PHOTO_JACKET } from "./landing-photo.js";
+import { readDraftSnapshot, writeDraftSnapshot } from "./draft-store.js";
 
 const LANG_KEYS = Object.keys(translations);
 const browserLang = navigator.language.split("-")[0].toUpperCase();
@@ -7,6 +8,8 @@ let currentLang = LANG_KEYS.includes(browserLang)
   ? browserLang
   : LANG_KEYS[0] || "RU";
 const MOBILE_BREAKPOINT = 900;
+const DRAFT_SCHEMA_VERSION = 1;
+const DRAFT_SAVE_DEBOUNCE_MS = 500;
 
 const landingView = document.getElementById("landingView");
 const editorView = document.getElementById("editorView");
@@ -16,9 +19,14 @@ const finalGoButton = document.getElementById("l-final-btn");
 const landingLangButton = document.getElementById("langBtn");
 const editorLangButton = document.getElementById("langBtnEditor");
 const editorMobileLangButton = document.getElementById("langBtnEditorMobile");
+const editorBackButton = document.getElementById("editorBackBtn");
+const editorBackButtonMobile = document.getElementById("editorBackBtnMobile");
+const rotateHintBackButton = document.getElementById("rotateHintBackBtn");
 const fileInput = document.getElementById("fileInput");
 const addTextButton = document.getElementById("t-addtext");
 const downloadButton = document.getElementById("t-download");
+const saveIndicator = document.getElementById("saveIndicator");
+const saveIndicatorMobile = document.getElementById("saveIndicatorMobile");
 
 // Editor elements
 const objectMenu = document.getElementById("objectMenu");
@@ -60,6 +68,11 @@ const FONT_FAMILIES = [
 ];
 
 let placeholders = [];
+let draftSaveTimer = null;
+let suppressDraftPersistence = false;
+let currentSaveStatusKey = "saveIdle";
+let draftBootstrapComplete = false;
+let draftBootstrapPromise = null;
 
 const canvas = new fabric.Canvas("visionBoard", {
   width: 960,
@@ -119,6 +132,17 @@ function applyToolbarTooltips() {
   omFontFamilyBtn.setAttribute("data-tooltip", t.ttFont);
 }
 
+function setSaveStatus(statusKey) {
+  currentSaveStatusKey = statusKey;
+  const label = translations[currentLang]?.[statusKey] || "";
+
+  [saveIndicator, saveIndicatorMobile].forEach((node) => {
+    if (!node) return;
+    node.textContent = label;
+    node.hidden = !label;
+  });
+}
+
 function applyLanguageUI() {
   const t = translations[currentLang];
 
@@ -156,6 +180,13 @@ function applyLanguageUI() {
   document.getElementById("t-upload").innerText = t.upload;
   document.getElementById("t-addtext").innerText = t.addtext;
   document.getElementById("t-download").innerText = t.download;
+  document.getElementById("t-back-home").innerText = t.backHome;
+  document.getElementById("t-back-home-overlay").innerText = t.backHome;
+  document.getElementById("rotateHintTitle").innerText = t.rotateHintTitle;
+  document.getElementById("rotateHintText").innerText = t.rotateHintText;
+  editorBackButton?.setAttribute("aria-label", t.backHome);
+  editorBackButtonMobile?.setAttribute("aria-label", t.backHome);
+  rotateHintBackButton?.setAttribute("aria-label", t.backHome);
 
   // lang labels (landing + editor)
   document.getElementById("langBtn").innerText = currentLang;
@@ -169,12 +200,16 @@ function applyLanguageUI() {
 
   createPlaceholders();
   applyToolbarTooltips();
+  setSaveStatus(currentSaveStatusKey);
 }
 
 function toggleLang() {
   const currentIndex = LANG_KEYS.indexOf(currentLang);
   currentLang = LANG_KEYS[(currentIndex + 1) % LANG_KEYS.length];
   applyLanguageUI();
+  if (draftBootstrapComplete) {
+    scheduleDraftSave();
+  }
 }
 
 function scrollToSlide(id) {
@@ -216,13 +251,157 @@ function renderLandingRules() {
   });
 }
 
-function goToEditor() {
+function syncBodyOverflow() {
+  const donateModalOpen =
+    donateOverlay && donateOverlay.style.display === "flex";
+  document.body.style.overflow =
+    donateModalOpen || document.body.classList.contains("is-editor-active")
+      ? "hidden"
+      : "";
+}
+
+async function requestLandscapeOrientation() {
+  if (!isMobileLayout() || !screen.orientation?.lock) return;
+
+  try {
+    await screen.orientation.lock("landscape");
+  } catch (error) {
+    // iOS Safari and several browsers ignore or block this unless fullscreen.
+  }
+}
+
+function buildDraftSnapshot() {
+  return {
+    schemaVersion: DRAFT_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+    lang: currentLang,
+    canvas: {
+      width: canvas.getWidth(),
+      height: canvas.getHeight(),
+      backgroundColor: "#ffffff",
+      objects: canvas
+        .getObjects()
+        .filter((object) => !object.isPlaceholder)
+        .map((object) => object.toObject()),
+    },
+  };
+}
+
+async function persistDraftSnapshot() {
+  if (suppressDraftPersistence) return;
+
+  if (draftSaveTimer) {
+    window.clearTimeout(draftSaveTimer);
+    draftSaveTimer = null;
+  }
+
+  try {
+    await writeDraftSnapshot(buildDraftSnapshot());
+    setSaveStatus("saveSaved");
+  } catch (error) {
+    console.error("Could not persist dreamboard draft.", error);
+    setSaveStatus("saveError");
+  }
+}
+
+function scheduleDraftSave({ immediate = false } = {}) {
+  if (!draftBootstrapComplete || suppressDraftPersistence) return;
+
+  setSaveStatus("saveSaving");
+
+  if (draftSaveTimer) {
+    window.clearTimeout(draftSaveTimer);
+  }
+
+  if (immediate) {
+    void persistDraftSnapshot();
+    return;
+  }
+
+  draftSaveTimer = window.setTimeout(() => {
+    void persistDraftSnapshot();
+  }, DRAFT_SAVE_DEBOUNCE_MS);
+}
+
+async function restoreDraftSnapshot(snapshot) {
+  if (
+    !snapshot ||
+    snapshot.schemaVersion !== DRAFT_SCHEMA_VERSION ||
+    !snapshot.canvas
+  ) {
+    return;
+  }
+
+  suppressDraftPersistence = true;
+
+  await new Promise((resolve) => {
+    canvas.loadFromJSON(
+      {
+        version: "5.3.1",
+        background: snapshot.canvas.backgroundColor || "#ffffff",
+        objects: snapshot.canvas.objects || [],
+      },
+      () => {
+        canvas.backgroundColor = snapshot.canvas.backgroundColor || "#ffffff";
+        createPlaceholders();
+        enforceTextOnTop();
+        hideObjectMenu();
+        hideColorPopup();
+        hideFontPopup();
+        canvas.renderAll();
+        resolve();
+      },
+    );
+  });
+
+  suppressDraftPersistence = false;
+}
+
+async function bootstrapDraftState() {
+  const snapshot = await readDraftSnapshot();
+
+  if (snapshot?.lang && LANG_KEYS.includes(snapshot.lang)) {
+    currentLang = snapshot.lang;
+  }
+
+  applyLanguageUI();
+  if (snapshot) {
+    await restoreDraftSnapshot(snapshot);
+    setSaveStatus("saveSaved");
+  } else {
+    setSaveStatus("saveIdle");
+  }
+
+  draftBootstrapComplete = true;
+}
+
+async function goToEditor() {
+  if (draftBootstrapPromise) {
+    await draftBootstrapPromise;
+  }
   landingView.style.display = "none";
   editorView.style.display = "block";
-  document.body.style.overflow = "hidden";
+  document.body.classList.add("is-editor-active");
+  syncBodyOverflow();
   closeSidebar();
+  await requestLandscapeOrientation();
   requestAnimationFrame(() => {
     resizeCanvasToViewport();
+  });
+}
+
+function goToLanding() {
+  landingView.style.display = "block";
+  editorView.style.display = "none";
+  document.body.classList.remove("is-editor-active");
+  closeSidebar();
+  hideObjectMenu();
+  hideColorPopup();
+  hideFontPopup();
+  syncBodyOverflow();
+  requestAnimationFrame(() => {
+    updateLandingViewportVars();
+    landingView.scrollTo({ top: 0, behavior: "smooth" });
   });
 }
 
@@ -389,6 +568,9 @@ editorLangButton?.addEventListener("click", toggleLang);
 editorMobileLangButton?.addEventListener("click", toggleLang);
 heroGoButton?.addEventListener("click", goToEditor);
 finalGoButton?.addEventListener("click", goToEditor);
+editorBackButton?.addEventListener("click", goToLanding);
+editorBackButtonMobile?.addEventListener("click", goToLanding);
+rotateHintBackButton?.addEventListener("click", goToLanding);
 addTextButton?.addEventListener("click", addText);
 downloadButton?.addEventListener("click", exportBoard);
 omForward.addEventListener("click", () => changeZIndex("forward"));
@@ -425,6 +607,7 @@ function toggleBold() {
   canvas.renderAll();
   syncTextToolStates(obj);
   positionObjectMenu();
+  scheduleDraftSave();
 }
 
 function toggleItalic() {
@@ -435,6 +618,7 @@ function toggleItalic() {
   canvas.renderAll();
   syncTextToolStates(obj);
   positionObjectMenu();
+  scheduleDraftSave();
 }
 
 function toggleUnderline() {
@@ -444,6 +628,7 @@ function toggleUnderline() {
   canvas.renderAll();
   syncTextToolStates(obj);
   positionObjectMenu();
+  scheduleDraftSave();
 }
 
 function duplicateSelectedText() {
@@ -472,10 +657,20 @@ function duplicateSelectedText() {
     canvas.setActiveObject(cloned);
     canvas.renderAll();
     positionObjectMenu();
+    scheduleDraftSave();
   });
 }
 
 function createPlaceholders() {
+  const previousSuppression = suppressDraftPersistence;
+  suppressDraftPersistence = true;
+
+  canvas
+    .getObjects()
+    .filter((object) => object.isPlaceholder)
+    .forEach((object) => canvas.remove(object));
+  placeholders = [];
+
   const w = canvas.width;
   const h = canvas.height;
   const langData = translations[currentLang].sectors;
@@ -492,20 +687,6 @@ function createPlaceholders() {
     { t: langData[8], x: (3 * w) / 4, y: h / 4.5 },
   ];
 
-  if (placeholders.length === positions.length) {
-    positions.forEach((item, index) => {
-      placeholders[index].set({
-        left: item.x,
-        top: item.y,
-        text: item.t,
-      });
-      canvas.sendToBack(placeholders[index]);
-    });
-    canvas.renderAll();
-    return;
-  }
-
-  placeholders.forEach((placeholder) => canvas.remove(placeholder));
   placeholders = positions.map((item) => {
     const text = new fabric.Text(item.t, {
       left: item.x,
@@ -525,6 +706,7 @@ function createPlaceholders() {
     return text;
   });
   canvas.renderAll();
+  suppressDraftPersistence = previousSuppression;
 }
 
 function enforceTextOnTop() {
@@ -625,6 +807,7 @@ fileInput?.addEventListener("change", (e) => {
     layoutBatchImages(imgs.filter(Boolean));
     if (isMobileLayout()) closeSidebar();
     e.target.value = "";
+    scheduleDraftSave();
   });
 });
 
@@ -651,6 +834,8 @@ function addText() {
   setTimeout(() => {
     text.enterEditing();
   }, 0);
+
+  scheduleDraftSave();
 }
 
 function changeZIndex(direction) {
@@ -668,6 +853,7 @@ function changeZIndex(direction) {
     : canvas.sendBackwards(obj);
   enforceTextOnTop();
   positionObjectMenu();
+  scheduleDraftSave();
 }
 
 function deleteSelected() {
@@ -678,6 +864,7 @@ function deleteSelected() {
   hideColorPopup();
   hideFontPopup();
   canvas.renderAll();
+  scheduleDraftSave();
 }
 
 function exportBoard() {
@@ -705,7 +892,7 @@ const donateCloseBtn = document.getElementById("donateModalCloseBtn");
 function openDonateModal() {
   if (!donateOverlay) return;
   donateOverlay.style.display = "flex";
-  document.body.style.overflow = "hidden";
+  syncBodyOverflow();
   // focus close for accessibility
   if (donateCloseBtn) donateCloseBtn.focus();
 }
@@ -713,7 +900,7 @@ function openDonateModal() {
 function closeDonateModal() {
   if (!donateOverlay) return;
   donateOverlay.style.display = "none";
-  document.body.style.overflow = "";
+  syncBodyOverflow();
 }
 
 if (donateOverlay) {
@@ -846,6 +1033,7 @@ omTextColor.addEventListener("input", () => {
   obj.set("fill", omTextColor.value);
   canvas.renderAll();
   positionObjectMenu();
+  scheduleDraftSave();
 });
 
 canvas.on("selection:created", positionObjectMenu);
@@ -858,6 +1046,20 @@ canvas.on("selection:cleared", () => {
 canvas.on("object:moving", positionObjectMenu);
 canvas.on("object:scaling", positionObjectMenu);
 canvas.on("object:rotating", positionObjectMenu);
+canvas.on("object:modified", () => {
+  scheduleDraftSave();
+});
+canvas.on("object:added", (event) => {
+  if (event.target?.isPlaceholder || suppressDraftPersistence) return;
+  scheduleDraftSave();
+});
+canvas.on("object:removed", (event) => {
+  if (event.target?.isPlaceholder || suppressDraftPersistence) return;
+  scheduleDraftSave();
+});
+canvas.on("text:changed", () => {
+  scheduleDraftSave();
+});
 
 canvas.on("mouse:down", () => {
   const obj = canvas.getActiveObject();
@@ -976,7 +1178,17 @@ window.addEventListener("resize", () => {
   }
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    scheduleDraftSave({ immediate: true });
+  }
+});
+
+window.addEventListener("pagehide", () => {
+  scheduleDraftSave({ immediate: true });
+});
+
 // init
 updateLandingViewportVars();
 setLandingPhotos();
-applyLanguageUI();
+draftBootstrapPromise = bootstrapDraftState();
