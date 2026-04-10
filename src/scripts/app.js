@@ -631,6 +631,7 @@ function addText() {
     fontStyle: "normal",
     underline: false,
     originX: "center",
+    originY: "center",
   });
   canvas.add(text);
   canvas.setActiveObject(text);
