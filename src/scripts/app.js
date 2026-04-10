@@ -1,6 +1,10 @@
 import { translations } from "./i18n.js";
 import { LANDING_PHOTO_JACKET } from "./landing-photo.js";
-import { readDraftSnapshot, writeDraftSnapshot } from "./draft-store.js";
+import {
+  readDraftSnapshot,
+  writeDraftSnapshot,
+  writeDraftSnapshotSyncFallback,
+} from "./draft-store.js";
 
 const LANG_KEYS = Object.keys(translations);
 const browserLang = navigator.language.split("-")[0].toUpperCase();
@@ -143,7 +147,7 @@ function setSaveStatus(statusKey) {
   });
 }
 
-function applyLanguageUI() {
+function applyLanguageUI({ syncPlaceholders = true } = {}) {
   const t = translations[currentLang];
 
   // landing
@@ -198,7 +202,9 @@ function applyLanguageUI() {
   // html lang
   document.documentElement.lang = currentLang.toLowerCase();
 
-  createPlaceholders();
+  if (syncPlaceholders) {
+    createPlaceholders();
+  }
   applyToolbarTooltips();
   setSaveStatus(currentSaveStatusKey);
 }
@@ -287,7 +293,7 @@ function buildDraftSnapshot() {
   };
 }
 
-async function persistDraftSnapshot() {
+async function persistDraftSnapshot(snapshot = buildDraftSnapshot()) {
   if (suppressDraftPersistence) return;
 
   if (draftSaveTimer) {
@@ -296,7 +302,7 @@ async function persistDraftSnapshot() {
   }
 
   try {
-    await writeDraftSnapshot(buildDraftSnapshot());
+    await writeDraftSnapshot(snapshot);
     setSaveStatus("saveSaved");
   } catch (error) {
     console.error("Could not persist dreamboard draft.", error);
@@ -364,7 +370,7 @@ async function bootstrapDraftState() {
     currentLang = snapshot.lang;
   }
 
-  applyLanguageUI();
+  applyLanguageUI({ syncPlaceholders: !snapshot });
   if (snapshot) {
     await restoreDraftSnapshot(snapshot);
     setSaveStatus("saveSaved");
@@ -373,6 +379,14 @@ async function bootstrapDraftState() {
   }
 
   draftBootstrapComplete = true;
+}
+
+function persistDraftOnExit() {
+  if (!draftBootstrapComplete || suppressDraftPersistence) return;
+
+  const snapshot = buildDraftSnapshot();
+  writeDraftSnapshotSyncFallback(snapshot);
+  void persistDraftSnapshot(snapshot);
 }
 
 async function goToEditor() {
@@ -1180,12 +1194,12 @@ window.addEventListener("resize", () => {
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
-    scheduleDraftSave({ immediate: true });
+    persistDraftOnExit();
   }
 });
 
 window.addEventListener("pagehide", () => {
-  scheduleDraftSave({ immediate: true });
+  persistDraftOnExit();
 });
 
 // init
