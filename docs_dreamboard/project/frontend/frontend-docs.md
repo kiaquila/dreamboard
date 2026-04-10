@@ -19,7 +19,16 @@ The editor now uses container-based canvas sizing instead of raw viewport math:
 - the editor shell owns the available space
 - the Fabric canvas resizes from the `.canvas-area` container
 - a `ResizeObserver` keeps the canvas in sync with footer height and viewport changes
-- the mobile sidebar remains an overlay, while the canvas keeps a safe top offset under the menu trigger
+- the mobile editor now uses a dedicated interaction shell instead of a desktop left rail squeezed into phone width
+
+## Mobile Editor Model
+
+The current static app now treats phone layouts as a separate editor mode:
+
+- a fixed mobile top bar keeps the primary entry points reachable
+- tool controls open as a bottom sheet instead of an off-canvas desktop sidebar
+- the canvas reserves safe space for the top bar and sticky footer
+- the object menu docks near the bottom of the canvas on mobile instead of chasing the selected object into cramped positions
 
 ## Build Contract
 
@@ -36,7 +45,7 @@ The recommended target architecture for the next phase is:
 - `Vite + React + TypeScript`
 - dedicated components for landing and editor shells
 - extracted locales, assets, and editor services
-- removal of remaining inline action handlers in favor of bound module listeners
-- a dedicated mobile editor interaction model instead of desktop controls squeezed into a phone viewport
+- extraction of the mobile editor shell into dedicated components instead of shared static DOM branches
+- stronger visual and interaction parity between landing and editor on small screens
 
 Until that migration happens, all changes should keep the static app functioning and deployable.

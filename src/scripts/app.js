@@ -15,6 +15,7 @@ const heroGoButton = document.getElementById("l-go-btn");
 const finalGoButton = document.getElementById("l-final-btn");
 const landingLangButton = document.getElementById("langBtn");
 const editorLangButton = document.getElementById("langBtnEditor");
+const editorMobileLangButton = document.getElementById("langBtnEditorMobile");
 const fileInput = document.getElementById("fileInput");
 const addTextButton = document.getElementById("t-addtext");
 const downloadButton = document.getElementById("t-download");
@@ -159,6 +160,9 @@ function applyLanguageUI() {
   // lang labels (landing + editor)
   document.getElementById("langBtn").innerText = currentLang;
   document.getElementById("langBtnEditor").innerText = currentLang;
+  if (editorMobileLangButton) {
+    editorMobileLangButton.innerText = currentLang;
+  }
 
   // html lang
   document.documentElement.lang = currentLang.toLowerCase();
@@ -216,6 +220,7 @@ function goToEditor() {
   landingView.style.display = "none";
   editorView.style.display = "block";
   document.body.style.overflow = "hidden";
+  closeSidebar();
   requestAnimationFrame(() => {
     resizeCanvasToViewport();
   });
@@ -381,6 +386,7 @@ omFontFamilyBtn.addEventListener("click", (e) => {
 
 landingLangButton?.addEventListener("click", toggleLang);
 editorLangButton?.addEventListener("click", toggleLang);
+editorMobileLangButton?.addEventListener("click", toggleLang);
 heroGoButton?.addEventListener("click", goToEditor);
 finalGoButton?.addEventListener("click", goToEditor);
 addTextButton?.addEventListener("click", addText);
@@ -722,6 +728,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 function hideObjectMenu() {
+  objectMenu.classList.remove("is-mobile-dock");
+  objectMenu.style.maxWidth = "";
   objectMenu.style.display = "none";
 }
 
@@ -775,18 +783,36 @@ function positionObjectMenu() {
 
   applyToolbarTooltips();
   objectMenu.style.display = "flex";
+  objectMenu.classList.toggle("is-mobile-dock", isMobileLayout());
 
-  const rect = obj.getBoundingRect(true, true);
   const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
 
+  objectMenu.style.left = "0px";
+  objectMenu.style.top = "0px";
+  objectMenu.style.maxWidth = "";
+  const menuRect = objectMenu.getBoundingClientRect();
+
+  if (isMobileLayout()) {
+    const maxDockWidth = Math.max(220, Math.min(canvasRect.width - 20, 360));
+    objectMenu.style.maxWidth = `${maxDockWidth}px`;
+
+    const dockRect = objectMenu.getBoundingClientRect();
+    const dockLeft = Math.max(10, (canvasRect.width - dockRect.width) / 2);
+    const dockTop = Math.max(10, canvasRect.height - dockRect.height - 12);
+
+    objectMenu.style.left = `${dockLeft}px`;
+    objectMenu.style.top = `${dockTop}px`;
+
+    positionColorPopup();
+    positionFontPopup();
+    return;
+  }
+
+  const rect = obj.getBoundingRect(true, true);
   const left = canvasRect.left + rect.left;
   const top = canvasRect.top + rect.top;
   const width = rect.width;
   const height = rect.height;
-
-  objectMenu.style.left = "0px";
-  objectMenu.style.top = "0px";
-  const menuRect = objectMenu.getBoundingClientRect();
 
   const spaceAbove = top - canvasRect.top;
   const spaceBelow = canvasRect.top + canvasRect.height - (top + height);

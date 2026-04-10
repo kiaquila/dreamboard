@@ -8,6 +8,8 @@
   --footer-height: 45px;
   --editor-shell-gap: 20px;
   --editor-mobile-header-offset: 68px;
+  --editor-mobile-topbar-height: 74px;
+  --editor-mobile-sheet-gap: 16px;
 
   --landing-bg: #ececec;
   --landing-bg-2: #f3f3f3;
@@ -76,6 +78,34 @@ html {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.editor-mobile-topbar {
+  display: none;
+}
+
+.editor-mobile-brand {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--volcanic-grass);
+  text-transform: uppercase;
+}
+
+.editor-mobile-lang {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 40px;
+  border-radius: 20px;
+  padding: 0 14px;
+  border: 1px solid #e6e6e6;
+  background: #fff;
+  color: var(--volcanic-grass);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 h1 {
@@ -685,6 +715,21 @@ button:hover {
   max-width: 520px;
 }
 
+.object-menu.is-mobile-dock {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 24px;
+  padding: 10px;
+  max-width: min(360px, calc(100% - 20px));
+}
+
+.object-menu.is-mobile-dock .om-btn,
+.object-menu.is-mobile-dock #om-fontFamilyBtn,
+.object-menu.is-mobile-dock .om-color-btn {
+  flex: 0 0 auto;
+}
+
 .object-menu .om-btn {
   height: 40px;
   padding: 0 16px;
@@ -1021,11 +1066,10 @@ button:hover {
            MOBILE ADAPTATION (<= 900px) — editor sidebar
            ========================== */
 .mobile-menu-btn {
-  display: none;
-  position: fixed;
-  left: 12px;
-  top: calc(12px + env(safe-area-inset-top));
-  z-index: 250;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: static;
   width: 44px;
   height: 44px;
   border-radius: 22px;
@@ -1053,10 +1097,34 @@ button:hover {
 }
 
 @media (max-width: 900px) {
-  .mobile-menu-btn {
-    display: inline-flex;
+  .editor-mobile-topbar {
+    display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 240;
+    padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+    min-height: var(--editor-mobile-topbar-height);
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .editor-mobile-topbar .editor-mobile-brand {
+    flex: 1 1 auto;
+    text-align: center;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .sidebar-header .lang-switcher {
+    display: none;
   }
 
   .app-container {
@@ -1065,30 +1133,92 @@ button:hover {
 
   .sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: min(320px, 86vw);
-    height: 100vh;
+    left: 12px;
+    right: 12px;
+    bottom: calc(
+      var(--footer-height) + var(--editor-mobile-sheet-gap) +
+        env(safe-area-inset-bottom)
+    );
+    width: auto;
+    height: auto;
+    max-height: min(
+      420px,
+      calc(
+        100dvh - var(--footer-height) - var(--editor-mobile-topbar-height) -
+          40px
+      )
+    );
     z-index: 200;
-    transform: translateX(-110%);
+    transform: translateY(calc(100% + 24px));
     transition: transform 0.22s ease;
-    box-shadow: 2px 0 18px rgba(0, 0, 0, 0.12);
-    border-right: 1px solid #eee;
-    padding-top: calc(25px + env(safe-area-inset-top));
-    padding-bottom: calc(25px + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.14);
+    border: 1px solid #ececec;
+    border-radius: 28px;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+    gap: 16px;
+  }
+
+  .sidebar::before {
+    content: "";
+    width: 44px;
+    height: 5px;
+    border-radius: 999px;
+    background: #d8d8d8;
+    align-self: center;
   }
 
   .sidebar.is-open {
-    transform: translateX(0);
+    transform: translateY(0);
   }
 
   .sidebar-overlay.is-open {
     display: block;
   }
 
+  .sidebar-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-top: 2px;
+    padding-bottom: 10px;
+    background: linear-gradient(
+      180deg,
+      #ffffff 0%,
+      rgba(255, 255, 255, 0.92) 100%
+    );
+  }
+
+  .control-group {
+    gap: 12px;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .control-group button,
+  .file-input-label {
+    min-height: 48px;
+    border-radius: 24px;
+    font-size: 13px;
+  }
+
   .canvas-area {
-    padding: calc(var(--editor-mobile-header-offset) + env(safe-area-inset-top))
-      16px calc(16px + env(safe-area-inset-bottom));
+    padding: calc(
+        var(--editor-mobile-topbar-height) + env(safe-area-inset-top) + 14px
+      )
+      14px calc(var(--footer-height) + 22px + env(safe-area-inset-bottom));
+  }
+
+  .canvas-wrapper {
+    width: 100%;
+    border-radius: 28px;
+    overflow: hidden;
+  }
+
+  .object-menu.is-mobile-dock {
+    width: calc(100% - 20px);
+    border-radius: 26px;
+    padding: 12px;
+    gap: 8px;
   }
 }
 
