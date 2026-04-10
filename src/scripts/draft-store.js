@@ -78,15 +78,10 @@ export async function readDraftSnapshot() {
 }
 
 export async function writeDraftSnapshot(snapshot) {
+  const serializedSnapshot = JSON.stringify(snapshot);
+
   try {
     await withStore("readwrite", (store) => store.put(snapshot, RECORD_KEY));
-    window.localStorage.setItem(
-      FALLBACK_KEY,
-      JSON.stringify({
-        ...snapshot,
-        storage: "fallback-copy",
-      }),
-    );
     return;
   } catch (error) {
     console.warn(
@@ -95,7 +90,17 @@ export async function writeDraftSnapshot(snapshot) {
     );
   }
 
-  window.localStorage.setItem(FALLBACK_KEY, JSON.stringify(snapshot));
+  window.localStorage.setItem(FALLBACK_KEY, serializedSnapshot);
+}
+
+export function writeDraftSnapshotSyncFallback(snapshot) {
+  try {
+    window.localStorage.setItem(FALLBACK_KEY, JSON.stringify(snapshot));
+    return true;
+  } catch (error) {
+    console.warn("Synchronous localStorage draft write failed.", error);
+    return false;
+  }
 }
 
 export async function clearDraftSnapshot() {
