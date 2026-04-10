@@ -32,6 +32,7 @@ The current static app now treats phone layouts as a separate editor mode:
 - the canvas reserves safe space for the top bar and sticky footer
 - the object menu docks near the bottom of the canvas on mobile instead of chasing the selected object into cramped positions
 - portrait phone editor is intentionally treated as a rotate-hint state; the actual editing shell is optimized for landscape, because iOS browsers cannot be trusted to honor hard orientation locks
+- editor return controls are icon-only, with localized tooltips instead of visible labels to keep the shell visually lighter
 
 ## Build Contract
 
