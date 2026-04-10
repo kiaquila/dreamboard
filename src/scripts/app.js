@@ -184,13 +184,17 @@ function applyLanguageUI({ syncPlaceholders = true } = {}) {
   document.getElementById("t-upload").innerText = t.upload;
   document.getElementById("t-addtext").innerText = t.addtext;
   document.getElementById("t-download").innerText = t.download;
-  document.getElementById("t-back-home").innerText = t.backHome;
-  document.getElementById("t-back-home-overlay").innerText = t.backHome;
   document.getElementById("rotateHintTitle").innerText = t.rotateHintTitle;
   document.getElementById("rotateHintText").innerText = t.rotateHintText;
   editorBackButton?.setAttribute("aria-label", t.backHome);
   editorBackButtonMobile?.setAttribute("aria-label", t.backHome);
   rotateHintBackButton?.setAttribute("aria-label", t.backHome);
+  editorBackButton?.setAttribute("data-tooltip", t.backHome);
+  editorBackButton?.setAttribute("title", t.backHome);
+  editorBackButtonMobile?.setAttribute("data-tooltip", t.backHome);
+  editorBackButtonMobile?.setAttribute("title", t.backHome);
+  rotateHintBackButton?.setAttribute("data-tooltip", t.backHome);
+  rotateHintBackButton?.setAttribute("title", t.backHome);
 
   // lang labels (landing + editor)
   document.getElementById("langBtn").innerText = currentLang;

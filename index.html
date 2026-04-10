@@ -114,7 +114,7 @@
     <div class="editor-view" id="editorView">
       <div class="editor-mobile-topbar">
         <button
-          class="topbar-icon-btn topbar-back-btn"
+          class="topbar-icon-btn topbar-back-btn tooltip-trigger"
           id="editorBackBtnMobile"
           type="button"
           aria-label="Back to start page"
@@ -168,7 +168,7 @@
             <div class="sidebar-header-actions">
               <button
                 type="button"
-                class="editor-home-btn"
+                class="editor-home-btn tooltip-trigger"
                 id="editorBackBtn"
                 aria-label="Back to start page"
               >
@@ -182,7 +182,6 @@
                     stroke-linejoin="round"
                   ></path>
                 </svg>
-                <span id="t-back-home">На старт</span>
               </button>
               <button type="button" id="langBtnEditor">RU</button>
             </div>
@@ -378,7 +377,12 @@
           <p id="rotateHintText">
             Так редактору хватает места для canvas, меню и текста.
           </p>
-          <button type="button" class="editor-home-btn" id="rotateHintBackBtn">
+          <button
+            type="button"
+            class="editor-home-btn tooltip-trigger"
+            id="rotateHintBackBtn"
+            aria-label="Назад"
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
                 d="M15 18l-6-6 6-6"
@@ -389,7 +393,6 @@
                 stroke-linejoin="round"
               ></path>
             </svg>
-            <span id="t-back-home-overlay">На старт</span>
           </button>
         </div>
       </div>
