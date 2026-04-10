@@ -609,6 +609,8 @@ fileInput?.addEventListener("change", (e) => {
           resolve(img);
         });
       };
+      reader.onerror = () => resolve(null);
+      reader.onabort = () => resolve(null);
       reader.readAsDataURL(file);
     });
   });
