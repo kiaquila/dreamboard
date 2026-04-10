@@ -10,6 +10,7 @@
   --editor-mobile-header-offset: 68px;
   --editor-mobile-topbar-height: 74px;
   --editor-mobile-sheet-gap: 16px;
+  --landing-hero-image: url("../assets/images/landing/dreamboard-wallpaper.jpg");
 
   --landing-bg: #ececec;
   --landing-bg-2: #f3f3f3;
@@ -72,6 +73,13 @@ html {
   gap: 12px;
 }
 
+.landing-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* Заголовок + кнопка языка как в редакторе */
 .sidebar-header {
   display: flex;
@@ -82,6 +90,12 @@ html {
 
 .editor-mobile-topbar {
   display: none;
+}
+
+.editor-mobile-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .editor-mobile-brand {
@@ -113,6 +127,12 @@ h1 {
   margin: 0;
   font-weight: 700;
   letter-spacing: -1.5px;
+}
+
+.landing-header h1,
+.sidebar-header h1 {
+  display: inline-flex;
+  align-items: center;
 }
 
 .lang-switcher button {
@@ -238,6 +258,7 @@ h1 {
       rgba(255, 255, 255, 0.08) 32%,
       rgba(24, 24, 24, 0.1) 100%
     ),
+    var(--landing-hero-image),
     linear-gradient(135deg, #ebe5dc 0%, #d8d4cc 48%, #c1b8ac 100%);
   background-size: cover;
   background-position: center;
@@ -588,6 +609,7 @@ h1 {
   display: none;
   min-height: 100dvh;
   background: var(--bg-color);
+  position: relative;
 }
 
 .app-container {
@@ -612,6 +634,60 @@ h1 {
   overflow-y: auto;
   position: relative;
   min-height: 0;
+}
+
+.sidebar-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid #ececec;
+  background: #fff;
+  color: var(--volcanic-grass);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.editor-home-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.save-indicator,
+.save-indicator-chip {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(59, 58, 54, 0.62);
+}
+
+.save-indicator-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  max-width: 124px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .section-title {
@@ -1019,6 +1095,10 @@ button:hover {
   z-index: 100;
 }
 
+body.is-editor-active .sticky-footer {
+  display: none;
+}
+
 .sticky-footer a {
   color: #888;
   text-decoration: none;
@@ -1065,7 +1145,7 @@ button:hover {
 /* ==========================
            MOBILE ADAPTATION (<= 900px) — editor sidebar
            ========================== */
-.mobile-menu-btn {
+.topbar-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1080,10 +1160,19 @@ button:hover {
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.14),
     0 2px 6px rgba(0, 0, 0, 0.12);
-  font-size: 20px;
-  font-weight: 900;
   line-height: 1;
   cursor: pointer;
+}
+
+.topbar-icon-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.mobile-menu-btn {
+  font-size: 20px;
+  font-weight: 900;
 }
 
 .sidebar-overlay {
@@ -1096,7 +1185,79 @@ button:hover {
   -webkit-backdrop-filter: blur(2px);
 }
 
+.editor-rotate-hint {
+  display: none;
+}
+
+.editor-rotate-card {
+  width: min(360px, calc(100vw - 32px));
+  padding: 28px 24px calc(28px + env(safe-area-inset-bottom));
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--volcanic-grass);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.16),
+    0 2px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.editor-rotate-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  color: var(--volcanic-grass);
+  background: rgba(254, 221, 0, 0.22);
+}
+
+.editor-rotate-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.editor-rotate-card h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.editor-rotate-card p {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(59, 58, 54, 0.72);
+}
+
+body.is-editor-active .app-container {
+  height: 100dvh;
+}
+
 @media (max-width: 900px) {
+  .landing-header {
+    padding: calc(16px + env(safe-area-inset-top)) 16px 8px;
+  }
+
+  .landing-header-bar h1 {
+    font-size: 24px;
+    letter-spacing: -1.2px;
+  }
+
+  body:not(.is-editor-active) .sticky-footer {
+    background: transparent;
+    color: rgba(59, 58, 54, 0.68);
+  }
+
+  body:not(.is-editor-active) .sticky-footer a {
+    color: rgba(59, 58, 54, 0.68);
+  }
+
+  body:not(.is-editor-active) .footer-inner {
+    text-shadow: 0 1px 14px rgba(255, 255, 255, 0.9);
+  }
+
   .editor-mobile-topbar {
     display: flex;
     align-items: center;
@@ -1123,7 +1284,7 @@ button:hover {
     padding-right: 8px;
   }
 
-  .sidebar-header .lang-switcher {
+  .sidebar .sidebar-header .lang-switcher {
     display: none;
   }
 
@@ -1175,7 +1336,7 @@ button:hover {
     display: block;
   }
 
-  .sidebar-header {
+  .sidebar .sidebar-header {
     position: sticky;
     top: 0;
     z-index: 1;
@@ -1219,6 +1380,33 @@ button:hover {
     border-radius: 26px;
     padding: 12px;
     gap: 8px;
+  }
+
+  body.is-editor-active .sidebar {
+    bottom: calc(var(--editor-mobile-sheet-gap) + env(safe-area-inset-bottom));
+    max-height: min(
+      420px,
+      calc(100dvh - var(--editor-mobile-topbar-height) - 28px)
+    );
+  }
+
+  body.is-editor-active .canvas-area {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  body.is-editor-active .editor-rotate-hint {
+    position: fixed;
+    inset: 0;
+    z-index: 320;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(24px + env(safe-area-inset-top)) 16px 24px;
+    background: rgba(244, 241, 235, 0.92);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 }
 

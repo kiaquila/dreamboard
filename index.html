@@ -22,7 +22,7 @@
     <!-- LANDING VIEW -->
     <div class="landing-view" id="landingView">
       <header class="landing-header" aria-label="Header">
-        <div class="sidebar-header">
+        <div class="landing-header-bar">
           <h1>DREAM <span style="color: var(--pantone-yellow)">BOARD</span></h1>
           <div class="lang-switcher">
             <button type="button" id="langBtn">RU</button>
@@ -114,24 +114,44 @@
     <div class="editor-view" id="editorView">
       <div class="editor-mobile-topbar">
         <button
-          class="mobile-menu-btn"
-          id="mobileMenuBtn"
+          class="topbar-icon-btn topbar-back-btn"
+          id="editorBackBtnMobile"
           type="button"
-          aria-label="Open tools"
+          aria-label="Back to start page"
         >
-          ☰
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M15 18l-6-6 6-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></path>
+          </svg>
         </button>
         <div class="editor-mobile-brand" aria-hidden="true">
           DREAM <span style="color: var(--pantone-yellow)">BOARD</span>
         </div>
-        <button
-          type="button"
-          class="editor-mobile-lang"
-          id="langBtnEditorMobile"
-          aria-label="Switch language"
-        >
-          RU
-        </button>
+        <div class="editor-mobile-actions">
+          <span class="save-indicator-chip" id="saveIndicatorMobile"></span>
+          <button
+            class="topbar-icon-btn mobile-menu-btn"
+            id="mobileMenuBtn"
+            type="button"
+            aria-label="Open tools"
+          >
+            ☰
+          </button>
+          <button
+            type="button"
+            class="editor-mobile-lang"
+            id="langBtnEditorMobile"
+            aria-label="Switch language"
+          >
+            RU
+          </button>
+        </div>
       </div>
       <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -141,10 +161,30 @@
             <h1>
               DREAM <span style="color: var(--pantone-yellow)">BOARD</span>
             </h1>
-            <div class="lang-switcher">
+            <div class="sidebar-header-actions">
+              <button
+                type="button"
+                class="editor-home-btn"
+                id="editorBackBtn"
+                aria-label="Back to start page"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M15 18l-6-6 6-6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+                <span id="t-back-home">На старт</span>
+              </button>
               <button type="button" id="langBtnEditor">RU</button>
             </div>
           </div>
+
+          <p class="save-indicator" id="saveIndicator" aria-live="polite"></p>
 
           <div class="control-group" style="border-bottom: none">
             <div class="section-title" id="t-images" style="display: none">
@@ -295,6 +335,59 @@
             </div>
           </div>
         </main>
+      </div>
+
+      <div class="editor-rotate-hint" id="editorRotateHint" aria-live="polite">
+        <div class="editor-rotate-card">
+          <div class="editor-rotate-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M7 3h7a2 2 0 0 1 2 2v6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+              <path
+                d="M17 8V5a3 3 0 0 0-3-3H7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+              <rect
+                x="5"
+                y="6"
+                width="8"
+                height="13"
+                rx="2"
+                transform="rotate(-90 9 12.5)"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              ></rect>
+            </svg>
+          </div>
+          <h2 id="rotateHintTitle">Поверни телефон горизонтально</h2>
+          <p id="rotateHintText">
+            Так редактору хватает места для canvas, меню и текста.
+          </p>
+          <button type="button" class="editor-home-btn" id="rotateHintBackBtn">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M15 18l-6-6 6-6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+            <span id="t-back-home-overlay">На старт</span>
+          </button>
+        </div>
       </div>
     </div>
 
