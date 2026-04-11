@@ -13,28 +13,40 @@
 
 ## Current Phase & Status
 
-| Area                          | Status                                             |
-| ----------------------------- | -------------------------------------------------- |
-| Product prototype             | COMPLETE                                           |
-| Static landing + editor       | COMPLETE                                           |
-| Mobile adaptation             | PARTIAL — needs redesign                           |
-| Frontend architecture cleanup | UPCOMING                                           |
-| CI / AI review orchestration  | COMPLETE after infra PR                            |
-| Production deploy flow        | COMPLETE via Vercel Git integration after infra PR |
+| Area                                      | Status                              |
+| ----------------------------------------- | ----------------------------------- |
+| Product prototype                         | COMPLETE                            |
+| Static landing + editor                   | COMPLETE                            |
+| Mobile adaptation                         | PARTIAL — ongoing iteration         |
+| Frontend architecture cleanup             | UPCOMING                            |
+| Repository memory and feature-memory flow | IN PROGRESS                         |
+| CI / AI review orchestration              | COMPLETE                            |
+| Production deploy flow                    | COMPLETE via Vercel Git integration |
 
 ## Project Structure
 
 ```
 dreamboard/
-├── index.html                          # Current app: landing + editor + styles + scripts
-├── package.json                        # Repo tooling for CI and Vercel build
+├── .specify/
+│   └── memory/constitution.md          # Process contract and non-negotiable rules
+├── specs/
+│   └── <feature-id>/                   # Feature memory: spec.md, plan.md, tasks.md
+├── index.html                          # Current app shell
+├── package.json                        # Repo tooling for CI, local orchestration, and build
 ├── vercel.json                         # Vercel build/output configuration
 ├── scripts/
 │   ├── build-static.mjs                # Static build to dist/
 │   ├── check-static-baseline.mjs       # Repository baseline checks
+│   ├── check-feature-memory.mjs        # Product change -> complete specs folder enforcement
+│   ├── set-implementation-agent.mjs    # Local + GitHub agent policy helper
+│   ├── new-worktree.mjs                # macOS local worktree helper
+│   ├── start-implementation-worker.mjs # Prompt preparation helper
+│   ├── publish-branch.mjs              # Push branch and open or reuse PR
 │   ├── resolve-pr-context.mjs          # Pull request context resolver for workflows
 │   └── ai-review-gate.mjs              # Review gate for Codex/Claude
 ├── docs_dreamboard/
+│   ├── README.md                       # Durable docs index
+│   ├── adr/                            # Architecture decision records
 │   ├── project-idea.md                 # Product overview and roadmap
 │   └── project/
 │       ├── frontend/frontend-docs.md   # Frontend architecture notes
@@ -45,9 +57,12 @@ dreamboard/
 ## Delivery Workflow
 
 - All code changes land through pull requests.
+- Product-code work starts from an active `specs/<feature-id>/` folder.
+- One implementation loop uses one worktree, one branch, and one PR.
 - Required GitHub checks are `baseline-checks`, `guard`, and `AI Review`.
 - Vercel handles preview deployments for pull requests and production deployment for `main` through Git integration.
 - Durable workflow docs live under `docs_dreamboard/project/devops/`.
+- Local orchestration state lives under `.codex/` and is gitignored.
 - Agent selection is policy-driven through repository variables:
   - `AI_IMPLEMENTATION_AGENT`
   - `AI_REVIEW_AGENT`
@@ -78,24 +93,38 @@ No direct production edits in Vercel or the browser. Product changes must be mad
 
 ### 2. Keep durable docs in sync
 
-When updating `index.html`, `scripts/`, workflow behavior, or deployment configuration, update at least one relevant file under `docs_dreamboard/`, `AGENTS.md`, or `CLAUDE.md`.
+When updating `index.html`, `src/`, runtime behavior, workflows, or deploy
+configuration, update the active `specs/<feature-id>/` folder and at least one
+relevant durable doc under `docs_dreamboard/`, `AGENTS.md`, or `CLAUDE.md`.
 
 ### 3. Preserve static-site deployability
 
 Even while the app is still a single-file prototype, changes must keep `npm run build` producing a deployable `dist/index.html` artifact for Vercel.
 
-### 4. Gemini review config is repository-owned
+### 4. One worker equals one worktree
 
-Gemini review behavior is configured through `.gemini/config.yaml` and `.gemini/styleguide.md`. Keep those files in sync with the repository review contract.
+Do not run parallel implementation work in the main checkout. Use the local
+macOS runner flow from `docs_dreamboard/project/devops/macos-local-runners.md`.
 
-### 5. Frontend changes should improve mobile, not patch around it
+### 5. Gemini review config is repository-owned
+
+Gemini review behavior is configured through `.gemini/config.yaml` and
+`.gemini/styleguide.md`. Keep those files in sync with the repository review
+contract.
+
+### 6. Frontend changes should improve mobile, not patch around it
 
 Avoid adding more fixed-size offsets and viewport hacks unless strictly necessary. Prefer layout systems that can survive later migration to a modular frontend app.
 
 ## Reading Route — Implementing a Change
 
-1. `docs_dreamboard/project-idea.md`
-2. `docs_dreamboard/project/frontend/frontend-docs.md`
-3. `docs_dreamboard/project/devops/ai-orchestration-protocol.md`
-4. `index.html`
-5. Existing workflows and scripts
+1. `.specify/memory/constitution.md`
+2. `docs_dreamboard/README.md`
+3. `docs_dreamboard/project-idea.md`
+4. `docs_dreamboard/project/frontend/frontend-docs.md`
+5. `docs_dreamboard/project/devops/ai-orchestration-protocol.md`
+6. `docs_dreamboard/project/devops/ai-pr-workflow.md`
+7. `specs/<feature-id>/spec.md`
+8. `specs/<feature-id>/plan.md`
+9. `specs/<feature-id>/tasks.md`
+10. Relevant app files and scripts

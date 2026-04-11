@@ -35,6 +35,7 @@ For `dreamboard`, reviewers should prioritize:
 - mobile layout regressions
 - canvas/editor correctness
 - export behavior
+- draft persistence and state safety
 - i18n regressions
 - build/deploy safety
 - maintainability risks in the static app

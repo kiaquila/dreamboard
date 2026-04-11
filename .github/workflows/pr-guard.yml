@@ -9,6 +9,14 @@ on:
         description: Git ref to check
         required: false
         type: string
+      head_ref:
+        description: PR head ref to compare
+        required: false
+        type: string
+      base_ref:
+        description: PR base ref to compare
+        required: false
+        type: string
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -28,15 +36,30 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+
+      - name: Resolve diff refs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_ref="${{ github.event.pull_request.base.sha }}"
+            head_ref="${{ github.event.pull_request.head.sha }}"
+          else
+            base_ref="${{ inputs.base_ref || 'HEAD~1' }}"
+            head_ref="${{ inputs.head_ref || 'HEAD' }}"
+          fi
+
+          echo "BASE_REF=$base_ref" >> "$GITHUB_ENV"
+          echo "HEAD_REF=$head_ref" >> "$GITHUB_ENV"
 
       - name: Check docs coverage for product and infra changes
         shell: bash
         run: |
           set -euo pipefail
 
-          base="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
-          changed=$(git diff --name-only "$base"...HEAD)
+          changed=$(git diff --name-only "$BASE_REF"... "$HEAD_REF")
 
           echo "Changed files:"
           echo "$changed"
@@ -72,6 +95,7 @@ jobs:
             echo ""
             echo "When modifying index.html, scripts/, build config, or future app source — update at least one of:"
             echo "  - docs_dreamboard/"
+            echo "  - specs/<feature-id>/"
             echo "  - AGENTS.md or CLAUDE.md"
             echo "  - .github/workflows/ (if orchestration changed)"
             echo ""
@@ -79,6 +103,9 @@ jobs:
           fi
 
           echo "Docs coverage OK."
+
+      - name: Require complete feature memory for product changes
+        run: node scripts/check-feature-memory.mjs "$BASE_REF" "$HEAD_REF"
 
       - name: Verify required baseline files exist
         uses: actions/setup-node@v4

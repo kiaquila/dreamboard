@@ -4,6 +4,12 @@
 
 `dreamboard` uses a PR-only delivery model.
 
+Repository memory is split into:
+
+- `.specify/` for process constitution
+- `docs_dreamboard/` for durable product and devops context
+- `specs/<feature-id>/` for active feature intent, plan, and task state
+
 Required GitHub checks:
 
 - `baseline-checks`
@@ -29,6 +35,17 @@ Default policy in this repository:
 Gemini is the canonical default review backend for this repository because it is already installed on GitHub and runs natively on pull requests.
 
 Claude remains supported as an optional backend when `ANTHROPIC_API_KEY` is configured and the repository variable is switched.
+
+## Local macOS Orchestration
+
+Implementation work is prepared locally through repository-owned macOS helpers:
+
+- `scripts/set-implementation-agent.mjs`
+- `scripts/new-worktree.mjs`
+- `scripts/start-implementation-worker.mjs`
+- `scripts/publish-branch.mjs`
+
+One task should map to one worktree, one branch, and one PR.
 
 ## Native Execution Surface
 
