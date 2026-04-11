@@ -11,8 +11,6 @@ users toward landscape orientation when they want a roomier canvas.
 - replace it with a lightweight, non-blocking orientation hint
 - dismiss the hint when the user rotates to landscape or interacts with the
   editor
-- keep the human-triggered Codex review validation path compatible with
-  already-posted no-findings comments for this PR slice
 - document the new mobile-editor contract in frontend docs
 
 ## Non-Goals

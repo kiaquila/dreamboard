@@ -659,10 +659,8 @@ while (Date.now() < deadline) {
     const recentIssueComments = issueComments.filter(
       (comment) => new Date(comment.created_at || 0).getTime() >= triggerTime,
     );
-    const candidateIssueComments =
-      triggerMode === "skip" ? issueComments : recentIssueComments;
     const summaryComment =
-      candidateIssueComments
+      recentIssueComments
         .filter((comment) => matchesCodexSummaryComment(comment))
         .sort(
           (a, b) =>
@@ -697,8 +695,12 @@ while (Date.now() < deadline) {
     }
 
     const recentConnectorReply =
-      candidateIssueComments
-        .filter((comment) => codexReviewerLogins.has(comment.user?.login || ""))
+      issueComments
+        .filter(
+          (comment) =>
+            codexReviewerLogins.has(comment.user?.login || "") &&
+            new Date(comment.created_at || 0).getTime() >= triggerTime,
+        )
         .sort(
           (a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
