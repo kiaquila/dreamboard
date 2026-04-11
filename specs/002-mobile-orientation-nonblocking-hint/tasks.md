@@ -4,7 +4,6 @@
 - [x] Remove hard reliance on landscape locking during editor entry
 - [x] Update localized hint copy and motion behavior
 - [x] Sync frontend docs and project summary with the new editor model
-- [x] Align the PR-linked AI review workflow with the selected Codex backend
 - [x] Run validation and capture the result in this PR
 
 ## Validation
