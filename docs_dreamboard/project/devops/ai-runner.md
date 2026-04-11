@@ -62,6 +62,8 @@ without a complete `specs/<feature-id>/` update.
 For `dreamboard`, product-code paths are:
 
 - `index.html`
+- `package.json` and `package-lock.json`
+- `scripts/`
 - `src/`
 - future `app/`, `public/`, and `assets/` folders
 - `vercel.json`
