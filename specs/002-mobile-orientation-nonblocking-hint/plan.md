@@ -17,6 +17,12 @@
 - update frontend docs to reflect the non-blocking mobile editor behavior
 - sync the high-level project summary with the new mobile interaction model
 
+## Slice 4: Review Flow Alignment
+
+- ensure PR-linked `AI Review` no longer skips when `AI_REVIEW_AGENT=codex`
+- keep the existing draft guard while letting the selected backend run through
+  the normal PR workflow
+
 ## Validation
 
 - run `npm run ci`

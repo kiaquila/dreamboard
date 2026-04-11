@@ -11,6 +11,8 @@ users toward landscape orientation when they want a roomier canvas.
 - replace it with a lightweight, non-blocking orientation hint
 - dismiss the hint when the user rotates to landscape or interacts with the
   editor
+- align the PR-linked review gate with the selected `codex` review backend so
+  this slice can complete through the standard repository flow
 - document the new mobile-editor contract in frontend docs
 
 ## Non-Goals
