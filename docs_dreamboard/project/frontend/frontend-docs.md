@@ -42,7 +42,8 @@ The current static app now treats phone layouts as a separate editor mode:
 - tool controls open as a bottom sheet instead of an off-canvas desktop sidebar
 - the canvas reserves safe space for the top bar and sticky footer
 - the object menu docks near the bottom of the canvas on mobile instead of chasing the selected object into cramped positions
-- portrait phone editor remains usable; landscape is now a recommendation surfaced through a non-blocking floating hint instead of a hard gate, because mobile web orientation locks are not reliable enough to block entry
+- portrait phone editor remains usable; landscape is now a recommendation surfaced through a non-blocking floating hint card instead of a hard gate, because mobile web orientation locks are not reliable enough to block entry
+- phone landscape switches into a true side-by-side shell so the tools and canvas use the wider viewport instead of reusing the portrait bottom-sheet layout
 - editor return controls are icon-only, with localized tooltips instead of visible labels to keep the shell visually lighter
 
 ## Build Contract
@@ -62,6 +63,7 @@ The current editor now preserves the working board as a browser draft:
 - `localStorage` remains only as a lightweight fallback when IndexedDB is unavailable
 - save operations are debounced during editing and flushed again on `visibilitychange` / `pagehide`
 - the draft is restored automatically the next time the editor opens in the same browser
+- draft persistence is intentionally silent in the UI; the app keeps autosaving without a visible “draft saved” badge
 
 This keeps persistence local-first without introducing backend state or breaking the static deploy model.
 

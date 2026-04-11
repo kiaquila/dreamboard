@@ -26,6 +26,7 @@ const editorMobileLangButton = document.getElementById("langBtnEditorMobile");
 const editorBackButton = document.getElementById("editorBackBtn");
 const editorBackButtonMobile = document.getElementById("editorBackBtnMobile");
 const rotateHint = document.getElementById("editorRotateHint");
+const rotateHintCloseButton = document.getElementById("rotateHintCloseBtn");
 const fileInput = document.getElementById("fileInput");
 const addTextButton = document.getElementById("t-addtext");
 const downloadButton = document.getElementById("t-download");
@@ -126,6 +127,25 @@ function dismissRotateHint() {
   syncRotateHintVisibility();
 }
 
+function syncEditorViewport({ dismissForLandscape = false } = {}) {
+  syncRotateHintVisibility({ dismissForLandscape });
+
+  if (!isMobilePortraitViewport()) {
+    closeSidebar();
+  }
+
+  if (editorView.style.display !== "block") {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    resizeCanvasToViewport();
+    requestAnimationFrame(() => {
+      resizeCanvasToViewport();
+    });
+  });
+}
+
 function syncMenuButtonState() {
   if (!mobileMenuBtn) return;
 
@@ -180,7 +200,7 @@ function setSaveStatus(statusKey) {
   [saveIndicator, saveIndicatorMobile].forEach((node) => {
     if (!node) return;
     node.textContent = label;
-    node.hidden = !label;
+    node.hidden = true;
   });
 }
 
@@ -225,6 +245,8 @@ function applyLanguageUI({ syncPlaceholders = true } = {}) {
   document.getElementById("rotateHintText").innerText = t.rotateHintText;
   editorBackButton?.setAttribute("aria-label", t.backHome);
   editorBackButtonMobile?.setAttribute("aria-label", t.backHome);
+  rotateHintCloseButton?.setAttribute("aria-label", t.rotateHintDismiss);
+  rotateHintCloseButton?.setAttribute("title", t.rotateHintDismiss);
   editorBackButton?.setAttribute("data-tooltip", t.backHome);
   editorBackButton?.setAttribute("title", t.backHome);
   editorBackButtonMobile?.setAttribute("data-tooltip", t.backHome);
@@ -427,10 +449,7 @@ async function goToEditor() {
   rotateHintDismissed = false;
   syncBodyOverflow();
   closeSidebar();
-  syncRotateHintVisibility();
-  requestAnimationFrame(() => {
-    resizeCanvasToViewport();
-  });
+  syncEditorViewport();
 }
 
 function goToLanding() {
@@ -624,6 +643,11 @@ omItalic.addEventListener("click", toggleItalic);
 omUnderline.addEventListener("click", toggleUnderline);
 omCopy.addEventListener("click", duplicateSelectedText);
 omDelete.addEventListener("click", deleteSelected);
+rotateHintCloseButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  dismissRotateHint();
+});
 
 document.addEventListener("pointerdown", (e) => {
   if (fontPopup.style.display === "block") {
@@ -1223,13 +1247,21 @@ if (editorResizeObserver && canvasArea) {
 
 window.addEventListener("resize", () => {
   updateLandingViewportVars();
-  if (!isMobileLayout()) {
-    closeSidebar();
-  }
-  syncRotateHintVisibility({ dismissForLandscape: true });
-  if (!editorResizeObserver && editorView.style.display === "block") {
-    resizeCanvasToViewport();
-  }
+  syncEditorViewport({ dismissForLandscape: true });
+});
+
+window.addEventListener("orientationchange", () => {
+  window.setTimeout(() => {
+    syncEditorViewport({ dismissForLandscape: true });
+  }, 60);
+
+  window.setTimeout(() => {
+    syncEditorViewport({ dismissForLandscape: true });
+  }, 220);
+});
+
+window.visualViewport?.addEventListener("resize", () => {
+  syncEditorViewport({ dismissForLandscape: true });
 });
 
 document.addEventListener("visibilitychange", () => {
