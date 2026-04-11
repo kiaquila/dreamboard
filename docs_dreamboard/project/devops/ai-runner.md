@@ -12,6 +12,11 @@ If a variable is unset, the workflows fall back to repository defaults:
 - implementation: `codex`
 - review: `gemini`
 
+Local macOS helper scripts may also store the current selection under:
+
+- `.codex/implementation-agent`
+- `.codex/review-agent`
+
 ## Claude Requirements
 
 Claude paths require repository secret:
@@ -48,6 +53,18 @@ The gate fails on:
 - Gemini `CHANGES_REQUESTED`
 - Gemini inline findings with highest severity `Critical`, `High`, or `Medium`
 - setup/runtime failures for the selected backend
+
+## Feature Memory Gate
+
+`guard` is also responsible for ensuring that product-code changes do not land
+without a complete `specs/<feature-id>/` update.
+
+For `dreamboard`, product-code paths are:
+
+- `index.html`
+- `src/`
+- future `app/`, `public/`, and `assets/` folders
+- `vercel.json`
 
 ## Gemini Operational Note
 

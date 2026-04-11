@@ -14,6 +14,17 @@ The current application is still a static frontend, but it is no longer entirely
 
 This keeps the repo deployable as a static site while making future extraction to components and a typed frontend stack much safer.
 
+## Repository Memory and Feature Loop
+
+Frontend work now follows the repository memory contract:
+
+- process rules live in `.specify/memory/constitution.md`
+- durable frontend and delivery context lives in `docs_dreamboard/`
+- active implementation scope lives in `specs/<feature-id>/`
+
+UI or editor changes should start by updating the active feature folder before
+touching product code.
+
 ## Responsive Behavior
 
 The editor now uses container-based canvas sizing instead of raw viewport math:

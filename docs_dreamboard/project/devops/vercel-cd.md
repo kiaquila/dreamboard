@@ -36,3 +36,6 @@ Do not treat manual dashboard edits as the delivery path. Product behavior shoul
 2. PR checks
 3. merge to `main`
 4. Vercel production deploy from the merged commit
+
+Preview validation and post-merge smoke are documented in
+`docs_dreamboard/project/devops/delivery-playbook.md`.

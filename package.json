@@ -4,11 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "agent:set": "node scripts/set-implementation-agent.mjs",
     "build": "node scripts/build-static.mjs",
+    "check:feature-memory": "node scripts/check-feature-memory.mjs",
     "check:repo": "node scripts/check-static-baseline.mjs",
     "check:html": "html-validate index.html",
-    "format:check": "prettier --check \"index.html\" \"src/**/*.{css,js}\" \"AGENTS.md\" \"CLAUDE.md\" \"docs_dreamboard/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
-    "ci": "npm run check:repo && npm run check:html && npm run build && npm run format:check"
+    "format:check": "prettier --check \"index.html\" \"src/**/*.{css,js}\" \"AGENTS.md\" \"CLAUDE.md\" \".specify/**/*.md\" \"specs/**/*.md\" \"docs_dreamboard/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
+    "ci": "npm run check:repo && npm run check:html && npm run build && npm run format:check",
+    "pr:publish": "node scripts/publish-branch.mjs",
+    "worker:start": "node scripts/start-implementation-worker.mjs",
+    "worktree:new": "node scripts/new-worktree.mjs"
   },
   "devDependencies": {
     "html-validate": "^10.11.3",

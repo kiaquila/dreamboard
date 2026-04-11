@@ -21,13 +21,15 @@ The current app is a strong prototype, and the repository is now on a safer refa
 
 ## Infra Goal
 
-Before refactoring the application itself, the repository must follow the standard delivery path:
+Before deeper refactoring, the repository must follow the standard delivery path:
 
 1. PR-only changes
 2. required checks in GitHub
 3. AI review routing through repository policy with Gemini as the default reviewer
 4. Vercel preview deploys on PR
 5. Vercel production deploys on merge to `main`
+6. repository memory through `.specify/`, `docs_dreamboard/`, and `specs/`
+7. local macOS worktree orchestration for implementation tasks
 
 ## Next Product Goal
 
