@@ -12,6 +12,12 @@ const options = {
   base: "origin/main",
 };
 
+const usage = [
+  "Usage:",
+  "  node scripts/new-worktree.mjs --feature <feature-id> [--branch <branch>] [--path <dir>] [--base <ref>]",
+  "  node scripts/new-worktree.mjs --branch <branch> [--path <dir>] [--base <ref>]",
+].join("\n");
+
 for (let index = 0; index < args.length; index += 1) {
   const current = args[index];
 
@@ -33,12 +39,12 @@ for (let index = 0; index < args.length; index += 1) {
       index += 1;
       break;
     default:
-      throw new Error(`Unknown argument: ${current}`);
+      throw new Error(`Unknown argument: ${current}\n\n${usage}`);
   }
 }
 
 if (!options.feature && !options.branch) {
-  throw new Error("Provide --feature or --branch.");
+  throw new Error(`Provide --feature or --branch.\n\n${usage}`);
 }
 
 const run = (command, commandArgs, cwd) =>
