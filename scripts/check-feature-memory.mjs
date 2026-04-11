@@ -1,21 +1,24 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const inspectWorktree = args.includes("--worktree");
 const filteredArgs = args.filter((arg) => arg !== "--worktree");
+const repoRoot = resolve(process.cwd());
 
 const git = (args) =>
   execFileSync("git", args, {
-    cwd: process.cwd(),
+    cwd: repoRoot,
     encoding: "utf8",
   }).trim();
 
 const hasRef = (ref) => {
   try {
     execFileSync("git", ["rev-parse", "--verify", ref], {
-      cwd: process.cwd(),
+      cwd: repoRoot,
       stdio: "ignore",
     });
     return true;
@@ -24,15 +27,21 @@ const hasRef = (ref) => {
   }
 };
 
+const [
+  baseRefInput = process.env.GITHUB_BASE_REF || "origin/main",
+  headRef = "HEAD",
+] = filteredArgs;
+
 const preferredBaseRef = process.env.GITHUB_BASE_REF
   ? `origin/${process.env.GITHUB_BASE_REF}`
   : "origin/main";
-const defaultBaseRef = hasRef(preferredBaseRef)
-  ? preferredBaseRef
-  : hasRef("origin/main")
-    ? "origin/main"
-    : "HEAD~1";
-const [baseRef = defaultBaseRef, headRef = "HEAD"] = filteredArgs;
+const baseRef = hasRef(baseRefInput)
+  ? baseRefInput
+  : hasRef(preferredBaseRef)
+    ? preferredBaseRef
+    : hasRef("origin/main")
+      ? "origin/main"
+      : "HEAD~1";
 
 const diffArgs = inspectWorktree
   ? ["diff", "--name-only", "HEAD"]
@@ -50,6 +59,8 @@ const isProductPath = (file) =>
   file === "package.json" ||
   file === "package-lock.json" ||
   file === "vercel.json" ||
+  file === ".htmlvalidate.json" ||
+  file.startsWith(".github/workflows/") ||
   file.startsWith("scripts/") ||
   file.startsWith("src/") ||
   file.startsWith("app/") ||
@@ -61,32 +72,27 @@ if (!changedFiles.some(isProductPath)) {
   process.exit(0);
 }
 
-const featureCoverage = new Map();
+const featureIds = new Set();
 
 for (const file of changedFiles) {
-  const match = file.match(/^specs\/([^/]+)\/(spec|plan|tasks)\.md$/);
+  const match = file.match(/^specs\/([^/]+)\//);
   if (!match) {
     continue;
   }
 
-  const [, featureId, kind] = match;
-  const current = featureCoverage.get(featureId) || {
-    spec: false,
-    plan: false,
-    tasks: false,
-  };
-
-  current[kind] = true;
-  featureCoverage.set(featureId, current);
+  featureIds.add(match[1]);
 }
 
-const validFeature = [...featureCoverage.entries()].find(
-  ([, files]) => files.spec && files.plan && files.tasks,
-);
+const hasCompleteFeatureMemory = (featureId) =>
+  existsSync(resolve(repoRoot, "specs", featureId, "spec.md")) &&
+  existsSync(resolve(repoRoot, "specs", featureId, "plan.md")) &&
+  existsSync(resolve(repoRoot, "specs", featureId, "tasks.md"));
+
+const validFeature = [...featureIds].find(hasCompleteFeatureMemory);
 
 if (validFeature) {
   console.log(
-    `Feature-memory gate passed via specs/${validFeature[0]}/{spec,plan,tasks}.md`,
+    `Feature-memory gate passed via specs/${validFeature}/{spec,plan,tasks}.md`,
   );
   process.exit(0);
 }
@@ -98,14 +104,16 @@ console.error(
   "Touch one specs/<feature-id>/ folder with spec.md, plan.md, and tasks.md in the same PR.",
 );
 
-if (featureCoverage.size > 0) {
-  console.error("Observed feature-memory changes:");
-  for (const [featureId, files] of featureCoverage.entries()) {
-    const touched = Object.entries(files)
-      .filter(([, touchedFlag]) => touchedFlag)
-      .map(([name]) => `${name}.md`)
-      .join(", ");
-    console.error(`- ${featureId}: ${touched || "no complete files"}`);
+if (featureIds.size > 0) {
+  console.error("Observed feature-memory folders:");
+  for (const featureId of featureIds) {
+    console.error(
+      `- ${featureId}: ${
+        hasCompleteFeatureMemory(featureId)
+          ? "complete feature memory present"
+          : "missing one or more of spec.md, plan.md, tasks.md"
+      }`,
+    );
   }
 }
 

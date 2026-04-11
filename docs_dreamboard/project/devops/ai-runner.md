@@ -63,6 +63,8 @@ For `dreamboard`, product-code paths are:
 
 - `index.html`
 - `package.json` and `package-lock.json`
+- `.htmlvalidate.json`
+- `.github/workflows/`
 - `scripts/`
 - `src/`
 - future `app/`, `public/`, and `assets/` folders
