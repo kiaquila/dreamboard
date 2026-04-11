@@ -59,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          changed=$(git diff --name-only "$BASE_REF"... "$HEAD_REF")
+          changed=$(git diff --name-only "${BASE_REF}...${HEAD_REF}")
 
           echo "Changed files:"
           echo "$changed"
