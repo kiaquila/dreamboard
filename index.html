@@ -340,7 +340,13 @@
         </main>
       </div>
 
-      <div class="editor-rotate-hint" id="editorRotateHint" aria-live="polite">
+      <div
+        class="editor-rotate-hint"
+        id="editorRotateHint"
+        aria-live="polite"
+        role="status"
+        hidden
+      >
         <div class="editor-rotate-card">
           <div class="editor-rotate-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -373,27 +379,12 @@
               ></rect>
             </svg>
           </div>
-          <h2 id="rotateHintTitle">Поверни телефон горизонтально</h2>
-          <p id="rotateHintText">
-            Так редактору хватает места для canvas, меню и текста.
-          </p>
-          <button
-            type="button"
-            class="editor-home-btn tooltip-trigger"
-            id="rotateHintBackBtn"
-            aria-label="Назад"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M15 18l-6-6 6-6"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></path>
-            </svg>
-          </button>
+          <div class="editor-rotate-copy">
+            <h2 id="rotateHintTitle">В горизонтали удобнее</h2>
+            <p id="rotateHintText">
+              Редактор уже работает. Разверни телефон для более широкого холста.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -25,7 +25,7 @@ const editorLangButton = document.getElementById("langBtnEditor");
 const editorMobileLangButton = document.getElementById("langBtnEditorMobile");
 const editorBackButton = document.getElementById("editorBackBtn");
 const editorBackButtonMobile = document.getElementById("editorBackBtnMobile");
-const rotateHintBackButton = document.getElementById("rotateHintBackBtn");
+const rotateHint = document.getElementById("editorRotateHint");
 const fileInput = document.getElementById("fileInput");
 const addTextButton = document.getElementById("t-addtext");
 const downloadButton = document.getElementById("t-download");
@@ -77,6 +77,7 @@ let suppressDraftPersistence = false;
 let currentSaveStatusKey = "saveIdle";
 let draftBootstrapComplete = false;
 let draftBootstrapPromise = null;
+let rotateHintDismissed = false;
 
 const canvas = new fabric.Canvas("visionBoard", {
   width: 960,
@@ -87,6 +88,42 @@ const canvas = new fabric.Canvas("visionBoard", {
 
 function isMobileLayout() {
   return window.innerWidth <= MOBILE_BREAKPOINT;
+}
+
+function isPortraitViewport() {
+  if (typeof window.matchMedia === "function") {
+    return window.matchMedia("(orientation: portrait)").matches;
+  }
+
+  return window.innerHeight >= window.innerWidth;
+}
+
+function isMobilePortraitViewport() {
+  return isMobileLayout() && isPortraitViewport();
+}
+
+function syncRotateHintVisibility({ dismissForLandscape = false } = {}) {
+  if (!rotateHint) return;
+
+  const editorActive = document.body.classList.contains("is-editor-active");
+
+  if (dismissForLandscape && editorActive && !isMobilePortraitViewport()) {
+    rotateHintDismissed = true;
+  }
+
+  const shouldShow =
+    editorActive && isMobilePortraitViewport() && !rotateHintDismissed;
+
+  rotateHint.hidden = !shouldShow;
+  rotateHint.classList.toggle("is-visible", shouldShow);
+  rotateHint.setAttribute("aria-hidden", shouldShow ? "false" : "true");
+}
+
+function dismissRotateHint() {
+  if (rotateHintDismissed) return;
+
+  rotateHintDismissed = true;
+  syncRotateHintVisibility();
 }
 
 function syncMenuButtonState() {
@@ -188,13 +225,10 @@ function applyLanguageUI({ syncPlaceholders = true } = {}) {
   document.getElementById("rotateHintText").innerText = t.rotateHintText;
   editorBackButton?.setAttribute("aria-label", t.backHome);
   editorBackButtonMobile?.setAttribute("aria-label", t.backHome);
-  rotateHintBackButton?.setAttribute("aria-label", t.backHome);
   editorBackButton?.setAttribute("data-tooltip", t.backHome);
   editorBackButton?.setAttribute("title", t.backHome);
   editorBackButtonMobile?.setAttribute("data-tooltip", t.backHome);
   editorBackButtonMobile?.setAttribute("title", t.backHome);
-  rotateHintBackButton?.setAttribute("data-tooltip", t.backHome);
-  rotateHintBackButton?.setAttribute("title", t.backHome);
 
   // lang labels (landing + editor)
   document.getElementById("langBtn").innerText = currentLang;
@@ -268,16 +302,6 @@ function syncBodyOverflow() {
     donateModalOpen || document.body.classList.contains("is-editor-active")
       ? "hidden"
       : "";
-}
-
-async function requestLandscapeOrientation() {
-  if (!isMobileLayout() || !screen.orientation?.lock) return;
-
-  try {
-    await screen.orientation.lock("landscape");
-  } catch (error) {
-    // iOS Safari and several browsers ignore or block this unless fullscreen.
-  }
 }
 
 function buildDraftSnapshot() {
@@ -400,9 +424,10 @@ async function goToEditor() {
   landingView.style.display = "none";
   editorView.style.display = "block";
   document.body.classList.add("is-editor-active");
+  rotateHintDismissed = false;
   syncBodyOverflow();
   closeSidebar();
-  await requestLandscapeOrientation();
+  syncRotateHintVisibility();
   requestAnimationFrame(() => {
     resizeCanvasToViewport();
   });
@@ -412,11 +437,13 @@ function goToLanding() {
   landingView.style.display = "block";
   editorView.style.display = "none";
   document.body.classList.remove("is-editor-active");
+  rotateHintDismissed = false;
   closeSidebar();
   hideObjectMenu();
   hideColorPopup();
   hideFontPopup();
   syncBodyOverflow();
+  syncRotateHintVisibility();
   requestAnimationFrame(() => {
     updateLandingViewportVars();
     landingView.scrollTo({ top: 0, behavior: "smooth" });
@@ -588,7 +615,6 @@ heroGoButton?.addEventListener("click", goToEditor);
 finalGoButton?.addEventListener("click", goToEditor);
 editorBackButton?.addEventListener("click", goToLanding);
 editorBackButtonMobile?.addEventListener("click", goToLanding);
-rotateHintBackButton?.addEventListener("click", goToLanding);
 addTextButton?.addEventListener("click", addText);
 downloadButton?.addEventListener("click", exportBoard);
 omForward.addEventListener("click", () => changeZIndex("forward"));
@@ -604,6 +630,15 @@ document.addEventListener("pointerdown", (e) => {
     if (!fontPopup.contains(e.target) && !omFontFamilyBtn.contains(e.target)) {
       hideFontPopup();
     }
+  }
+
+  if (
+    document.body.classList.contains("is-editor-active") &&
+    !rotateHintDismissed &&
+    isMobilePortraitViewport() &&
+    editorView.contains(e.target)
+  ) {
+    dismissRotateHint();
   }
 });
 
@@ -1191,6 +1226,7 @@ window.addEventListener("resize", () => {
   if (!isMobileLayout()) {
     closeSidebar();
   }
+  syncRotateHintVisibility({ dismissForLandscape: true });
   if (!editorResizeObserver && editorView.style.display === "block") {
     resizeCanvasToViewport();
   }
@@ -1208,5 +1244,6 @@ window.addEventListener("pagehide", () => {
 
 // init
 updateLandingViewportVars();
+syncRotateHintVisibility();
 setLandingPhotos();
 draftBootstrapPromise = bootstrapDraftState();
