@@ -70,7 +70,7 @@ if (existsSync(worktreePath)) {
   throw new Error(`Worktree path already exists: ${worktreePath}`);
 }
 
-run("git", ["fetch", "origin", "--prune"], repoRoot);
+run("git", ["fetch", "--all", "--prune"], repoRoot);
 
 const branchLookup = spawnSync("git", ["rev-parse", "--verify", branch], {
   cwd: repoRoot,
