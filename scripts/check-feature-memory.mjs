@@ -5,13 +5,27 @@ import { execFileSync } from "node:child_process";
 const args = process.argv.slice(2);
 const inspectWorktree = args.includes("--worktree");
 const filteredArgs = args.filter((arg) => arg !== "--worktree");
-const [baseRef = "HEAD~1", headRef = "HEAD"] = filteredArgs;
 
 const git = (args) =>
   execFileSync("git", args, {
     cwd: process.cwd(),
     encoding: "utf8",
   }).trim();
+
+const hasRef = (ref) => {
+  try {
+    execFileSync("git", ["rev-parse", "--verify", ref], {
+      cwd: process.cwd(),
+      stdio: "ignore",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const defaultBaseRef = hasRef("origin/main") ? "origin/main" : "HEAD~1";
+const [baseRef = defaultBaseRef, headRef = "HEAD"] = filteredArgs;
 
 const diffArgs = inspectWorktree
   ? ["diff", "--name-only", "HEAD"]
@@ -24,7 +38,10 @@ const changedFiles = git(diffArgs)
 
 const isProductPath = (file) =>
   file === "index.html" ||
+  file === "package.json" ||
+  file === "package-lock.json" ||
   file === "vercel.json" ||
+  file.startsWith("scripts/") ||
   file.startsWith("src/") ||
   file.startsWith("app/") ||
   file.startsWith("public/") ||
