@@ -24,7 +24,14 @@ const hasRef = (ref) => {
   }
 };
 
-const defaultBaseRef = hasRef("origin/main") ? "origin/main" : "HEAD~1";
+const preferredBaseRef = process.env.GITHUB_BASE_REF
+  ? `origin/${process.env.GITHUB_BASE_REF}`
+  : "origin/main";
+const defaultBaseRef = hasRef(preferredBaseRef)
+  ? preferredBaseRef
+  : hasRef("origin/main")
+    ? "origin/main"
+    : "HEAD~1";
 const [baseRef = defaultBaseRef, headRef = "HEAD"] = filteredArgs;
 
 const diffArgs = inspectWorktree
@@ -36,6 +43,8 @@ const changedFiles = git(diffArgs)
   .map((file) => file.trim())
   .filter(Boolean);
 
+// Build-contract and repository-owned orchestration changes should participate
+// in the same feature-memory rule as UI code.
 const isProductPath = (file) =>
   file === "index.html" ||
   file === "package.json" ||
