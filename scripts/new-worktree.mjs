@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
@@ -66,13 +66,13 @@ if (existsSync(worktreePath)) {
 
 run("git", ["fetch", "origin", "--prune"], repoRoot);
 
-try {
-  run("git", ["rev-parse", "--verify", branch], repoRoot);
+const branchLookup = spawnSync("git", ["rev-parse", "--verify", branch], {
+  cwd: repoRoot,
+  stdio: "ignore",
+});
+
+if (branchLookup.status === 0) {
   throw new Error(`Branch already exists locally: ${branch}`);
-} catch (error) {
-  if (!String(error.message).includes("fatal")) {
-    throw error;
-  }
 }
 
 run(
