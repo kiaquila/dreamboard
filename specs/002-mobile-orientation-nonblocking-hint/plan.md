@@ -17,6 +17,11 @@
 - update frontend docs to reflect the non-blocking mobile editor behavior
 - sync the high-level project summary with the new mobile interaction model
 
+## Slice 4: Review Gate Compatibility
+
+- let the human-triggered Codex validation path reuse already-posted same-head
+  reviewer comments instead of waiting only for post-dispatch comments
+
 ## Validation
 
 - run `npm run ci`
