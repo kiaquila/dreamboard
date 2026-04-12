@@ -8,6 +8,7 @@
 - [x] Update localized hint copy, spacing, and visual styling
 - [x] Sync frontend docs and project summary with the new editor model
 - [x] Align the AI Review workflow follow-up with the repository review-agent contract
+- [x] Prevent Codex comment triggers from canceling the required PR-linked review gate
 - [x] Run validation and capture the result in this PR
 
 ## Validation
