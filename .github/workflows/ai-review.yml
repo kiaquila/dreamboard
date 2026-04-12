@@ -37,7 +37,7 @@ jobs:
       (
         github.event_name == 'pull_request' &&
         github.event.pull_request.draft == false &&
-        (vars.AI_REVIEW_AGENT == '' || vars.AI_REVIEW_AGENT == 'gemini')
+        (vars.AI_REVIEW_AGENT == '' || vars.AI_REVIEW_AGENT == 'codex')
       )
     name: AI Review
     runs-on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
           set -euo pipefail
           selected="${{ vars.AI_REVIEW_AGENT }}"
           if [ -z "$selected" ]; then
-            selected="gemini"
+            selected="codex"
           fi
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
