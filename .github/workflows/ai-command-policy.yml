@@ -112,7 +112,7 @@ jobs:
             if (selectedAgent === requestedAgent) {
               if (
                 kind === "review" &&
-                requestedAgent !== "gemini" &&
+                requestedAgent === "claude" &&
                 context.payload.issue?.number
               ) {
                 await github.rest.actions.createWorkflowDispatch({
@@ -126,6 +126,12 @@ jobs:
                   },
                 });
                 core.info(`Dispatched AI Review for PR #${context.payload.issue.number}`);
+              }
+
+              if (kind === "review" && requestedAgent === "codex") {
+                core.info(
+                  "Codex review comments stay native-only so the PR-linked AI Review check can keep polling the current head.",
+                );
               }
 
               if (kind === "review" && requestedAgent === "gemini") {

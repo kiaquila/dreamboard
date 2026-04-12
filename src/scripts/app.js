@@ -25,7 +25,8 @@ const editorLangButton = document.getElementById("langBtnEditor");
 const editorMobileLangButton = document.getElementById("langBtnEditorMobile");
 const editorBackButton = document.getElementById("editorBackBtn");
 const editorBackButtonMobile = document.getElementById("editorBackBtnMobile");
-const rotateHintBackButton = document.getElementById("rotateHintBackBtn");
+const rotateHint = document.getElementById("editorRotateHint");
+const rotateHintCloseButton = document.getElementById("rotateHintCloseBtn");
 const fileInput = document.getElementById("fileInput");
 const addTextButton = document.getElementById("t-addtext");
 const downloadButton = document.getElementById("t-download");
@@ -77,6 +78,7 @@ let suppressDraftPersistence = false;
 let currentSaveStatusKey = "saveIdle";
 let draftBootstrapComplete = false;
 let draftBootstrapPromise = null;
+let rotateHintDismissed = false;
 
 const canvas = new fabric.Canvas("visionBoard", {
   width: 960,
@@ -85,8 +87,99 @@ const canvas = new fabric.Canvas("visionBoard", {
   preserveObjectStacking: true,
 });
 
+const rotatedEditorMedia =
+  typeof window.matchMedia === "function"
+    ? window.matchMedia("(max-width: 900px) and (orientation: portrait)")
+    : null;
+
+function isEditorRotated() {
+  return (
+    document.body.classList.contains("is-editor-active") &&
+    !!rotatedEditorMedia?.matches
+  );
+}
+
+const originalGetPointer = canvas.getPointer.bind(canvas);
+canvas.getPointer = function (e, ignoreZoom) {
+  if (!isEditorRotated()) {
+    return originalGetPointer(e, ignoreZoom);
+  }
+  const upperCanvasEl = this.upperCanvasEl;
+  const bounds = upperCanvasEl.getBoundingClientRect();
+  const touch = e.touches?.[0] || e.changedTouches?.[0];
+  const clientX = touch ? touch.clientX : (e.clientX ?? 0);
+  const clientY = touch ? touch.clientY : (e.clientY ?? 0);
+  const visualPx = clientY - bounds.top;
+  const visualPy = bounds.left + bounds.width - clientX;
+  const widthCss = bounds.height || this.width || 1;
+  const heightCss = bounds.width || this.height || 1;
+  let pointer = {
+    x: visualPx * (this.width / widthCss),
+    y: visualPy * (this.height / heightCss),
+  };
+  if (!ignoreZoom) {
+    pointer = this.restorePointerVpt(pointer);
+  }
+  return pointer;
+};
+
 function isMobileLayout() {
   return window.innerWidth <= MOBILE_BREAKPOINT;
+}
+
+function isPortraitViewport() {
+  if (typeof window.matchMedia === "function") {
+    return window.matchMedia("(orientation: portrait)").matches;
+  }
+
+  return window.innerHeight >= window.innerWidth;
+}
+
+function isMobilePortraitViewport() {
+  return isMobileLayout() && isPortraitViewport();
+}
+
+function syncRotateHintVisibility({ dismissForLandscape = false } = {}) {
+  if (!rotateHint) return;
+
+  const editorActive = document.body.classList.contains("is-editor-active");
+
+  if (dismissForLandscape && editorActive && !isMobilePortraitViewport()) {
+    rotateHintDismissed = true;
+  }
+
+  const shouldShow =
+    editorActive && isMobilePortraitViewport() && !rotateHintDismissed;
+
+  rotateHint.hidden = !shouldShow;
+  rotateHint.classList.toggle("is-visible", shouldShow);
+  rotateHint.setAttribute("aria-hidden", shouldShow ? "false" : "true");
+}
+
+function dismissRotateHint() {
+  if (rotateHintDismissed) return;
+
+  rotateHintDismissed = true;
+  syncRotateHintVisibility();
+}
+
+function syncEditorViewport({ dismissForLandscape = false } = {}) {
+  syncRotateHintVisibility({ dismissForLandscape });
+
+  if (!isMobilePortraitViewport()) {
+    closeSidebar();
+  }
+
+  if (editorView.style.display !== "block") {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    resizeCanvasToViewport();
+    requestAnimationFrame(() => {
+      resizeCanvasToViewport();
+    });
+  });
 }
 
 function syncMenuButtonState() {
@@ -143,7 +236,7 @@ function setSaveStatus(statusKey) {
   [saveIndicator, saveIndicatorMobile].forEach((node) => {
     if (!node) return;
     node.textContent = label;
-    node.hidden = !label;
+    node.hidden = true;
   });
 }
 
@@ -188,13 +281,12 @@ function applyLanguageUI({ syncPlaceholders = true } = {}) {
   document.getElementById("rotateHintText").innerText = t.rotateHintText;
   editorBackButton?.setAttribute("aria-label", t.backHome);
   editorBackButtonMobile?.setAttribute("aria-label", t.backHome);
-  rotateHintBackButton?.setAttribute("aria-label", t.backHome);
+  rotateHintCloseButton?.setAttribute("aria-label", t.rotateHintDismiss);
+  rotateHintCloseButton?.setAttribute("title", t.rotateHintDismiss);
   editorBackButton?.setAttribute("data-tooltip", t.backHome);
   editorBackButton?.setAttribute("title", t.backHome);
   editorBackButtonMobile?.setAttribute("data-tooltip", t.backHome);
   editorBackButtonMobile?.setAttribute("title", t.backHome);
-  rotateHintBackButton?.setAttribute("data-tooltip", t.backHome);
-  rotateHintBackButton?.setAttribute("title", t.backHome);
 
   // lang labels (landing + editor)
   document.getElementById("langBtn").innerText = currentLang;
@@ -268,16 +360,6 @@ function syncBodyOverflow() {
     donateModalOpen || document.body.classList.contains("is-editor-active")
       ? "hidden"
       : "";
-}
-
-async function requestLandscapeOrientation() {
-  if (!isMobileLayout() || !screen.orientation?.lock) return;
-
-  try {
-    await screen.orientation.lock("landscape");
-  } catch (error) {
-    // iOS Safari and several browsers ignore or block this unless fullscreen.
-  }
 }
 
 function buildDraftSnapshot() {
@@ -400,23 +482,23 @@ async function goToEditor() {
   landingView.style.display = "none";
   editorView.style.display = "block";
   document.body.classList.add("is-editor-active");
+  rotateHintDismissed = false;
   syncBodyOverflow();
   closeSidebar();
-  await requestLandscapeOrientation();
-  requestAnimationFrame(() => {
-    resizeCanvasToViewport();
-  });
+  syncEditorViewport();
 }
 
 function goToLanding() {
   landingView.style.display = "block";
   editorView.style.display = "none";
   document.body.classList.remove("is-editor-active");
+  rotateHintDismissed = false;
   closeSidebar();
   hideObjectMenu();
   hideColorPopup();
   hideFontPopup();
   syncBodyOverflow();
+  syncRotateHintVisibility();
   requestAnimationFrame(() => {
     updateLandingViewportVars();
     landingView.scrollTo({ top: 0, behavior: "smooth" });
@@ -588,7 +670,6 @@ heroGoButton?.addEventListener("click", goToEditor);
 finalGoButton?.addEventListener("click", goToEditor);
 editorBackButton?.addEventListener("click", goToLanding);
 editorBackButtonMobile?.addEventListener("click", goToLanding);
-rotateHintBackButton?.addEventListener("click", goToLanding);
 addTextButton?.addEventListener("click", addText);
 downloadButton?.addEventListener("click", exportBoard);
 omForward.addEventListener("click", () => changeZIndex("forward"));
@@ -598,12 +679,26 @@ omItalic.addEventListener("click", toggleItalic);
 omUnderline.addEventListener("click", toggleUnderline);
 omCopy.addEventListener("click", duplicateSelectedText);
 omDelete.addEventListener("click", deleteSelected);
+rotateHintCloseButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  dismissRotateHint();
+});
 
 document.addEventListener("pointerdown", (e) => {
   if (fontPopup.style.display === "block") {
     if (!fontPopup.contains(e.target) && !omFontFamilyBtn.contains(e.target)) {
       hideFontPopup();
     }
+  }
+
+  if (
+    document.body.classList.contains("is-editor-active") &&
+    !rotateHintDismissed &&
+    isMobilePortraitViewport() &&
+    editorView.contains(e.target)
+  ) {
+    dismissRotateHint();
   }
 });
 
@@ -694,22 +789,29 @@ function createPlaceholders() {
   const langData = translations[currentLang].sectors;
 
   const positions = [
-    { t: langData[0], x: w / 2, y: h / 2 },
-    { t: langData[1], x: w / 2, y: h / 4.5 },
-    { t: langData[2], x: w / 4, y: h / 2 },
-    { t: langData[3], x: w / 4, y: h / 4.5 },
-    { t: langData[4], x: w / 4, y: h / 1.3 },
-    { t: langData[5], x: w / 2, y: h / 1.3 },
-    { t: langData[6], x: (3 * w) / 4, y: h / 1.3 },
-    { t: langData[7], x: (3 * w) / 4, y: h / 2 },
-    { t: langData[8], x: (3 * w) / 4, y: h / 4.5 },
+    { t: langData[0], cx: 0.5, cy: 0.5 },
+    { t: langData[1], cx: 0.5, cy: 0.18 },
+    { t: langData[2], cx: 0.18, cy: 0.5 },
+    { t: langData[3], cx: 0.18, cy: 0.18 },
+    { t: langData[4], cx: 0.18, cy: 0.82 },
+    { t: langData[5], cx: 0.5, cy: 0.82 },
+    { t: langData[6], cx: 0.82, cy: 0.82 },
+    { t: langData[7], cx: 0.82, cy: 0.5 },
+    { t: langData[8], cx: 0.82, cy: 0.18 },
   ];
+
+  const columnGap = Math.max(12, w * 0.035);
+  const rowGap = Math.max(10, h * 0.035);
+  const maxTextWidth = Math.max(24, w / 3 - columnGap);
+  const maxTextHeight = Math.max(14, h / 3 - rowGap);
+  const baseFontSize = 18;
+  const minFontSize = 8;
 
   placeholders = positions.map((item) => {
     const text = new fabric.Text(item.t, {
-      left: item.x,
-      top: item.y,
-      fontSize: 18,
+      left: w * item.cx,
+      top: h * item.cy,
+      fontSize: baseFontSize,
       fontFamily: "DM Sans",
       fontWeight: "bold",
       fill: "#f2f2f2",
@@ -719,9 +821,45 @@ function createPlaceholders() {
       evented: false,
       isPlaceholder: true,
     });
-    canvas.add(text);
-    canvas.sendToBack(text);
     return text;
+  });
+
+  const widest = placeholders.reduce(
+    (acc, p) => Math.max(acc, p.width || 0),
+    0,
+  );
+  const tallest = placeholders.reduce(
+    (acc, p) => Math.max(acc, p.height || 0),
+    0,
+  );
+  const scale = Math.min(
+    1,
+    widest > 0 ? maxTextWidth / widest : 1,
+    tallest > 0 ? maxTextHeight / tallest : 1,
+  );
+  if (scale < 1) {
+    const finalFontSize = Math.max(
+      minFontSize,
+      Math.floor(baseFontSize * scale),
+    );
+    placeholders.forEach((p) => p.set("fontSize", finalFontSize));
+  }
+
+  placeholders.forEach((p) => {
+    p.setCoords();
+    const halfW = (p.width || 0) / 2;
+    const halfH = (p.height || 0) / 2;
+    const minLeft = halfW + columnGap / 2;
+    const maxLeft = w - halfW - columnGap / 2;
+    const minTop = halfH + rowGap / 2;
+    const maxTop = h - halfH - rowGap / 2;
+    p.set({
+      left: Math.min(Math.max(p.left, minLeft), maxLeft),
+      top: Math.min(Math.max(p.top, minTop), maxTop),
+    });
+    p.setCoords();
+    canvas.add(p);
+    canvas.sendToBack(p);
   });
   canvas.renderAll();
   suppressDraftPersistence = previousSuppression;
@@ -932,10 +1070,13 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeDonateModal();
 });
 
+let menuUserPositioned = false;
+
 function hideObjectMenu() {
   objectMenu.classList.remove("is-mobile-dock");
   objectMenu.style.maxWidth = "";
   objectMenu.style.display = "none";
+  menuUserPositioned = false;
 }
 
 function positionObjectMenu() {
@@ -989,6 +1130,12 @@ function positionObjectMenu() {
   applyToolbarTooltips();
   objectMenu.style.display = "flex";
   objectMenu.classList.toggle("is-mobile-dock", isMobileLayout());
+
+  if (menuUserPositioned && isMobileLayout()) {
+    positionColorPopup();
+    positionFontPopup();
+    return;
+  }
 
   const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
 
@@ -1054,8 +1201,14 @@ omTextColor.addEventListener("input", () => {
   scheduleDraftSave();
 });
 
-canvas.on("selection:created", positionObjectMenu);
-canvas.on("selection:updated", positionObjectMenu);
+canvas.on("selection:created", () => {
+  menuUserPositioned = false;
+  positionObjectMenu();
+});
+canvas.on("selection:updated", () => {
+  menuUserPositioned = false;
+  positionObjectMenu();
+});
 canvas.on("selection:cleared", () => {
   hideObjectMenu();
   hideColorPopup();
@@ -1078,6 +1231,158 @@ canvas.on("object:removed", (event) => {
 canvas.on("text:changed", () => {
   scheduleDraftSave();
 });
+
+(function enablePinchZoom() {
+  const el = canvas.upperCanvasEl;
+  const parent = el.parentElement || el;
+  let state = null;
+
+  const getDist = (a, b) =>
+    Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  const getMid = (a, b) => ({
+    x: (a.clientX + b.clientX) / 2,
+    y: (a.clientY + b.clientY) / 2,
+  });
+
+  function screenToCanvasPoint(clientX, clientY) {
+    const bounds = el.getBoundingClientRect();
+    if (isEditorRotated()) {
+      const visualPx = clientY - bounds.top;
+      const visualPy = bounds.left + bounds.width - clientX;
+      const widthCss = bounds.height || canvas.width || 1;
+      const heightCss = bounds.width || canvas.height || 1;
+      return {
+        x: visualPx * (canvas.width / widthCss),
+        y: visualPy * (canvas.height / heightCss),
+      };
+    }
+    const widthCss = bounds.width || canvas.width || 1;
+    const heightCss = bounds.height || canvas.height || 1;
+    return {
+      x: (clientX - bounds.left) * (canvas.width / widthCss),
+      y: (clientY - bounds.top) * (canvas.height / heightCss),
+    };
+  }
+
+  function onStart(e) {
+    if (e.touches && e.touches.length === 2) {
+      const active = canvas.getActiveObject();
+      const targetObject = active && !active.isPlaceholder ? active : null;
+      state = {
+        startDist: getDist(e.touches[0], e.touches[1]),
+        startZoom: canvas.getZoom(),
+        targetObject,
+        startScaleX: targetObject ? targetObject.scaleX : 1,
+        startScaleY: targetObject ? targetObject.scaleY : 1,
+        didScale: false,
+      };
+      canvas.requestRenderAll();
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }
+
+  function onMove(e) {
+    if (!state || !e.touches || e.touches.length < 2) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const dist = getDist(e.touches[0], e.touches[1]);
+    if (!state.startDist) return;
+    const ratio = dist / state.startDist;
+    if (state.targetObject) {
+      const obj = state.targetObject;
+      const nx = Math.max(0.05, Math.min(10, state.startScaleX * ratio));
+      const ny = Math.max(0.05, Math.min(10, state.startScaleY * ratio));
+      obj.set({ scaleX: nx, scaleY: ny });
+      obj.setCoords();
+      canvas.requestRenderAll();
+      positionObjectMenu();
+      state.didScale = true;
+    } else {
+      let newZoom = state.startZoom * ratio;
+      newZoom = Math.max(0.3, Math.min(5, newZoom));
+      const mid = getMid(e.touches[0], e.touches[1]);
+      const point = screenToCanvasPoint(mid.x, mid.y);
+      canvas.zoomToPoint(point, newZoom);
+    }
+  }
+
+  function onEnd(e) {
+    if (!state) return;
+    if (!e.touches || e.touches.length < 2) {
+      if (state.targetObject && state.didScale) {
+        canvas.fire("object:modified", { target: state.targetObject });
+        scheduleDraftSave();
+      }
+      state = null;
+    }
+  }
+
+  parent.addEventListener("touchstart", onStart, {
+    capture: true,
+    passive: false,
+  });
+  parent.addEventListener("touchmove", onMove, {
+    capture: true,
+    passive: false,
+  });
+  parent.addEventListener("touchend", onEnd, { capture: true });
+  parent.addEventListener("touchcancel", onEnd, { capture: true });
+})();
+
+(function enableObjectMenuDrag() {
+  let drag = null;
+
+  function toLocalDelta(dx, dy) {
+    if (isEditorRotated()) {
+      return { dx: dy, dy: -dx };
+    }
+    return { dx, dy };
+  }
+
+  function onStart(e) {
+    if (!isMobileLayout()) return;
+    if (
+      e.target.closest(
+        "button, label, input, select, .om-color-popup, .om-font-popup",
+      )
+    ) {
+      return;
+    }
+    const touch = e.touches ? e.touches[0] : e;
+    drag = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startLeft: parseFloat(objectMenu.style.left) || 0,
+      startTop: parseFloat(objectMenu.style.top) || 0,
+      moved: false,
+    };
+  }
+
+  function onMove(e) {
+    if (!drag) return;
+    const touch = e.touches ? e.touches[0] : e;
+    const dx = touch.clientX - drag.startX;
+    const dy = touch.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+    drag.moved = true;
+    menuUserPositioned = true;
+    objectMenu.classList.add("is-user-positioned");
+    const local = toLocalDelta(dx, dy);
+    objectMenu.style.left = `${drag.startLeft + local.dx}px`;
+    objectMenu.style.top = `${drag.startTop + local.dy}px`;
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onEnd() {
+    drag = null;
+  }
+
+  objectMenu.addEventListener("touchstart", onStart, { passive: true });
+  objectMenu.addEventListener("touchmove", onMove, { passive: false });
+  objectMenu.addEventListener("touchend", onEnd);
+  objectMenu.addEventListener("touchcancel", onEnd);
+})();
 
 canvas.on("mouse:down", () => {
   const obj = canvas.getActiveObject();
@@ -1134,12 +1439,13 @@ function getCanvasTargetSize() {
     };
   }
 
-  const areaRect = canvasArea.getBoundingClientRect();
+  const areaWidth = canvasArea.clientWidth;
+  const areaHeight = canvasArea.clientHeight;
   const { horizontal, vertical } = getCanvasAreaInsets();
   const fallbackWidth = canvas.getWidth() || 960;
   const fallbackHeight = canvas.getHeight() || 640;
 
-  if (areaRect.width <= horizontal || areaRect.height <= vertical) {
+  if (areaWidth <= horizontal || areaHeight <= vertical) {
     return {
       width: fallbackWidth,
       height: fallbackHeight,
@@ -1149,11 +1455,11 @@ function getCanvasTargetSize() {
   return {
     width: Math.max(
       isMobileLayout() ? 280 : 420,
-      Math.floor(areaRect.width - horizontal),
+      Math.floor(areaWidth - horizontal),
     ),
     height: Math.max(
       isMobileLayout() ? 360 : 520,
-      Math.floor(areaRect.height - vertical),
+      Math.floor(areaHeight - vertical),
     ),
   };
 }
@@ -1188,12 +1494,21 @@ if (editorResizeObserver && canvasArea) {
 
 window.addEventListener("resize", () => {
   updateLandingViewportVars();
-  if (!isMobileLayout()) {
-    closeSidebar();
-  }
-  if (!editorResizeObserver && editorView.style.display === "block") {
-    resizeCanvasToViewport();
-  }
+  syncEditorViewport({ dismissForLandscape: true });
+});
+
+window.addEventListener("orientationchange", () => {
+  window.setTimeout(() => {
+    syncEditorViewport({ dismissForLandscape: true });
+  }, 60);
+
+  window.setTimeout(() => {
+    syncEditorViewport({ dismissForLandscape: true });
+  }, 220);
+});
+
+window.visualViewport?.addEventListener("resize", () => {
+  syncEditorViewport({ dismissForLandscape: true });
 });
 
 document.addEventListener("visibilitychange", () => {
@@ -1208,5 +1523,6 @@ window.addEventListener("pagehide", () => {
 
 // init
 updateLandingViewportVars();
+syncRotateHintVisibility();
 setLandingPhotos();
 draftBootstrapPromise = bootstrapDraftState();

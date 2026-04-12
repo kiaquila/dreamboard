@@ -134,11 +134,6 @@
           DREAM <span style="color: var(--pantone-yellow)">BOARD</span>
         </div>
         <div class="editor-mobile-actions">
-          <span
-            class="save-indicator-chip"
-            id="saveIndicatorMobile"
-            aria-live="polite"
-          ></span>
           <button
             class="topbar-icon-btn mobile-menu-btn"
             id="mobileMenuBtn"
@@ -186,8 +181,6 @@
               <button type="button" id="langBtnEditor">RU</button>
             </div>
           </div>
-
-          <p class="save-indicator" id="saveIndicator" aria-live="polite"></p>
 
           <div class="control-group" style="border-bottom: none">
             <div class="section-title" id="t-images" style="display: none">
@@ -339,61 +332,58 @@
           </div>
         </main>
       </div>
+    </div>
 
-      <div class="editor-rotate-hint" id="editorRotateHint" aria-live="polite">
-        <div class="editor-rotate-card">
-          <div class="editor-rotate-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M7 3h7a2 2 0 0 1 2 2v6"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></path>
-              <path
-                d="M17 8V5a3 3 0 0 0-3-3H7"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></path>
-              <rect
-                x="5"
-                y="6"
-                width="8"
-                height="13"
-                rx="2"
-                transform="rotate(-90 9 12.5)"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-              ></rect>
-            </svg>
-          </div>
-          <h2 id="rotateHintTitle">Поверни телефон горизонтально</h2>
-          <p id="rotateHintText">
-            Так редактору хватает места для canvas, меню и текста.
-          </p>
+    <div
+      class="editor-rotate-hint"
+      id="editorRotateHint"
+      aria-live="polite"
+      role="status"
+      hidden
+    >
+      <div class="editor-rotate-card">
+        <div class="editor-rotate-header">
+          <h2 id="rotateHintTitle">В горизонтали удобнее</h2>
           <button
+            class="editor-rotate-close"
             type="button"
-            class="editor-home-btn tooltip-trigger"
-            id="rotateHintBackBtn"
-            aria-label="Назад"
+            id="rotateHintCloseBtn"
+            aria-label="Закрыть подсказку"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M15 18l-6-6 6-6"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></path>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M18 6 6 18"></path>
+              <path d="M6 6 18 18"></path>
             </svg>
           </button>
+        </div>
+        <div class="editor-rotate-content">
+          <div class="editor-rotate-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3.5 12a8.5 8.5 0 0 1 14.1-6.4"></path>
+              <path d="M20.5 12a8.5 8.5 0 0 1-14.1 6.4"></path>
+              <path d="M18 2.5v4.5h-4.5"></path>
+              <path d="M6 21.5v-4.5h4.5"></path>
+            </svg>
+          </div>
+          <div class="editor-rotate-copy">
+            <p id="rotateHintText">
+              Редактор уже работает. Разверни телефон для более широкого холста.
+            </p>
+          </div>
         </div>
       </div>
     </div>

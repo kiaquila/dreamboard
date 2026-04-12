@@ -44,8 +44,12 @@ This is the canonical PR loop for `dreamboard`.
 - Supported review backends are `gemini`, `codex`, and `claude`.
 - `AI Review` is the normalized required check regardless of the backend.
 - Low-severity-only findings are advisory and non-blocking.
-- Manual Gemini review commands stay native-only; rerunning the PR-linked
-  `AI Review` workflow is enough to reuse same-head Gemini output.
+- With no repository override, the pull-request gate defaults to `gemini`.
+- When `AI_REVIEW_AGENT=codex`, the pull-request gate waits for native Codex output without posting a bot-authored `@codex review` trigger comment.
+- Manual Gemini and Codex review commands stay native-only so they do not
+  cancel the PR-linked `AI Review` check.
+- Rerunning the PR-linked `AI Review` workflow is enough to reuse same-head
+  Gemini output.
 
 ## Merge-Ready Definition
 

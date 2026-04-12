@@ -58,8 +58,13 @@ One task should map to one worktree, one branch, and one PR.
 Review normalization behavior:
 
 - `gemini` is the default automatic pull-request reviewer
-- trusted human review commands dispatch the shared `AI Review` gate via `workflow_dispatch` for `codex` and `claude`
-- manual Gemini comments stay native-only to avoid canceling the PR-linked `AI Review` check
+- pull-request `AI Review` runs support both `gemini` and `codex`; `codex`
+  uses passive same-head detection on PR events instead of a bot-authored
+  trigger comment
+- trusted human review commands dispatch the shared `AI Review` gate via
+  `workflow_dispatch` only for `claude`
+- manual Gemini and Codex comments stay native-only to avoid canceling the
+  PR-linked `AI Review` check
 - the gate may reuse an existing same-head native review when a PR-linked `AI Review` run is rerun
 
 Only trusted actors may trigger AI workflows:
