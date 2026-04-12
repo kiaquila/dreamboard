@@ -332,58 +332,57 @@
           </div>
         </main>
       </div>
+    </div>
 
-      <div
-        class="editor-rotate-hint"
-        id="editorRotateHint"
-        aria-live="polite"
-        role="status"
-        hidden
-      >
-        <div class="editor-rotate-card">
-          <div class="editor-rotate-header">
-            <h2 id="rotateHintTitle">В горизонтали удобнее</h2>
-            <button
-              class="editor-rotate-close"
-              type="button"
-              id="rotateHintCloseBtn"
-              aria-label="Закрыть подсказку"
+    <div
+      class="editor-rotate-hint"
+      id="editorRotateHint"
+      aria-live="polite"
+      role="status"
+      hidden
+    >
+      <div class="editor-rotate-card">
+        <div class="editor-rotate-header">
+          <h2 id="rotateHintTitle">В горизонтали удобнее</h2>
+          <button
+            class="editor-rotate-close"
+            type="button"
+            id="rotateHintCloseBtn"
+            aria-label="Закрыть подсказку"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M18 6 6 18"></path>
-                <path d="M6 6 18 18"></path>
-              </svg>
-            </button>
+              <path d="M18 6 6 18"></path>
+              <path d="M6 6 18 18"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="editor-rotate-content">
+          <div class="editor-rotate-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3.5 12a8.5 8.5 0 0 1 14.1-6.4"></path>
+              <path d="M20.5 12a8.5 8.5 0 0 1-14.1 6.4"></path>
+              <path d="M18 2.5v4.5h-4.5"></path>
+              <path d="M6 21.5v-4.5h4.5"></path>
+            </svg>
           </div>
-          <div class="editor-rotate-content">
-            <div class="editor-rotate-icon" aria-hidden="true">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M3.5 12a8.5 8.5 0 0 1 14.1-6.4"></path>
-                <path d="M20.5 12a8.5 8.5 0 0 1-14.1 6.4"></path>
-                <path d="M18 2.5v4.5h-4.5"></path>
-                <path d="M6 21.5v-4.5h4.5"></path>
-              </svg>
-            </div>
-            <div class="editor-rotate-copy">
-              <p id="rotateHintText">
-                Редактор уже работает. Разверни телефон для более широкого
-                холста.
-              </p>
-            </div>
+          <div class="editor-rotate-copy">
+            <p id="rotateHintText">
+              Редактор уже работает. Разверни телефон для более широкого холста.
+            </p>
           </div>
         </div>
       </div>

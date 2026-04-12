@@ -1245,11 +1245,11 @@ body.is-editor-active .sticky-footer {
 
 .editor-rotate-close {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
+  top: 0;
+  right: 0;
+  width: 27px;
+  min-width: 27px;
+  height: 27px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1267,8 +1267,8 @@ body.is-editor-active .sticky-footer {
 }
 
 .editor-rotate-close svg {
-  width: 17px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
   stroke: currentColor;
 }
 
@@ -1611,7 +1611,7 @@ body.is-editor-active .app-container {
     width: 100dvh;
     height: 100dvw;
     transform-origin: top left;
-    transform: translateY(100dvh) rotate(-90deg);
+    transform: translateX(100dvw) rotate(90deg);
     z-index: 100;
   }
 
@@ -1621,6 +1621,10 @@ body.is-editor-active .app-container {
 
   body.is-editor-active .sticky-footer {
     display: none;
+  }
+
+  body.is-editor-active .editor-rotate-hint {
+    top: max(14px, calc(env(safe-area-inset-top) + 14px));
   }
 }
 
