@@ -7,6 +7,7 @@
 - [x] Adapt the mobile landscape editor to a true horizontal layout and resize flow
 - [x] Update localized hint copy, spacing, and visual styling
 - [x] Sync frontend docs and project summary with the new editor model
+- [x] Align the AI Review workflow follow-up with the repository review-agent contract
 - [x] Run validation and capture the result in this PR
 
 ## Validation
