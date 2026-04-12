@@ -1628,39 +1628,51 @@ body.is-editor-active .app-container {
   }
 
   body.is-editor-active .sidebar {
-    width: min(170px, 44vw);
-    flex: 0 0 min(170px, 44vw);
-    padding: calc(12px + env(safe-area-inset-top)) 12px
-      calc(12px + env(safe-area-inset-bottom));
+    width: min(158px, 42vw);
+    flex: 0 0 min(158px, 42vw);
+    padding: calc(10px + env(safe-area-inset-top)) 10px
+      calc(10px + env(safe-area-inset-bottom));
     gap: 10px;
     overflow: hidden;
   }
 
   body.is-editor-active .sidebar .sidebar-header {
-    gap: 6px;
+    gap: 4px;
+    flex-wrap: nowrap;
+    min-width: 0;
   }
 
   body.is-editor-active .sidebar .sidebar-header h1 {
-    font-size: 18px;
-    letter-spacing: -0.8px;
+    font-size: 14px;
+    letter-spacing: -0.5px;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  body.is-editor-active .sidebar .sidebar-header-actions {
+    gap: 4px;
+    flex: 0 0 auto;
   }
 
   body.is-editor-active .sidebar .editor-home-btn {
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
   }
 
   body.is-editor-active .sidebar .editor-home-btn svg {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
   }
 
   body.is-editor-active .sidebar #langBtnEditor {
-    min-width: 32px;
-    height: 30px;
-    padding: 0 8px;
-    font-size: 11px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    font-size: 10px;
   }
 
   body.is-editor-active .sidebar .control-group {

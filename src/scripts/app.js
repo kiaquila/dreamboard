@@ -1070,10 +1070,13 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeDonateModal();
 });
 
+let menuUserPositioned = false;
+
 function hideObjectMenu() {
   objectMenu.classList.remove("is-mobile-dock");
   objectMenu.style.maxWidth = "";
   objectMenu.style.display = "none";
+  menuUserPositioned = false;
 }
 
 function positionObjectMenu() {
@@ -1127,6 +1130,12 @@ function positionObjectMenu() {
   applyToolbarTooltips();
   objectMenu.style.display = "flex";
   objectMenu.classList.toggle("is-mobile-dock", isMobileLayout());
+
+  if (menuUserPositioned && isMobileLayout()) {
+    positionColorPopup();
+    positionFontPopup();
+    return;
+  }
 
   const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
 
@@ -1192,8 +1201,14 @@ omTextColor.addEventListener("input", () => {
   scheduleDraftSave();
 });
 
-canvas.on("selection:created", positionObjectMenu);
-canvas.on("selection:updated", positionObjectMenu);
+canvas.on("selection:created", () => {
+  menuUserPositioned = false;
+  positionObjectMenu();
+});
+canvas.on("selection:updated", () => {
+  menuUserPositioned = false;
+  positionObjectMenu();
+});
 canvas.on("selection:cleared", () => {
   hideObjectMenu();
   hideColorPopup();
@@ -1216,6 +1231,137 @@ canvas.on("object:removed", (event) => {
 canvas.on("text:changed", () => {
   scheduleDraftSave();
 });
+
+(function enablePinchZoom() {
+  const el = canvas.upperCanvasEl;
+  const parent = el.parentElement || el;
+  let state = null;
+
+  const getDist = (a, b) =>
+    Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  const getMid = (a, b) => ({
+    x: (a.clientX + b.clientX) / 2,
+    y: (a.clientY + b.clientY) / 2,
+  });
+
+  function screenToCanvasPoint(clientX, clientY) {
+    const bounds = el.getBoundingClientRect();
+    if (isEditorRotated()) {
+      const visualPx = clientY - bounds.top;
+      const visualPy = bounds.left + bounds.width - clientX;
+      const widthCss = bounds.height || canvas.width || 1;
+      const heightCss = bounds.width || canvas.height || 1;
+      return {
+        x: visualPx * (canvas.width / widthCss),
+        y: visualPy * (canvas.height / heightCss),
+      };
+    }
+    const widthCss = bounds.width || canvas.width || 1;
+    const heightCss = bounds.height || canvas.height || 1;
+    return {
+      x: (clientX - bounds.left) * (canvas.width / widthCss),
+      y: (clientY - bounds.top) * (canvas.height / heightCss),
+    };
+  }
+
+  function onStart(e) {
+    if (e.touches && e.touches.length === 2) {
+      state = {
+        startDist: getDist(e.touches[0], e.touches[1]),
+        startZoom: canvas.getZoom(),
+      };
+      canvas.discardActiveObject();
+      canvas.requestRenderAll();
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }
+
+  function onMove(e) {
+    if (!state || !e.touches || e.touches.length < 2) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const dist = getDist(e.touches[0], e.touches[1]);
+    if (!state.startDist) return;
+    let newZoom = state.startZoom * (dist / state.startDist);
+    newZoom = Math.max(0.3, Math.min(5, newZoom));
+    const mid = getMid(e.touches[0], e.touches[1]);
+    const point = screenToCanvasPoint(mid.x, mid.y);
+    canvas.zoomToPoint(point, newZoom);
+  }
+
+  function onEnd(e) {
+    if (!state) return;
+    if (!e.touches || e.touches.length < 2) {
+      state = null;
+    }
+  }
+
+  parent.addEventListener("touchstart", onStart, {
+    capture: true,
+    passive: false,
+  });
+  parent.addEventListener("touchmove", onMove, {
+    capture: true,
+    passive: false,
+  });
+  parent.addEventListener("touchend", onEnd, { capture: true });
+  parent.addEventListener("touchcancel", onEnd, { capture: true });
+})();
+
+(function enableObjectMenuDrag() {
+  let drag = null;
+
+  function toLocalDelta(dx, dy) {
+    if (isEditorRotated()) {
+      return { dx: dy, dy: -dx };
+    }
+    return { dx, dy };
+  }
+
+  function onStart(e) {
+    if (!isMobileLayout()) return;
+    if (
+      e.target.closest(
+        "button, label, input, select, .om-color-popup, .om-font-popup",
+      )
+    ) {
+      return;
+    }
+    const touch = e.touches ? e.touches[0] : e;
+    drag = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startLeft: parseFloat(objectMenu.style.left) || 0,
+      startTop: parseFloat(objectMenu.style.top) || 0,
+      moved: false,
+    };
+  }
+
+  function onMove(e) {
+    if (!drag) return;
+    const touch = e.touches ? e.touches[0] : e;
+    const dx = touch.clientX - drag.startX;
+    const dy = touch.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+    drag.moved = true;
+    menuUserPositioned = true;
+    objectMenu.classList.add("is-user-positioned");
+    const local = toLocalDelta(dx, dy);
+    objectMenu.style.left = `${drag.startLeft + local.dx}px`;
+    objectMenu.style.top = `${drag.startTop + local.dy}px`;
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onEnd() {
+    drag = null;
+  }
+
+  objectMenu.addEventListener("touchstart", onStart, { passive: true });
+  objectMenu.addEventListener("touchmove", onMove, { passive: false });
+  objectMenu.addEventListener("touchend", onEnd);
+  objectMenu.addEventListener("touchcancel", onEnd);
+})();
 
 canvas.on("mouse:down", () => {
   const obj = canvas.getActiveObject();
