@@ -1223,19 +1223,18 @@ body.is-editor-active .sticky-footer {
 .editor-rotate-card {
   width: min(100%, 560px);
   margin: 0 auto;
-  padding: 18px 18px 16px;
+  padding: 18px 20px 16px;
   border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  background: rgba(59, 58, 54, 0.82);
-  color: rgba(255, 255, 255, 0.94);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.32),
-    0 2px 12px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(28, 30, 38, 0.42);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
   animation: rotate-hint-fade-in 0.26s ease-out;
   pointer-events: auto;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .editor-rotate-header {
@@ -1536,13 +1535,14 @@ body.is-editor-active .app-container {
   }
 }
 
-@media (max-width: 900px) and (orientation: landscape) {
-  .editor-mobile-topbar {
+@media (max-width: 900px) {
+  body.is-editor-active .editor-mobile-topbar {
     display: none;
   }
 
   body.is-editor-active .app-container {
     height: 100dvh;
+    flex-direction: row;
   }
 
   body.is-editor-active .sidebar {
@@ -1550,15 +1550,15 @@ body.is-editor-active .app-container {
     left: auto;
     right: auto;
     bottom: auto;
-    width: min(250px, 38vw);
-    flex: 0 0 min(250px, 38vw);
+    width: min(220px, 42vw);
+    flex: 0 0 min(220px, 42vw);
     max-height: 100dvh;
     transform: none;
     border-radius: 0;
     border: none;
     border-right: 1px solid #ececec;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-    padding: calc(18px + env(safe-area-inset-top)) 16px
+    padding: calc(18px + env(safe-area-inset-top)) 14px
       calc(18px + env(safe-area-inset-bottom));
   }
 
