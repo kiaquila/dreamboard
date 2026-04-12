@@ -1626,6 +1626,55 @@ body.is-editor-active .app-container {
   body.is-editor-active .editor-rotate-hint {
     top: max(14px, calc(env(safe-area-inset-top) + 14px));
   }
+
+  body.is-editor-active .sidebar {
+    width: min(170px, 44vw);
+    flex: 0 0 min(170px, 44vw);
+    padding: calc(12px + env(safe-area-inset-top)) 12px
+      calc(12px + env(safe-area-inset-bottom));
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  body.is-editor-active .sidebar .sidebar-header {
+    gap: 6px;
+  }
+
+  body.is-editor-active .sidebar .sidebar-header h1 {
+    font-size: 18px;
+    letter-spacing: -0.8px;
+  }
+
+  body.is-editor-active .sidebar .editor-home-btn {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+  }
+
+  body.is-editor-active .sidebar .editor-home-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  body.is-editor-active .sidebar #langBtnEditor {
+    min-width: 32px;
+    height: 30px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  body.is-editor-active .sidebar .control-group {
+    gap: 8px;
+  }
+
+  body.is-editor-active .sidebar .control-group button,
+  body.is-editor-active .sidebar .file-input-label {
+    min-height: 36px;
+    border-radius: 16px;
+    font-size: 11px;
+    padding: 8px 10px;
+    letter-spacing: -0.2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

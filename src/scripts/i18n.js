@@ -31,8 +31,7 @@ export const translations = {
     saveSaved: "Черновик сохранён",
     saveError: "Не удалось сохранить черновик",
     rotateHintTitle: "В горизонтали удобнее",
-    rotateHintText:
-      "Разверни телефон, чтобы холст и инструменты легли шире. Можно продолжать и так.",
+    rotateHintText: "Поверни телефон, чтобы проще было работать с холстом.",
     rotateHintDismiss: "Закрыть подсказку о повороте",
 
     landingHero: "Создай свою карту желаний бесплатно, без регистрации",
@@ -88,8 +87,7 @@ export const translations = {
     saveSaved: "Draft saved",
     saveError: "Draft could not be saved",
     rotateHintTitle: "Landscape gives you more room",
-    rotateHintText:
-      "Rotate your phone to give the canvas and tools more room. You can keep working here too.",
+    rotateHintText: "Rotate your phone to work with the canvas more easily.",
     rotateHintDismiss: "Close the rotation hint",
 
     landingHero: "Create your vision board for free — no registration",
@@ -147,7 +145,7 @@ export const translations = {
     saveError: "No se pudo guardar el borrador",
     rotateHintTitle: "En horizontal se ve mejor",
     rotateHintText:
-      "Girando el teléfono el canvas y las herramientas quedan más cómodos. También podés seguir así.",
+      "Girá el teléfono para trabajar más fácilmente con el lienzo.",
     rotateHintDismiss: "Cerrar la sugerencia de giro",
 
     landingHero: "Creá tu tablero de deseos gratis — sin registro",

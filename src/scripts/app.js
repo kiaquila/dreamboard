@@ -789,22 +789,29 @@ function createPlaceholders() {
   const langData = translations[currentLang].sectors;
 
   const positions = [
-    { t: langData[0], x: w / 2, y: h / 2 },
-    { t: langData[1], x: w / 2, y: h / 4.5 },
-    { t: langData[2], x: w / 4, y: h / 2 },
-    { t: langData[3], x: w / 4, y: h / 4.5 },
-    { t: langData[4], x: w / 4, y: h / 1.3 },
-    { t: langData[5], x: w / 2, y: h / 1.3 },
-    { t: langData[6], x: (3 * w) / 4, y: h / 1.3 },
-    { t: langData[7], x: (3 * w) / 4, y: h / 2 },
-    { t: langData[8], x: (3 * w) / 4, y: h / 4.5 },
+    { t: langData[0], cx: 0.5, cy: 0.5 },
+    { t: langData[1], cx: 0.5, cy: 0.18 },
+    { t: langData[2], cx: 0.18, cy: 0.5 },
+    { t: langData[3], cx: 0.18, cy: 0.18 },
+    { t: langData[4], cx: 0.18, cy: 0.82 },
+    { t: langData[5], cx: 0.5, cy: 0.82 },
+    { t: langData[6], cx: 0.82, cy: 0.82 },
+    { t: langData[7], cx: 0.82, cy: 0.5 },
+    { t: langData[8], cx: 0.82, cy: 0.18 },
   ];
+
+  const columnGap = Math.max(12, w * 0.035);
+  const rowGap = Math.max(10, h * 0.035);
+  const maxTextWidth = Math.max(24, w / 3 - columnGap);
+  const maxTextHeight = Math.max(14, h / 3 - rowGap);
+  const baseFontSize = 18;
+  const minFontSize = 8;
 
   placeholders = positions.map((item) => {
     const text = new fabric.Text(item.t, {
-      left: item.x,
-      top: item.y,
-      fontSize: 18,
+      left: w * item.cx,
+      top: h * item.cy,
+      fontSize: baseFontSize,
       fontFamily: "DM Sans",
       fontWeight: "bold",
       fill: "#f2f2f2",
@@ -814,9 +821,45 @@ function createPlaceholders() {
       evented: false,
       isPlaceholder: true,
     });
-    canvas.add(text);
-    canvas.sendToBack(text);
     return text;
+  });
+
+  const widest = placeholders.reduce(
+    (acc, p) => Math.max(acc, p.width || 0),
+    0,
+  );
+  const tallest = placeholders.reduce(
+    (acc, p) => Math.max(acc, p.height || 0),
+    0,
+  );
+  const scale = Math.min(
+    1,
+    widest > 0 ? maxTextWidth / widest : 1,
+    tallest > 0 ? maxTextHeight / tallest : 1,
+  );
+  if (scale < 1) {
+    const finalFontSize = Math.max(
+      minFontSize,
+      Math.floor(baseFontSize * scale),
+    );
+    placeholders.forEach((p) => p.set("fontSize", finalFontSize));
+  }
+
+  placeholders.forEach((p) => {
+    p.setCoords();
+    const halfW = (p.width || 0) / 2;
+    const halfH = (p.height || 0) / 2;
+    const minLeft = halfW + columnGap / 2;
+    const maxLeft = w - halfW - columnGap / 2;
+    const minTop = halfH + rowGap / 2;
+    const maxTop = h - halfH - rowGap / 2;
+    p.set({
+      left: Math.min(Math.max(p.left, minLeft), maxLeft),
+      top: Math.min(Math.max(p.top, minTop), maxTop),
+    });
+    p.setCoords();
+    canvas.add(p);
+    canvas.sendToBack(p);
   });
   canvas.renderAll();
   suppressDraftPersistence = previousSuppression;
