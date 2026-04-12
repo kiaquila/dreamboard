@@ -1266,11 +1266,16 @@ canvas.on("text:changed", () => {
 
   function onStart(e) {
     if (e.touches && e.touches.length === 2) {
+      const active = canvas.getActiveObject();
+      const targetObject = active && !active.isPlaceholder ? active : null;
       state = {
         startDist: getDist(e.touches[0], e.touches[1]),
         startZoom: canvas.getZoom(),
+        targetObject,
+        startScaleX: targetObject ? targetObject.scaleX : 1,
+        startScaleY: targetObject ? targetObject.scaleY : 1,
+        didScale: false,
       };
-      canvas.discardActiveObject();
       canvas.requestRenderAll();
       e.stopPropagation();
       e.preventDefault();
@@ -1283,16 +1288,32 @@ canvas.on("text:changed", () => {
     e.preventDefault();
     const dist = getDist(e.touches[0], e.touches[1]);
     if (!state.startDist) return;
-    let newZoom = state.startZoom * (dist / state.startDist);
-    newZoom = Math.max(0.3, Math.min(5, newZoom));
-    const mid = getMid(e.touches[0], e.touches[1]);
-    const point = screenToCanvasPoint(mid.x, mid.y);
-    canvas.zoomToPoint(point, newZoom);
+    const ratio = dist / state.startDist;
+    if (state.targetObject) {
+      const obj = state.targetObject;
+      const nx = Math.max(0.05, Math.min(10, state.startScaleX * ratio));
+      const ny = Math.max(0.05, Math.min(10, state.startScaleY * ratio));
+      obj.set({ scaleX: nx, scaleY: ny });
+      obj.setCoords();
+      canvas.requestRenderAll();
+      positionObjectMenu();
+      state.didScale = true;
+    } else {
+      let newZoom = state.startZoom * ratio;
+      newZoom = Math.max(0.3, Math.min(5, newZoom));
+      const mid = getMid(e.touches[0], e.touches[1]);
+      const point = screenToCanvasPoint(mid.x, mid.y);
+      canvas.zoomToPoint(point, newZoom);
+    }
   }
 
   function onEnd(e) {
     if (!state) return;
     if (!e.touches || e.touches.length < 2) {
+      if (state.targetObject && state.didScale) {
+        canvas.fire("object:modified", { target: state.targetObject });
+        scheduleDraftSave();
+      }
       state = null;
     }
   }

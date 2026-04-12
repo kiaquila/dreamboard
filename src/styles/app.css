@@ -1681,11 +1681,16 @@ body.is-editor-active .app-container {
 
   body.is-editor-active .sidebar .control-group button,
   body.is-editor-active .sidebar .file-input-label {
-    min-height: 36px;
-    border-radius: 16px;
+    min-height: 0;
+    height: auto;
+    border-radius: 14px;
     font-size: 11px;
-    padding: 8px 10px;
+    padding: 6px 10px;
+    line-height: 1.2;
     letter-spacing: -0.2px;
+    white-space: normal;
+    display: block;
+    text-align: center;
   }
 }
 
