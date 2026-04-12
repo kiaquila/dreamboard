@@ -1245,11 +1245,11 @@ body.is-editor-active .sticky-footer {
 
 .editor-rotate-close {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
+  top: -2px;
+  right: -2px;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1267,8 +1267,8 @@ body.is-editor-active .sticky-footer {
 }
 
 .editor-rotate-close svg {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
   stroke: currentColor;
 }
 
@@ -1596,6 +1596,31 @@ body.is-editor-active .app-container {
 
   body.is-editor-active .object-menu.is-mobile-dock {
     width: min(420px, calc(100% - 28px));
+  }
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  body.is-editor-active {
+    overflow: hidden;
+  }
+
+  body.is-editor-active .editor-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100dvh;
+    height: 100dvw;
+    transform-origin: top left;
+    transform: translateY(100dvh) rotate(-90deg);
+    z-index: 100;
+  }
+
+  body.is-editor-active .app-container {
+    height: 100%;
+  }
+
+  body.is-editor-active .sticky-footer {
+    display: none;
   }
 }
 

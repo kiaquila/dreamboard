@@ -87,6 +87,42 @@ const canvas = new fabric.Canvas("visionBoard", {
   preserveObjectStacking: true,
 });
 
+const rotatedEditorMedia =
+  typeof window.matchMedia === "function"
+    ? window.matchMedia("(max-width: 900px) and (orientation: portrait)")
+    : null;
+
+function isEditorRotated() {
+  return (
+    document.body.classList.contains("is-editor-active") &&
+    !!rotatedEditorMedia?.matches
+  );
+}
+
+const originalGetPointer = canvas.getPointer.bind(canvas);
+canvas.getPointer = function (e, ignoreZoom) {
+  if (!isEditorRotated()) {
+    return originalGetPointer(e, ignoreZoom);
+  }
+  const upperCanvasEl = this.upperCanvasEl;
+  const bounds = upperCanvasEl.getBoundingClientRect();
+  const touch = e.touches?.[0] || e.changedTouches?.[0];
+  const clientX = touch ? touch.clientX : (e.clientX ?? 0);
+  const clientY = touch ? touch.clientY : (e.clientY ?? 0);
+  const visualPx = bounds.top + bounds.height - clientY;
+  const visualPy = clientX - bounds.left;
+  const widthCss = bounds.height || this.width || 1;
+  const heightCss = bounds.width || this.height || 1;
+  let pointer = {
+    x: visualPx * (this.width / widthCss),
+    y: visualPy * (this.height / heightCss),
+  };
+  if (!ignoreZoom) {
+    pointer = this.restorePointerVpt(pointer);
+  }
+  return pointer;
+};
+
 function isMobileLayout() {
   return window.innerWidth <= MOBILE_BREAKPOINT;
 }
@@ -1193,12 +1229,13 @@ function getCanvasTargetSize() {
     };
   }
 
-  const areaRect = canvasArea.getBoundingClientRect();
+  const areaWidth = canvasArea.clientWidth;
+  const areaHeight = canvasArea.clientHeight;
   const { horizontal, vertical } = getCanvasAreaInsets();
   const fallbackWidth = canvas.getWidth() || 960;
   const fallbackHeight = canvas.getHeight() || 640;
 
-  if (areaRect.width <= horizontal || areaRect.height <= vertical) {
+  if (areaWidth <= horizontal || areaHeight <= vertical) {
     return {
       width: fallbackWidth,
       height: fallbackHeight,
@@ -1208,11 +1245,11 @@ function getCanvasTargetSize() {
   return {
     width: Math.max(
       isMobileLayout() ? 280 : 420,
-      Math.floor(areaRect.width - horizontal),
+      Math.floor(areaWidth - horizontal),
     ),
     height: Math.max(
       isMobileLayout() ? 360 : 520,
-      Math.floor(areaRect.height - vertical),
+      Math.floor(areaHeight - vertical),
     ),
   };
 }
