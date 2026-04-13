@@ -1,8 +1,8 @@
 # dreamboard
 
-Personal visual goal-board creator: a marketing landing page plus a canvas-based
-editor where you place images and text, style objects, and export the result as
-a composed dream board.
+Personal visual goal-board creator: a canvas-based editor where you place
+images and text, style objects, and export the result as a composed dream
+board.
 
 **Live:** deployed to Vercel via Git integration on every push to `main`.
 
