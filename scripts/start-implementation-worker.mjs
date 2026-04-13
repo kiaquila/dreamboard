@@ -78,7 +78,7 @@ Read in this order:
 
 Execution rules:
 - implement only the scoped task on this branch
-- keep the static site deployable with npm run build
+- keep the static site deployable with pnpm run build
 - update tasks.md as work completes
 - update durable docs when behavior, architecture, or workflow changes
 - do not bypass the PR loop or switch branches

@@ -99,7 +99,7 @@ relevant durable doc under `docs_dreamboard/`, `AGENTS.md`, or `CLAUDE.md`.
 
 ### 3. Preserve static-site deployability
 
-Even while the app is still a single-file prototype, changes must keep `npm run build` producing a deployable `dist/index.html` artifact for Vercel.
+Even while the app is still a single-file prototype, changes must keep `pnpm run build` producing a deployable `dist/index.html` artifact for Vercel.
 
 ### 4. One worker equals one worktree
 

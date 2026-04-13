@@ -16,10 +16,15 @@ board.
 
 ## Getting started
 
+This project uses **pnpm** (pinned via `packageManager` in `package.json`).
+The easiest way to get the right version is Node's built-in
+[`corepack`](https://nodejs.org/api/corepack.html):
+
 ```bash
-npm install
-npm run build        # produce dist/index.html
-npm run ci           # baseline + html-validate + build + prettier check
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run build        # produce dist/index.html
+pnpm run ci           # baseline + html-validate + build + prettier check
 ```
 
 Open `index.html` directly in a browser, or serve `dist/` with any static
@@ -27,16 +32,27 @@ server to preview the build.
 
 ## Scripts
 
-| Command                        | Purpose                                                |
-| ------------------------------ | ------------------------------------------------------ |
-| `npm run build`                | Build static `dist/index.html` for Vercel              |
-| `npm run check:repo`           | Repository baseline checks                             |
-| `npm run check:html`           | HTML validation via `html-validate`                    |
-| `npm run check:feature-memory` | Enforce `specs/<feature-id>/` for product changes      |
-| `npm run format:check`         | Prettier check across tracked files                    |
-| `npm run ci`                   | Full local CI pipeline                                 |
-| `npm run worktree:new`         | Create a new local worktree for an implementation loop |
-| `npm run pr:publish`           | Push current branch and open/reuse a PR                |
+| Command                         | Purpose                                                |
+| ------------------------------- | ------------------------------------------------------ |
+| `pnpm run build`                | Build static `dist/index.html` for Vercel              |
+| `pnpm run check:repo`           | Repository baseline checks                             |
+| `pnpm run check:html`           | HTML validation via `html-validate`                    |
+| `pnpm run check:feature-memory` | Enforce `specs/<feature-id>/` for product changes      |
+| `pnpm run format:check`         | Prettier check across tracked files                    |
+| `pnpm run ci`                   | Full local CI pipeline                                 |
+| `pnpm run worktree:new`         | Create a new local worktree for an implementation loop |
+| `pnpm run pr:publish`           | Push current branch and open/reuse a PR                |
+
+## Supply chain
+
+`pnpm-workspace.yaml` sets `minimumReleaseAge: 10080` (7 days, expressed in
+minutes). Any newly published version of a dependency — direct or transitive
+— must exist on the registry for at least 7 days before pnpm will install it.
+This reduces exposure to supply-chain attacks that rely on freshly published
+compromised versions being pulled in immediately.
+
+See [pnpm docs on `minimumReleaseAge`](https://pnpm.io/settings#minimumreleaseage)
+for details.
 
 ## Repository layout
 

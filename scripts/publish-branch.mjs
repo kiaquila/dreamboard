@@ -79,7 +79,7 @@ const body =
     options.feature ? `- Feature memory: \`specs/${options.feature}/\`` : "",
     "",
     "## Validation",
-    "- npm run ci",
+    "- pnpm run ci",
   ]
     .filter(Boolean)
     .join("\n");

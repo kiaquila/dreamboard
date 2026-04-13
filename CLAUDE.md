@@ -18,7 +18,7 @@
 - Продуктовые изменения начинаются с активной папки `specs/<feature-id>/`
 - Один implementation loop = один worktree, одна ветка и один PR
 - При изменении поведения UI, workflow или build/deploy обновляй `specs/` и `docs_dreamboard/`
-- Не ломай `npm run build`: проект должен оставаться deployable как статический сайт
+- Не ломай `pnpm run build`: проект должен оставаться deployable как статический сайт
 - При review фокусируйся на mobile layout, editor behavior, export safety, i18n consistency и maintainability
 
 ## Документация

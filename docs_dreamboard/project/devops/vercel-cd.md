@@ -21,10 +21,12 @@ Current Vercel project:
 
 The repository declares:
 
-- `buildCommand`: `npm run build`
+- `buildCommand`: `pnpm run build`
 - `outputDirectory`: `dist`
 
-`npm run build` must always produce a deployable static artifact under `dist/`.
+`pnpm run build` must always produce a deployable static artifact under `dist/`.
+
+Vercel auto-detects pnpm from `pnpm-lock.yaml` and uses the version pinned in `packageManager` (see [`../../README.md`](../../README.md#supply-chain)). No Vercel dashboard overrides required.
 
 The repository also keeps Gemini review configuration in `.gemini/` so review behavior stays versioned together with the app and workflow contract.
 

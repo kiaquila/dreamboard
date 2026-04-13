@@ -50,9 +50,9 @@ The current static app now treats phone layouts as a separate editor mode:
 
 The repository keeps a static build layer:
 
-- `npm run build` copies [index.html](/Users/kristina.kurashova/projects/dreamboard/index.html) and the full [`src/`](/Users/kristina.kurashova/projects/dreamboard/src) tree into `dist/`
+- `pnpm run build` copies [index.html](/Users/kristina.kurashova/projects/dreamboard/index.html) and the full [`src/`](/Users/kristina.kurashova/projects/dreamboard/src) tree into `dist/`
 - Vercel reads `dist/` as the output directory
-- `npm run ci` validates repo baseline, HTML, formatting, and build output
+- `pnpm run ci` validates repo baseline, HTML, formatting, and build output
 
 ## Draft Persistence
 
