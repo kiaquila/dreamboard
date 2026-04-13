@@ -69,4 +69,4 @@ index.
 
 ## License
 
-Personal project — all rights reserved unless stated otherwise.
+Released under the [MIT License](./LICENSE). © 2026 Kristina Aquila.
