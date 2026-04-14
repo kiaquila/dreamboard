@@ -10,7 +10,7 @@
     "check:repo": "node scripts/check-static-baseline.mjs",
     "check:html": "html-validate index.html",
     "format:check": "prettier --check \"index.html\" \"src/**/*.{css,js}\" \"AGENTS.md\" \"CLAUDE.md\" \".specify/**/*.md\" \"specs/**/*.md\" \"docs_dreamboard/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
-    "ci": "npm run check:repo && npm run check:html && npm run build && npm run format:check",
+    "ci": "pnpm run check:repo && pnpm run check:html && pnpm run build && pnpm run format:check",
     "pr:publish": "node scripts/publish-branch.mjs",
     "worker:start": "node scripts/start-implementation-worker.mjs",
     "worktree:new": "node scripts/new-worktree.mjs"
@@ -18,5 +18,10 @@
   "devDependencies": {
     "html-validate": "^10.11.3",
     "prettier": "^3.8.1"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10.16"
   }
 }

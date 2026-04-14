@@ -57,7 +57,8 @@ const changedFiles = git(diffArgs)
 const isProductPath = (file) =>
   file === "index.html" ||
   file === "package.json" ||
-  file === "package-lock.json" ||
+  file === "pnpm-lock.yaml" ||
+  file === "pnpm-workspace.yaml" ||
   file === "vercel.json" ||
   file === ".htmlvalidate.json" ||
   file.startsWith(".github/workflows/") ||
