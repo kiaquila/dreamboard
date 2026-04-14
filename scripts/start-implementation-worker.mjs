@@ -2,7 +2,7 @@
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const options = {
@@ -37,13 +37,8 @@ const run = (command, commandArgs, cwd) =>
     encoding: "utf8",
   }).trim();
 
-const gitCommonDir = run(
-  "git",
-  ["rev-parse", "--path-format=absolute", "--git-common-dir"],
-  process.cwd(),
-);
-const repoRoot = dirname(gitCommonDir);
-const branch = run("git", ["branch", "--show-current"], process.cwd());
+const repoRoot = run("git", ["rev-parse", "--show-toplevel"], process.cwd());
+const branch = run("git", ["branch", "--show-current"], repoRoot);
 const claudeDir = resolve(repoRoot, ".claude");
 const legacyCodexDir = resolve(repoRoot, ".codex");
 const promptsDir = resolve(claudeDir, "prompts");

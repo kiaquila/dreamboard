@@ -2,7 +2,7 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 
 const validImplementationAgents = new Set(["codex", "claude"]);
 const validReviewAgents = new Set(["codex", "claude", "gemini"]);
@@ -63,12 +63,7 @@ const run = (command, commandArgs, { cwd, input } = {}) =>
     input,
   }).trim();
 
-const gitCommonDir = run("git", [
-  "rev-parse",
-  "--path-format=absolute",
-  "--git-common-dir",
-]);
-const repoRoot = dirname(gitCommonDir);
+const repoRoot = run("git", ["rev-parse", "--show-toplevel"]);
 const claudeDir = resolve(repoRoot, ".claude");
 
 if (!existsSync(claudeDir)) {
