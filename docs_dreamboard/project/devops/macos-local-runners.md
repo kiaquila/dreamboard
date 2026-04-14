@@ -18,6 +18,9 @@ macOS helpers for:
 - One task equals one worktree, one branch, and one PR.
 - Never run multiple implementation loops inside the main checkout.
 - Start each worktree from current `main`.
+- Keep worktrees inside the repository at
+  `<repoRoot>/.claude/worktrees/<slug>/` so they do not pollute the user's
+  `~/projects/` directory.
 - Keep prompts tied to one active `specs/<feature-id>/` folder.
 - Use the scripts to prepare and publish work, but never bypass GitHub checks.
 
@@ -25,16 +28,18 @@ macOS helpers for:
 
 - macOS with `git`, `gh`, and Node.js 24 available
 - authenticated GitHub CLI for repository variable updates and PR creation
-- Codex app or Claude Code available locally when you want to hand off the
-  prepared prompt
+- Claude Code available locally as the primary implementation agent
+- Codex app or Codex CLI available locally only when you want to hand off the
+  prepared prompt to Codex as the optional implementation agent
 
 ## Local State
 
-The scripts keep local orchestration state in `.codex/`:
+The scripts keep local orchestration state in `.claude/`:
 
-- `.codex/implementation-agent`
-- `.codex/review-agent`
-- `.codex/prompts/`
+- `.claude/implementation-agent`
+- `.claude/review-agent`
+- `.claude/prompts/`
+- `.claude/worktrees/`
 
 This directory is local-only and gitignored.
 
@@ -43,13 +48,13 @@ This directory is local-only and gitignored.
 1. Select policy.
 
 ```bash
-node scripts/set-implementation-agent.mjs --implementation codex --review gemini
+node scripts/set-implementation-agent.mjs --implementation claude --review codex
 ```
 
-2. Create a new isolated worktree.
+2. Create a new isolated worktree inside `.claude/worktrees/`.
 
 ```bash
-node scripts/new-worktree.mjs --feature 001-process-memory-and-macos-runners
+node scripts/new-worktree.mjs --feature 004-claude-primary-orchestrator
 ```
 
 3. Change into the created worktree.
@@ -58,7 +63,7 @@ node scripts/new-worktree.mjs --feature 001-process-memory-and-macos-runners
 
 ```bash
 node scripts/start-implementation-worker.mjs \
-  --feature 001-process-memory-and-macos-runners \
+  --feature 004-claude-primary-orchestrator \
   --copy
 ```
 
@@ -68,13 +73,14 @@ node scripts/start-implementation-worker.mjs \
 
 ```bash
 node scripts/publish-branch.mjs \
-  --feature 001-process-memory-and-macos-runners \
-  --title "chore: add dreamboard process memory and macOS local runner flow"
+  --feature 004-claude-primary-orchestrator \
+  --title "chore: swap claude and codex roles and move worktrees inside repo"
 ```
 
 ## Trade-Offs
 
 - The repository prepares prompts and branch/worktree state, but it does not
   force-launch a specific local app.
-- Claude review remains unavailable until `ANTHROPIC_API_KEY` is configured in
-  GitHub repository secrets.
+- Codex implementation and Claude review remain optional paths behind an
+  explicit `AI_IMPLEMENTATION_AGENT=codex` or `AI_REVIEW_AGENT=claude`
+  override.

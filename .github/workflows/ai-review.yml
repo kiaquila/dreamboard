@@ -68,7 +68,7 @@ jobs:
           set -euo pipefail
           selected="${{ vars.AI_REVIEW_AGENT }}"
           if [ -z "$selected" ]; then
-            selected="gemini"
+            selected="codex"
           fi
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -93,6 +93,6 @@ jobs:
           AI_REVIEW_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
           AI_REVIEW_TRIGGER_MODE: ${{ steps.policy.outputs.trigger_mode }}
           AI_REVIEW_TRIGGERED_AT: ${{ steps.start.outputs.triggered_at }}
-          AI_REVIEW_WAIT_MS: "900000"
+          AI_REVIEW_WAIT_MS: "1200000"
           AI_REVIEW_POLL_MS: "15000"
         run: node scripts/ai-review-gate.mjs

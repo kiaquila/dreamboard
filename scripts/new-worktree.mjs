@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const args = process.argv.slice(2);
@@ -54,21 +54,27 @@ const run = (command, commandArgs, cwd) =>
     encoding: "utf8",
   }).trim();
 
-const repoRoot = run("git", ["rev-parse", "--show-toplevel"], process.cwd());
-const repoParent = dirname(repoRoot);
+const gitCommonDir = run(
+  "git",
+  ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+  process.cwd(),
+);
+const repoRoot = dirname(gitCommonDir);
 const featureSlug = (options.feature || options.branch)
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, "-")
   .replace(/^-+|-+$/g, "");
-const branch = options.branch || `codex/${featureSlug}`;
-const worktreePath = resolve(
-  repoParent,
-  options.path || `dreamboard-${featureSlug}`,
-);
+const branch = options.branch || `claude/${featureSlug}`;
+const worktreesRoot = resolve(repoRoot, ".claude", "worktrees");
+const worktreePath = options.path
+  ? resolve(repoRoot, options.path)
+  : resolve(worktreesRoot, featureSlug);
 
 if (existsSync(worktreePath)) {
   throw new Error(`Worktree path already exists: ${worktreePath}`);
 }
+
+mkdirSync(worktreesRoot, { recursive: true });
 
 run("git", ["fetch", "--all", "--prune"], repoRoot);
 

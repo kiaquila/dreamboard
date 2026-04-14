@@ -77,7 +77,8 @@ dreamboard/
   runs in its own worktree / branch / PR.
 - Required checks: `baseline-checks`, `guard`, `AI Review`.
 - Agent policy is repository-driven via `AI_IMPLEMENTATION_AGENT` and
-  `AI_REVIEW_AGENT` (defaults: `codex` for implementation, `gemini` for review).
+  `AI_REVIEW_AGENT` (defaults: `claude` for implementation, `codex` for
+  review, with `gemini` as the fallback review backend).
 
 See [`AGENTS.md`](./AGENTS.md) for the full onboarding route and
 [`docs_dreamboard/README.md`](./docs_dreamboard/README.md) for the durable docs

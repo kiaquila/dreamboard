@@ -2,7 +2,7 @@
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const options = {
@@ -37,11 +37,24 @@ const run = (command, commandArgs, cwd) =>
     encoding: "utf8",
   }).trim();
 
-const repoRoot = run("git", ["rev-parse", "--show-toplevel"], process.cwd());
-const branch = run("git", ["branch", "--show-current"], repoRoot);
-const codexDir = resolve(repoRoot, ".codex");
-const promptsDir = resolve(codexDir, "prompts");
-const featureDir = resolve(repoRoot, "specs", options.feature);
+// Split repo roots by data semantics:
+// - `primaryRoot` for shared state under `.claude/` (agent selection,
+//   prompts, legacy `.codex/` fallback) so every linked worktree reads
+//   the same selection written by scripts/set-implementation-agent.mjs.
+// - `workingRoot` for per-branch files like `specs/<feature>/` that live
+//   in the checkout of the current worktree's branch.
+const workingRoot = run("git", ["rev-parse", "--show-toplevel"], process.cwd());
+const gitCommonDir = run(
+  "git",
+  ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+  process.cwd(),
+);
+const primaryRoot = dirname(gitCommonDir);
+const branch = run("git", ["branch", "--show-current"], workingRoot);
+const claudeDir = resolve(primaryRoot, ".claude");
+const legacyCodexDir = resolve(primaryRoot, ".codex");
+const promptsDir = resolve(claudeDir, "prompts");
+const featureDir = resolve(workingRoot, "specs", options.feature);
 
 if (!existsSync(resolve(featureDir, "spec.md"))) {
   throw new Error(`Missing feature spec folder: ${featureDir}`);
@@ -50,14 +63,22 @@ if (!existsSync(resolve(featureDir, "spec.md"))) {
 mkdirSync(promptsDir, { recursive: true });
 
 const readLocalState = (name, fallback) => {
-  const file = resolve(codexDir, name);
-  return existsSync(file)
-    ? readFileSync(file, "utf8").trim() || fallback
-    : fallback;
+  const file = resolve(claudeDir, name);
+  if (existsSync(file)) {
+    return readFileSync(file, "utf8").trim() || fallback;
+  }
+  const legacyFile = resolve(legacyCodexDir, name);
+  if (existsSync(legacyFile)) {
+    console.warn(
+      `warning: reading legacy ${legacyFile}; run scripts/set-implementation-agent.mjs to migrate to .claude/`,
+    );
+    return readFileSync(legacyFile, "utf8").trim() || fallback;
+  }
+  return fallback;
 };
 
-const implementationAgent = readLocalState("implementation-agent", "codex");
-const reviewAgent = readLocalState("review-agent", "gemini");
+const implementationAgent = readLocalState("implementation-agent", "claude");
+const reviewAgent = readLocalState("review-agent", "codex");
 
 const prompt = `# dreamboard implementation prompt
 

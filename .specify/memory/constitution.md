@@ -46,15 +46,18 @@ through Vercel without relying on hidden session memory.
 ## Roles
 
 - User
-  Sets goals, approves product direction, and remains the final merge authority.
-- Codex
-  Owns architecture, orchestration, CI/CD health, repository memory, and can be
-  the selected implementation agent.
+  Sets goals, approves product direction, and remains the final merge
+  authority. Launches implementation loops from a local Claude Code terminal
+  session.
 - Claude
-  Optional implementation or review agent when the repository secret
-  `ANTHROPIC_API_KEY` is configured.
+  Owns architecture, orchestration, CI/CD health, and repository memory, and
+  is the default implementation agent. Runs from the user's local Claude Code
+  terminal session and can dispatch other local agents via CLI when needed.
+- Codex
+  Optional implementation agent and default review backend on GitHub pull
+  requests.
 - Gemini
-  Default native review backend on GitHub.
+  Fallback review backend on GitHub pull requests.
 - GitHub Actions + Vercel
   Execute required checks, review normalization, previews, and production
   deployment.
@@ -76,6 +79,9 @@ through Vercel without relying on hidden session memory.
 
 - Local orchestration is repository-owned and documented in
   `docs_dreamboard/project/devops/macos-local-runners.md`.
-- Local agent selection state is stored under `.codex/` and is gitignored.
+- Local agent selection state is stored under `.claude/` and is gitignored.
+- Local worktrees are created inside `<repoRoot>/.claude/worktrees/<slug>/`
+  so they stay inside the repository and do not pollute the user's
+  `~/projects/` directory.
 - Scripts may prepare prompts, worktrees, and PR publishing, but they must not
   bypass the PR loop or GitHub checks.

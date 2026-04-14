@@ -62,15 +62,17 @@ dreamboard/
 - Required GitHub checks are `baseline-checks`, `guard`, and `AI Review`.
 - Vercel handles preview deployments for pull requests and production deployment for `main` through Git integration.
 - Durable workflow docs live under `docs_dreamboard/project/devops/`.
-- Local orchestration state lives under `.codex/` and is gitignored.
+- Local orchestration state lives under `.claude/` and is gitignored.
+- Local worktrees are created inside `<repoRoot>/.claude/worktrees/<slug>/` so they stay inside the repository.
 - Agent selection is policy-driven through repository variables:
   - `AI_IMPLEMENTATION_AGENT`
   - `AI_REVIEW_AGENT`
 - Default policy for this repository is:
-  - implementation: `codex`
-  - review: `gemini`
-- Gemini review is the default because it is installed on the repository and can run natively on GitHub PRs.
-- Claude paths remain available but require `ANTHROPIC_API_KEY` to be configured before switching policy.
+  - implementation: `claude`
+  - review: `codex`
+- Claude is the default implementation agent because it owns architecture, orchestration, CI/CD health, and repository memory, and is driven from the user's local Claude Code terminal session.
+- Codex is the default review backend because it runs natively on GitHub pull requests and emits `P0`–`P3` inline severity markers.
+- Gemini stays available as the fallback review backend when `AI_REVIEW_AGENT=gemini`. Claude review is a third-tier option behind an explicit `AI_REVIEW_AGENT=claude` override and still requires `ANTHROPIC_API_KEY` when used.
 - Trusted human review commands still follow the shared `AI Review` contract, but only `claude` uses `workflow_dispatch`; `gemini` and `codex` stay native-only so they do not cancel the PR-linked gate.
 - Only trusted repository actors may trigger AI workflows.
 - Trusted actors are `OWNER`, `MEMBER`, and `COLLABORATOR`.
