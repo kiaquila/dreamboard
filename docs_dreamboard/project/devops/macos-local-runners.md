@@ -77,6 +77,33 @@ node scripts/publish-branch.mjs \
   --title "chore: swap claude and codex roles and move worktrees inside repo"
 ```
 
+## Fallback Review Agent
+
+When the selected review backend stalls, hits rate limits, or returns
+unexpected output on an open PR, you can flip the policy and re-trigger
+the `AI Review` gate with a single command from the current worktree:
+
+```bash
+pnpm run review:switch -- --to gemini
+```
+
+The helper resolves the open PR for the current branch, flips the
+`AI_REVIEW_AGENT` repository variable via `gh variable set`, posts the
+correct native trigger comment on the PR (`@codex review`,
+`/gemini review`, or `@claude review once`), and reruns the most recent
+failed `AI Review` run on the current head SHA.
+
+Optional flags:
+
+- `--pr <number>` — target a specific PR instead of the current branch
+- `--no-rerun` — flip and comment without rerunning
+- `--no-comment` — flip and rerun without posting a trigger comment
+- `--repo <owner/name>` — target a different repository
+
+Use this for one-shot recovery when Codex is rate-limited (fall back to
+Gemini), when Gemini is silent (fall back to Claude), or when you want to
+quickly compare output from a different backend on the same head SHA.
+
 ## Trade-Offs
 
 - The repository prepares prompts and branch/worktree state, but it does not

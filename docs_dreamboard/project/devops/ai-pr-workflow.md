@@ -45,11 +45,16 @@ This is the canonical PR loop for `dreamboard`.
 - Supported review backends are `codex`, `gemini`, and `claude`.
 - `AI Review` is the normalized required check regardless of the backend.
 - Low-severity-only findings are advisory and non-blocking.
-- With no repository override, the pull-request gate defaults to `codex` and
-  uses passive same-head detection instead of posting a bot-authored trigger
-  comment.
-- When `AI_REVIEW_AGENT=gemini`, the pull-request gate posts a single
-  bot-authored `/gemini review` trigger comment for the current PR head.
+- With no repository override, the pull-request gate defaults to `codex`.
+- On every `pull_request` event (including `synchronize` after a new push),
+  the gate posts the native trigger comment for the selected reviewer
+  (`@codex review` for Codex, `/gemini review` for Gemini) so the reviewer
+  re-reviews the current head SHA without human interaction.
+- Claude review is human-initiated only: a trusted `@claude review once`
+  comment dispatches the Claude review workflow through
+  `ai-command-policy.yml`; the gate never auto-posts it.
+- Trigger comments are deduplicated per head SHA via a hidden metadata
+  marker so workflow reruns and repeated events do not spam the PR.
 - Manual Gemini and Codex review commands stay native-only so they do not
   cancel the PR-linked `AI Review` check.
 - Rerunning the PR-linked `AI Review` workflow is enough to reuse same-head

@@ -1,0 +1,148 @@
+#!/usr/bin/env node
+
+import { execFileSync } from "node:child_process";
+
+const args = process.argv.slice(2);
+const options = {
+  to: "",
+  pr: "",
+  rerun: true,
+  comment: true,
+  repo: "",
+};
+
+const usage = [
+  "Usage:",
+  "  node scripts/switch-review-agent.mjs --to <codex|gemini|claude> [--pr <number>] [--no-rerun] [--no-comment] [--repo <owner/name>]",
+].join("\n");
+
+for (let index = 0; index < args.length; index += 1) {
+  const current = args[index];
+
+  switch (current) {
+    case "--to":
+      options.to = (args[index + 1] || "").trim().toLowerCase();
+      index += 1;
+      break;
+    case "--pr":
+      options.pr = (args[index + 1] || "").trim();
+      index += 1;
+      break;
+    case "--no-rerun":
+      options.rerun = false;
+      break;
+    case "--no-comment":
+      options.comment = false;
+      break;
+    case "--repo":
+      options.repo = (args[index + 1] || "").trim();
+      index += 1;
+      break;
+    default:
+      throw new Error(`Unknown argument: ${current}\n\n${usage}`);
+  }
+}
+
+const validAgents = new Set(["codex", "gemini", "claude"]);
+if (!validAgents.has(options.to)) {
+  throw new Error(`--to must be one of: codex, gemini, claude\n\n${usage}`);
+}
+
+const triggerBodies = {
+  codex: "@codex review",
+  gemini: "/gemini review",
+  claude: "@claude review once",
+};
+
+const run = (command, commandArgs) =>
+  execFileSync(command, commandArgs, {
+    stdio: ["ignore", "pipe", "pipe"],
+    encoding: "utf8",
+  }).trim();
+
+const repoArgs = options.repo ? ["--repo", options.repo] : [];
+
+// Step 0: resolve PR number from the current branch if not supplied.
+if (!options.pr) {
+  const json = run("gh", ["pr", "view", "--json", "number", ...repoArgs]);
+  if (!json) {
+    throw new Error(
+      "No open PR detected for the current branch. Pass --pr <number> explicitly.",
+    );
+  }
+  options.pr = String(JSON.parse(json).number);
+}
+
+// Step 1: flip the AI_REVIEW_AGENT repository variable.
+run("gh", [
+  "variable",
+  "set",
+  "AI_REVIEW_AGENT",
+  "--body",
+  options.to,
+  ...repoArgs,
+]);
+console.log(`Repository variable AI_REVIEW_AGENT set to ${options.to}.`);
+
+// Step 2: post the native trigger comment on the target PR.
+if (options.comment) {
+  run("gh", [
+    "pr",
+    "comment",
+    options.pr,
+    "--body",
+    triggerBodies[options.to],
+    ...repoArgs,
+  ]);
+  console.log(`Posted "${triggerBodies[options.to]}" on PR #${options.pr}.`);
+} else {
+  console.log("Skipped native trigger comment because --no-comment was used.");
+}
+
+// Step 3: rerun the most recent failed AI Review run at the current head SHA.
+if (options.rerun) {
+  const prJson = run("gh", [
+    "pr",
+    "view",
+    options.pr,
+    "--json",
+    "headRefOid",
+    ...repoArgs,
+  ]);
+  const headSha = JSON.parse(prJson).headRefOid;
+
+  const runsJson = run("gh", [
+    "run",
+    "list",
+    "--workflow",
+    "ai-review.yml",
+    "--limit",
+    "10",
+    "--json",
+    "databaseId,conclusion,headSha",
+    ...repoArgs,
+  ]);
+  const runs = JSON.parse(runsJson);
+  const target = runs.find(
+    (entry) => entry.headSha === headSha && entry.conclusion === "failure",
+  );
+
+  if (target) {
+    run("gh", [
+      "run",
+      "rerun",
+      String(target.databaseId),
+      "--failed",
+      ...repoArgs,
+    ]);
+    console.log(
+      `Re-run dispatched for failed AI Review run ${target.databaseId}.`,
+    );
+  } else {
+    console.log(
+      "No failed AI Review run found for the current head SHA; skipping rerun.",
+    );
+  }
+} else {
+  console.log("Skipped AI Review rerun because --no-rerun was used.");
+}

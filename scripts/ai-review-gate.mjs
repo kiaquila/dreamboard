@@ -205,6 +205,26 @@ const buildTriggerComment = () => {
 };
 
 const ensureTriggerComment = async () => {
+  // Dedupe: reuse an existing gate-originated trigger comment for the
+  // current head SHA within the last 30 minutes instead of posting a
+  // duplicate. The metadata marker encodes both agent and headSha, so a
+  // match is unambiguous. Prevents trigger-comment spam on workflow
+  // reruns and on repeated pull_request events for the same head.
+  const dedupeWindowMs = 30 * 60 * 1000;
+  const recentComments = await listPaginated(
+    buildIssueCommentsPath(Date.now() - dedupeWindowMs),
+  );
+  const existing = recentComments.find((comment) =>
+    (comment.body || "").includes(metadataMarker),
+  );
+
+  if (existing) {
+    console.log(
+      `Reusing existing gate trigger comment for ${selectedAgent} at ${headSha}: ${existing.html_url}`,
+    );
+    return existing;
+  }
+
   return request(`/repos/${owner}/${repo}/issues/${prNumber}/comments`, {
     method: "POST",
     body: JSON.stringify({ body: buildTriggerComment() }),

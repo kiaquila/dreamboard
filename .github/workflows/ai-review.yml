@@ -73,7 +73,10 @@ jobs:
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             trigger_mode="${{ inputs.trigger_mode || 'skip' }}"
-          elif [ "$selected" = "codex" ]; then
+          elif [ "$selected" = "claude" ]; then
+            # Claude review is human-initiated only: claude-review.yml gates
+            # on trusted-author issue_comment events, so a bot-posted
+            # `@claude review once` would not dispatch the actual reviewer.
             trigger_mode="skip"
           else
             trigger_mode="comment"

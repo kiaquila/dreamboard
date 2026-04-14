@@ -39,14 +39,30 @@ with an explanatory comment instead of silently skipping.
 `AI Review` is a normalization layer on top of native vendor review outputs.
 
 - Codex path waits for native GitHub PR review output from
-  `chatgpt-codex-connector[bot]` (default).
+  `chatgpt-codex-connector[bot]` (default). On every `pull_request` event
+  (including `synchronize` after a new push), the gate posts `@codex review`
+  for the current head SHA so Codex Cloud re-reviews the latest commit
+  without human interaction.
 - Gemini path waits for native GitHub PR review output from
   `gemini-code-assist[bot]` and classifies inline review comments by
-  `Critical`, `High`, `Medium`, and `Low` severity markers.
+  `Critical`, `High`, `Medium`, and `Low` severity markers. The gate also
+  posts `/gemini review` on every `pull_request` event for the current
+  head SHA.
 - Claude path waits for a top-level `claude[bot]` comment containing:
   - `AI_REVIEW_AGENT: claude`
   - `AI_REVIEW_SHA: <head sha>`
   - `AI_REVIEW_OUTCOME: pass|advisory|block`
+    Claude review is human-initiated only: a trusted
+    `@claude review once` comment dispatches `claude-review.yml`. Bot-posted
+    triggers are ignored by that workflow, so the gate does not auto-post
+    `@claude review once`.
+
+Each trigger comment carries a hidden metadata marker
+`<!-- ai-review-gate:agent=<agent>;sha=<head> -->`. When the gate would
+post a new trigger comment, it first scans PR comments from the last 30
+minutes for a matching marker and reuses the existing comment instead of
+posting a duplicate. This prevents trigger-comment spam on workflow
+reruns and on repeated `pull_request` events for the same head SHA.
 
 The gate passes on:
 
