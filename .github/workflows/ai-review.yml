@@ -40,7 +40,8 @@ jobs:
         (
           vars.AI_REVIEW_AGENT == '' ||
           vars.AI_REVIEW_AGENT == 'gemini' ||
-          vars.AI_REVIEW_AGENT == 'codex'
+          vars.AI_REVIEW_AGENT == 'codex' ||
+          vars.AI_REVIEW_AGENT == 'claude'
         )
       )
     name: AI Review
