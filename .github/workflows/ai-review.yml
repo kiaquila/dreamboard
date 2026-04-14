@@ -68,7 +68,7 @@ jobs:
           set -euo pipefail
           selected="${{ vars.AI_REVIEW_AGENT }}"
           if [ -z "$selected" ]; then
-            selected="gemini"
+            selected="codex"
           fi
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then

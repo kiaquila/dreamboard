@@ -4,8 +4,8 @@ This is the canonical PR loop for `dreamboard`.
 
 ## Roles
 
-- Codex owns architecture, repository memory, CI/CD health, and local
-  orchestration.
+- Claude owns architecture, repository memory, CI/CD health, and local
+  orchestration, and is the default implementation agent.
 - The selected implementation agent writes scoped code on a feature branch.
 - GitHub Actions runs `baseline-checks`, `guard`, and `AI Review`.
 - Vercel provides preview deployments for PRs and production deploy on merge to
@@ -16,7 +16,8 @@ This is the canonical PR loop for `dreamboard`.
 
 1. Start from current `main`.
 2. Create or update one active `specs/<feature-id>/` folder.
-3. Create an isolated macOS worktree for the task.
+3. Create an isolated macOS worktree for the task under
+   `<repoRoot>/.claude/worktrees/<slug>/`.
 4. Select the implementation and review agents for the branch.
 5. Generate the implementation prompt from repository memory.
 6. Implement only the scoped change on that branch.
@@ -41,15 +42,18 @@ This is the canonical PR loop for `dreamboard`.
 ## Review Contract
 
 - Reviewer selection comes only from `AI_REVIEW_AGENT`.
-- Supported review backends are `gemini`, `codex`, and `claude`.
+- Supported review backends are `codex`, `gemini`, and `claude`.
 - `AI Review` is the normalized required check regardless of the backend.
 - Low-severity-only findings are advisory and non-blocking.
-- With no repository override, the pull-request gate defaults to `gemini`.
-- When `AI_REVIEW_AGENT=codex`, the pull-request gate waits for native Codex output without posting a bot-authored `@codex review` trigger comment.
+- With no repository override, the pull-request gate defaults to `codex` and
+  uses passive same-head detection instead of posting a bot-authored trigger
+  comment.
+- When `AI_REVIEW_AGENT=gemini`, the pull-request gate posts a single
+  bot-authored `/gemini review` trigger comment for the current PR head.
 - Manual Gemini and Codex review commands stay native-only so they do not
   cancel the PR-linked `AI Review` check.
 - Rerunning the PR-linked `AI Review` workflow is enough to reuse same-head
-  Gemini output.
+  Codex or Gemini output.
 
 ## Merge-Ready Definition
 

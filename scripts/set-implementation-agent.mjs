@@ -64,21 +64,21 @@ const run = (command, commandArgs, { cwd, input } = {}) =>
   }).trim();
 
 const repoRoot = run("git", ["rev-parse", "--show-toplevel"]);
-const codexDir = resolve(repoRoot, ".codex");
+const claudeDir = resolve(repoRoot, ".claude");
 
-if (!existsSync(codexDir)) {
-  mkdirSync(codexDir, { recursive: true });
+if (!existsSync(claudeDir)) {
+  mkdirSync(claudeDir, { recursive: true });
 }
 
 writeFileSync(
-  resolve(codexDir, "implementation-agent"),
+  resolve(claudeDir, "implementation-agent"),
   `${options.implementation}\n`,
   "utf8",
 );
 
 if (options.review) {
   writeFileSync(
-    resolve(codexDir, "review-agent"),
+    resolve(claudeDir, "review-agent"),
     `${options.review}\n`,
     "utf8",
   );

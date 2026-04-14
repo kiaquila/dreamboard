@@ -39,8 +39,9 @@ const run = (command, commandArgs, cwd) =>
 
 const repoRoot = run("git", ["rev-parse", "--show-toplevel"], process.cwd());
 const branch = run("git", ["branch", "--show-current"], repoRoot);
-const codexDir = resolve(repoRoot, ".codex");
-const promptsDir = resolve(codexDir, "prompts");
+const claudeDir = resolve(repoRoot, ".claude");
+const legacyCodexDir = resolve(repoRoot, ".codex");
+const promptsDir = resolve(claudeDir, "prompts");
 const featureDir = resolve(repoRoot, "specs", options.feature);
 
 if (!existsSync(resolve(featureDir, "spec.md"))) {
@@ -50,14 +51,22 @@ if (!existsSync(resolve(featureDir, "spec.md"))) {
 mkdirSync(promptsDir, { recursive: true });
 
 const readLocalState = (name, fallback) => {
-  const file = resolve(codexDir, name);
-  return existsSync(file)
-    ? readFileSync(file, "utf8").trim() || fallback
-    : fallback;
+  const file = resolve(claudeDir, name);
+  if (existsSync(file)) {
+    return readFileSync(file, "utf8").trim() || fallback;
+  }
+  const legacyFile = resolve(legacyCodexDir, name);
+  if (existsSync(legacyFile)) {
+    console.warn(
+      `warning: reading legacy ${legacyFile}; run scripts/set-implementation-agent.mjs to migrate to .claude/`,
+    );
+    return readFileSync(legacyFile, "utf8").trim() || fallback;
+  }
+  return fallback;
 };
 
-const implementationAgent = readLocalState("implementation-agent", "codex");
-const reviewAgent = readLocalState("review-agent", "gemini");
+const implementationAgent = readLocalState("implementation-agent", "claude");
+const reviewAgent = readLocalState("review-agent", "codex");
 
 const prompt = `# dreamboard implementation prompt
 

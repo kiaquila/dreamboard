@@ -34,7 +34,7 @@ jobs:
         with:
           script: |
             const body = (context.payload.comment?.body || "").toLowerCase();
-            const defaults = { implementation: "codex", review: "gemini" };
+            const defaults = { implementation: "claude", review: "codex" };
             const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 
             let kind = null;
