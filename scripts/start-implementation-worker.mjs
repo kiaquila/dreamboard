@@ -2,7 +2,7 @@
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const options = {
@@ -37,12 +37,24 @@ const run = (command, commandArgs, cwd) =>
     encoding: "utf8",
   }).trim();
 
-const repoRoot = run("git", ["rev-parse", "--show-toplevel"], process.cwd());
-const branch = run("git", ["branch", "--show-current"], repoRoot);
-const claudeDir = resolve(repoRoot, ".claude");
-const legacyCodexDir = resolve(repoRoot, ".codex");
+// Split repo roots by data semantics:
+// - `primaryRoot` for shared state under `.claude/` (agent selection,
+//   prompts, legacy `.codex/` fallback) so every linked worktree reads
+//   the same selection written by scripts/set-implementation-agent.mjs.
+// - `workingRoot` for per-branch files like `specs/<feature>/` that live
+//   in the checkout of the current worktree's branch.
+const workingRoot = run("git", ["rev-parse", "--show-toplevel"], process.cwd());
+const gitCommonDir = run(
+  "git",
+  ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+  process.cwd(),
+);
+const primaryRoot = dirname(gitCommonDir);
+const branch = run("git", ["branch", "--show-current"], workingRoot);
+const claudeDir = resolve(primaryRoot, ".claude");
+const legacyCodexDir = resolve(primaryRoot, ".codex");
 const promptsDir = resolve(claudeDir, "prompts");
-const featureDir = resolve(repoRoot, "specs", options.feature);
+const featureDir = resolve(workingRoot, "specs", options.feature);
 
 if (!existsSync(resolve(featureDir, "spec.md"))) {
   throw new Error(`Missing feature spec folder: ${featureDir}`);
