@@ -6,24 +6,24 @@
   (`notepad.md`, `project-memory.json`) stops surfacing as untracked on
   every branch
 
-## Slice 2: Auto-retrigger for Gemini only
+## Slice 2: Document constraints and collapse workflow policy to skip
 
-- update the `Resolve selected review policy` step in
-  `.github/workflows/ai-review.yml`:
-  - `workflow_dispatch` runs respect `inputs.trigger_mode` (defaults
-    to `skip`)
-  - Codex stays on `trigger_mode=skip` with an inline comment noting
-    that Codex Cloud rejects bot-posted triggers
-  - Claude stays on `trigger_mode=skip` because `claude-review.yml`
-    gates on trusted-author issue_comment events
-  - Gemini (the only backend that accepts bot-posted triggers on
-    `synchronize`) falls through to `trigger_mode=comment`
+- rewrite the `Resolve selected review policy` step in
+  `.github/workflows/ai-review.yml` so every `pull_request` event
+  resolves `trigger_mode=skip`, regardless of the selected backend.
+  Keep `workflow_dispatch` runs honoring `inputs.trigger_mode`
+  (default `skip`) so manual dispatches can still opt into comment
+  mode for future backends that support bot triggers.
+- inline comments in the workflow enumerate the per-backend reason
+  (Codex rejects, Gemini ignores, Claude gates on human author) and
+  link to
+  `docs_dreamboard/project/devops/ai-runner.md` §Backend Trigger
+  Constraints.
 - `scripts/ai-review-gate.mjs` already picks the trigger comment text
   by selected backend via `buildTriggerComment()`; no changes there
-- add a same-head dedupe guard in `ensureTriggerComment()`: before
-  posting a Gemini trigger comment, look for an existing gate comment
-  with the current head SHA's `metadataMarker` within the last 30
-  minutes; reuse the existing comment instead of posting a duplicate
+  beyond the 30-minute same-head dedupe guard in
+  `ensureTriggerComment()`, which protects against duplicate trigger
+  comments on repeated manual dispatches for the same head SHA.
 
 ## Slice 3: Fallback helper `scripts/switch-review-agent.mjs`
 
@@ -43,13 +43,18 @@
 
 ## Slice 4: Documentation
 
-- `docs_dreamboard/project/devops/ai-runner.md`: describe the
-  auto-retrigger step in the `Review Gate` section, including the
-  same-head dedupe behavior
+- `docs_dreamboard/project/devops/ai-runner.md`: add the
+  `§Backend Trigger Constraints` section with the full matrix
+  (auto-review on open, auto-review on synchronize, accepts bot
+  trigger, manual recovery) and update the Review Gate subsection to
+  match
+- `docs_dreamboard/project/devops/review-contract.md`: add a
+  `§Backend Trigger Constraints` header that summarizes the same
+  finding and cross-links to `ai-runner.md`
 - `docs_dreamboard/project/devops/ai-pr-workflow.md`: update the
-  "Review Contract" section to note that `AI Review` posts the trigger
-  comment itself on every `synchronize` event, so humans no longer
-  need to manually post `@codex review` on new commits
+  "Review Contract" section to explicitly say that no backend
+  auto-retriggers on `synchronize` and that recovery uses
+  `pnpm run review:switch` or a trusted human trigger comment
 - `docs_dreamboard/project/devops/macos-local-runners.md`: add a short
   "Fallback review agent" subsection under `Recommended Flow` with the
   `pnpm run review:switch -- --to gemini` invocation and when to use it

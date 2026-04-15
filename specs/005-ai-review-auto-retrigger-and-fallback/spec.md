@@ -1,36 +1,49 @@
-# Spec: auto-retrigger native review on synchronize and one-command fallback
+# Spec: document review backend trigger constraints and ship a one-command fallback
 
 ## Goal
 
-Stop losing PR time on two operational frictions observed on PR #9:
+Stop losing PR time on two operational frictions observed on PR #9 and
+confirmed on PR #10:
 
-1. Pushing a new commit to an open PR does not auto-retrigger the selected
-   native reviewer (Codex, Claude), so the `AI Review` gate passively polls
-   and times out until a human manually posts `@codex review` / `@claude
-review once`. Gemini is the exception because its PR-linked path already
-   posts a trigger comment.
+1. **Auto-retrigger of native review on `synchronize` is not achievable
+   from a stock GitHub Actions workflow.** All three supported review
+   backends reject bot-authored trigger comments: Codex Cloud fails
+   fast with "trigger did not come from a connected human Codex
+   account", Gemini Code Assist silently ignores bot-posted
+   `/gemini review`, and `claude-review.yml` gates on trusted
+   `author_association`. This is documented once in durable docs so
+   the next repo that adopts this pattern does not rediscover it the
+   hard way.
 
-2. When the selected review backend is unavailable (rate limits, app outage,
-   unexpected silence), switching to a fallback backend requires three manual
-   steps (`gh variable set`, `gh pr comment`, `gh run rerun --failed`) and
-   institutional memory of which command to use for which backend.
+2. When the selected review backend is unavailable (rate limits, app
+   outage, unexpected silence), switching to a fallback backend
+   requires three manual steps (`gh variable set`, `gh pr comment`,
+   `gh run rerun --failed`) and institutional memory of which command
+   to use for which backend. Ship a single-command helper that does
+   all three as the current `gh` user (so the trigger comment is
+   human-authored and therefore trusted).
 
 ## Scope
 
-- Update `.github/workflows/ai-review.yml` so that on
-  `pull_request: synchronize` events (and `opened` / `reopened` /
-  `ready_for_review`) the gate posts `/gemini review` for the current
-  head SHA when `AI_REVIEW_AGENT=gemini`. Codex auto-retrigger on
-  `synchronize` is explicitly out of scope: Codex Cloud rejects
-  bot-posted `@codex review` triggers ("trigger did not come from a
-  connected human Codex account"), so the gate keeps
-  `trigger_mode=skip` for Codex and we document the manual recovery
-  path. Claude review stays human-initiated only for the same reason.
-- Preserve the existing `manual command → native-only` contract:
-  trusted `@codex review` / `/gemini review` / `@claude review once`
-  comments posted by humans must NOT be canceled by the auto-trigger.
-  Deduplicate Gemini trigger comments by same-head check so the gate
-  does not spam multiple trigger comments for the same SHA.
+- Collapse the `Resolve selected review policy` step in
+  `.github/workflows/ai-review.yml` so that every `pull_request` event
+  sets `trigger_mode=skip` regardless of the selected backend. Inline
+  comments in the workflow enumerate the reason per backend (Codex
+  rejects, Gemini ignores, Claude gates on human author_association)
+  and link to the constraint table in durable docs.
+- Keep `trigger_mode=comment` reachable only via `workflow_dispatch`
+  with an explicit `inputs.trigger_mode=comment`, so the
+  `ensureTriggerComment` code path remains available for manual
+  dispatches and for future backends that accept bot-posted triggers.
+- Keep the 30-minute same-head dedupe guard in `ensureTriggerComment`
+  so repeated manual dispatches on the same head SHA reuse the
+  existing trigger comment instead of spamming the PR.
+- Document the constraint matrix in
+  `docs_dreamboard/project/devops/ai-runner.md` (§Backend Trigger
+  Constraints) and
+  `docs_dreamboard/project/devops/review-contract.md` (§Backend
+  Trigger Constraints). Cross-link from
+  `docs_dreamboard/project/devops/ai-pr-workflow.md`.
 - Add a small repository helper `scripts/switch-review-agent.mjs` that
   takes `--to <codex|gemini|claude>` and performs: (a)
   `gh variable set AI_REVIEW_AGENT --body <agent>`, (b) posts the
@@ -56,10 +69,12 @@ review once`. Gemini is the exception because its PR-linked path already
   / Claude findings; only the trigger behavior changes.
 - No automatic detection of rate-limit errors — fallback is still
   human-initiated through the helper, not automatic.
-- No Codex auto-retrigger on `synchronize`. Codex Cloud's
-  human-account requirement on review triggers cannot be satisfied
-  from a GitHub Actions workflow without a user PAT, which is not in
-  scope for this spec.
+- No auto-retrigger of native review on `synchronize` for any
+  backend. All three reject bot-authored triggers (Codex fails fast,
+  Gemini silently ignores, Claude gates on trusted
+  `author_association`), and bypassing this would require either a
+  user PAT in repository secrets or a dedicated service account with
+  trusted author_association. Both are out of scope.
 - No Playwright or e2e test infrastructure.
 - No changes to `.gemini/config.yaml` or `.gemini/styleguide.md`; the
   existing Gemini review configuration is already correct for this
@@ -67,15 +82,15 @@ review once`. Gemini is the exception because its PR-linked path already
 
 ## Acceptance Criteria
 
-1. After a push that lands a new head SHA on an open PR with
-   `AI_REVIEW_AGENT=gemini`, the `AI Review` workflow run posts a
-   single `/gemini review` trigger comment for the current head SHA
-   without any human action. Codex and Claude paths remain
-   `trigger_mode=skip` by design.
-2. If a trusted human comment already triggered a native Gemini review
-   for the current head SHA within the last 30 minutes, the workflow
-   does not post a duplicate trigger comment on the same SHA during
-   the automatic retrigger path.
+1. On every `pull_request` event (regardless of
+   `AI_REVIEW_AGENT`), the `Resolve selected review policy` step in
+   `.github/workflows/ai-review.yml` resolves `trigger_mode=skip` and
+   the gate does not post any trigger comment. Inline comments in the
+   workflow file enumerate the per-backend reason.
+2. When the gate is dispatched via `workflow_dispatch` with
+   `inputs.trigger_mode=comment` and a trigger comment for the
+   current head SHA already exists within the last 30 minutes, the
+   gate reuses the existing comment instead of posting a duplicate.
 3. `scripts/switch-review-agent.mjs --to <agent>` flips
    `AI_REVIEW_AGENT` via `gh variable set`, posts the correct native
    trigger comment on the current branch's open PR (resolved via

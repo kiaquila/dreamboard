@@ -46,22 +46,19 @@ This is the canonical PR loop for `dreamboard`.
 - `AI Review` is the normalized required check regardless of the backend.
 - Low-severity-only findings are advisory and non-blocking.
 - With no repository override, the pull-request gate defaults to `codex`.
-- On `pull_request` events with `AI_REVIEW_AGENT=gemini`, the gate posts
-  `/gemini review` for the current head SHA so Gemini re-reviews new
-  commits automatically.
-- Codex auto-retrigger on `synchronize` is not supported: Codex Cloud
-  rejects bot-posted `@codex review` triggers (connector replies with
-  "trigger did not come from a connected human Codex account"). The gate
-  therefore keeps `trigger_mode=skip` for Codex and passively waits for a
-  same-head native review. After a new push, post `@codex review`
-  manually from a Codex-connected account, or run
-  `pnpm run review:switch -- --to gemini` to switch backends for this PR.
-- Claude review is human-initiated only: a trusted `@claude review once`
-  comment dispatches the Claude review workflow through
-  `ai-command-policy.yml`; the gate never auto-posts it.
-- Trigger comments for Gemini are deduplicated per head SHA via a hidden
-  metadata marker so workflow reruns and repeated events do not spam the
-  PR.
+- Auto-retrigger on `synchronize` is not supported for any backend: all
+  three reject bot-posted trigger comments (see
+  `docs_dreamboard/project/devops/ai-runner.md` §Backend Trigger
+  Constraints and `docs_dreamboard/project/devops/review-contract.md`
+  §Backend Trigger Constraints). The gate therefore stays in
+  `trigger_mode=skip` on every `pull_request` event and passively waits
+  for a same-head native review.
+- Initial PR review is covered by Codex Cloud's and Gemini Code Assist's
+  on-open auto-review. After a new push on an already-open PR, a human
+  must post the appropriate native trigger comment
+  (`@codex review`, `/gemini review`, or `@claude review once`), or run
+  `pnpm run review:switch -- --to <agent>` to flip backends and trigger
+  the new reviewer in one shot.
 - Manual Gemini and Codex review commands stay native-only so they do not
   cancel the PR-linked `AI Review` check.
 - Rerunning the PR-linked `AI Review` workflow is enough to reuse same-head

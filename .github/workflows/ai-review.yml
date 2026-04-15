@@ -73,22 +73,24 @@ jobs:
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             trigger_mode="${{ inputs.trigger_mode || 'skip' }}"
-          elif [ "$selected" = "codex" ]; then
-            # Codex Cloud rejects review triggers posted by GitHub bots
-            # (connector replies with "trigger did not come from a
-            # connected human Codex account"), so bot-posted `@codex
-            # review` cannot auto-retrigger on synchronize. Passive
-            # same-head detection stays in place and the
-            # pnpm run review:switch helper handles manual recovery.
-            trigger_mode="skip"
-          elif [ "$selected" = "claude" ]; then
-            # Claude review is human-initiated only: claude-review.yml
-            # gates on trusted-author issue_comment events, so a
-            # bot-posted `@claude review once` would not dispatch the
-            # actual reviewer.
-            trigger_mode="skip"
           else
-            trigger_mode="comment"
+            # None of the supported review backends accept bot-posted
+            # trigger comments on pull_request events:
+            # - Codex Cloud replies "trigger did not come from a
+            #   connected human Codex account" and fails fast.
+            # - Gemini Code Assist silently ignores bot-posted
+            #   /gemini review and never emits a review; the gate
+            #   times out waiting for it.
+            # - claude-review.yml gates on OWNER/MEMBER/COLLABORATOR
+            #   author_association, so bot-posted @claude review once
+            #   never dispatches the actual reviewer.
+            # Gate therefore stays in skip mode on every pull_request
+            # event. Codex Cloud's on-open auto-review covers initial
+            # PR review; manual recovery on synchronize uses
+            # pnpm run review:switch or a trusted human trigger.
+            # See docs_dreamboard/project/devops/ai-runner.md §Backend
+            # Trigger Constraints for the full matrix.
+            trigger_mode="skip"
           fi
 
           echo "selected_agent=$selected" >> "$GITHUB_OUTPUT"
