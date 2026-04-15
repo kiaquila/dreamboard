@@ -141,19 +141,24 @@ if (options.rerun) {
   );
 
   if (target) {
-    run("gh", [
-      "run",
-      "rerun",
-      String(target.databaseId),
-      "--failed",
-      ...repoArgs,
-    ]);
+    // `gh run rerun --failed` only reruns jobs whose conclusion is
+    // literally `failure`. For runs that ended in `cancelled`,
+    // `timed_out`, `startup_failure`, or `action_required` there
+    // may be no `failure`-conclusion jobs at all, so `--failed`
+    // would fail the command. Rerun the whole run in those cases
+    // and keep the targeted `--failed` behavior only for actual
+    // job failures.
+    const rerunArgs = ["run", "rerun", String(target.databaseId), ...repoArgs];
+    if (target.conclusion === "failure") {
+      rerunArgs.push("--failed");
+    }
+    run("gh", rerunArgs);
     console.log(
-      `Re-run dispatched for failed AI Review run ${target.databaseId}.`,
+      `Re-run dispatched for AI Review run ${target.databaseId} (conclusion: ${target.conclusion}).`,
     );
   } else {
     console.log(
-      "No failed AI Review run found for the current head SHA; skipping rerun.",
+      "No rerunable AI Review run found for the current head SHA; skipping rerun.",
     );
   }
 } else {

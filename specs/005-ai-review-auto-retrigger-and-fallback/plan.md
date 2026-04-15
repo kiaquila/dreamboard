@@ -8,22 +8,31 @@
 
 ## Slice 2: Document constraints and collapse workflow policy to skip
 
-- rewrite the `Resolve selected review policy` step in
-  `.github/workflows/ai-review.yml` so every `pull_request` event
-  resolves `trigger_mode=skip`, regardless of the selected backend.
-  Keep `workflow_dispatch` runs honoring `inputs.trigger_mode`
-  (default `skip`) so manual dispatches can still opt into comment
-  mode for future backends that support bot triggers.
-- inline comments in the workflow enumerate the per-backend reason
-  (Codex rejects, Gemini ignores, Claude gates on human author) and
-  link to
+- the `Resolve selected review policy` step in
+  `.github/workflows/ai-review.yml` now resolves `trigger_mode=skip`
+  on every `pull_request` event regardless of the selected backend.
+  No backend-specific branches exist in the `pull_request` path.
+  `workflow_dispatch` runs continue to honor `inputs.trigger_mode`
+  (defaulting to `skip`), so manual dispatches remain the only way
+  to reach `trigger_mode=comment` and they are not wired to any of
+  the current backends.
+- inline comments in the workflow file enumerate the per-backend
+  reason (Codex rejects, Gemini silently ignores, Claude gates on
+  human author) and cross-reference
   `docs_dreamboard/project/devops/ai-runner.md` §Backend Trigger
   Constraints.
-- `scripts/ai-review-gate.mjs` already picks the trigger comment text
-  by selected backend via `buildTriggerComment()`; no changes there
-  beyond the 30-minute same-head dedupe guard in
-  `ensureTriggerComment()`, which protects against duplicate trigger
-  comments on repeated manual dispatches for the same head SHA.
+- `scripts/ai-review-gate.mjs` keeps `buildTriggerComment()` for the
+  Codex and Gemini branches (reachable only via the explicit
+  `workflow_dispatch` comment-mode entry point), and now throws on
+  the Claude branch so a future misconfiguration surfaces as a loud
+  error instead of a silently ignored bot comment.
+- `ensureTriggerComment()` carries a 30-minute same-head dedupe
+  guard: it reuses an existing gate-authored trigger comment (by
+  hidden `metadataMarker`) **or** a trusted human comment that
+  already carries the bare backend trigger keyword
+  (`@codex review` / `/gemini review` / `@claude review once`),
+  excluding comments authored by any of the reviewer bots
+  themselves.
 
 ## Slice 3: Fallback helper `scripts/switch-review-agent.mjs`
 
