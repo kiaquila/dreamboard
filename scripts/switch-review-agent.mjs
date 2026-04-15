@@ -64,8 +64,10 @@ const repoArgs = options.repo ? ["--repo", options.repo] : [];
 
 // Step 0: resolve PR number from the current branch if not supplied.
 if (!options.pr) {
-  const json = run("gh", ["pr", "view", "--json", "number", ...repoArgs]);
-  if (!json) {
+  let json;
+  try {
+    json = run("gh", ["pr", "view", "--json", "number", ...repoArgs]);
+  } catch (error) {
     throw new Error(
       "No open PR detected for the current branch. Pass --pr <number> explicitly.",
     );
@@ -123,8 +125,19 @@ if (options.rerun) {
     ...repoArgs,
   ]);
   const runs = JSON.parse(runsJson);
+  // Match any non-success terminal conclusion so the helper also
+  // rescues Gemini-silent-timeout runs and cancelled reruns, not just
+  // explicit failures.
+  const rerunableConclusions = new Set([
+    "failure",
+    "timed_out",
+    "cancelled",
+    "startup_failure",
+    "action_required",
+  ]);
   const target = runs.find(
-    (entry) => entry.headSha === headSha && entry.conclusion === "failure",
+    (entry) =>
+      entry.headSha === headSha && rerunableConclusions.has(entry.conclusion),
   );
 
   if (target) {

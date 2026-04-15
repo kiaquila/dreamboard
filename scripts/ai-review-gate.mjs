@@ -187,40 +187,67 @@ const buildTriggerComment = () => {
     ].join("\n");
   }
 
-  return [
-    "@claude review once",
-    "",
-    `Please review PR #${prNumber} at head commit \`${headSha}\`.`,
-    "",
-    "In your final top-level Claude comment, begin with exactly these three lines:",
-    markerAgentLine,
-    markerShaLine,
-    `${claudeOutcomePrefix} pass|advisory|block`,
-    "",
-    "This repository validates Claude review via marker comments instead of formal GitHub PR review states.",
-    "Use inline PR comments only for concrete findings, and do not modify code in this workflow.",
-    "",
-    metadataMarker,
-  ].join("\n");
+  // Claude review is human-initiated only: claude-review.yml gates on
+  // author_association in (OWNER, MEMBER, COLLABORATOR), so any
+  // bot-authored @claude review once comment would be dropped and never
+  // dispatch the actual reviewer. ai-review.yml keeps Claude on
+  // trigger_mode=skip on every pull_request event and
+  // workflow_dispatch with inputs.trigger_mode=comment is not a
+  // supported entry point for Claude. Fail loudly here so a future
+  // misconfiguration surfaces as an explicit error instead of a
+  // silently ignored bot comment.
+  throw new Error(
+    `buildTriggerComment() refused: selectedAgent="${selectedAgent}" does not support bot-posted triggers. Claude review requires a human-authored @claude review once comment from a trusted account.`,
+  );
 };
 
+const triggerKeywords = {
+  codex: "@codex review",
+  gemini: "/gemini review",
+  claude: "@claude review once",
+};
+
+const isReviewerBotLogin = (login) =>
+  codexReviewerLogins.has(login) ||
+  geminiReviewerLogins.has(login) ||
+  claudeReviewerLogins.has(login);
+
 const ensureTriggerComment = async () => {
-  // Dedupe: reuse an existing gate-originated trigger comment for the
-  // current head SHA within the last 30 minutes instead of posting a
-  // duplicate. The metadata marker encodes both agent and headSha, so a
-  // match is unambiguous. Prevents trigger-comment spam on workflow
-  // reruns and on repeated pull_request events for the same head.
+  // Dedupe: skip posting a duplicate trigger when either
+  // (a) a gate-originated trigger comment for the current head SHA
+  //     already exists in the last 30 minutes (matched via the hidden
+  //     metadataMarker, which encodes both agent and headSha), or
+  // (b) a non-reviewer author posted the bare backend trigger keyword
+  //     (e.g. `@codex review`, `/gemini review`, `@claude review once`)
+  //     in the same window. Case (b) covers trusted humans who already
+  //     triggered native review via ai-command-policy.yml so the gate
+  //     does not fan out a duplicate native review or add rate-limit
+  //     pressure. Comments authored by any of the review backend bots
+  //     themselves are excluded so connector replies and summary
+  //     comments are never treated as triggers.
   const dedupeWindowMs = 30 * 60 * 1000;
+  const triggerKeyword = triggerKeywords[selectedAgent];
   const recentComments = await listPaginated(
     buildIssueCommentsPath(Date.now() - dedupeWindowMs),
   );
-  const existing = recentComments.find((comment) =>
-    (comment.body || "").includes(metadataMarker),
-  );
+  const existing = recentComments.find((comment) => {
+    const body = comment.body || "";
+    if (body.includes(metadataMarker)) {
+      return true;
+    }
+    if (
+      triggerKeyword &&
+      body.includes(triggerKeyword) &&
+      !isReviewerBotLogin(comment.user?.login || "")
+    ) {
+      return true;
+    }
+    return false;
+  });
 
   if (existing) {
     console.log(
-      `Reusing existing gate trigger comment for ${selectedAgent} at ${headSha}: ${existing.html_url}`,
+      `Reusing existing trigger comment for ${selectedAgent} at ${headSha}: ${existing.html_url}`,
     );
     return existing;
   }

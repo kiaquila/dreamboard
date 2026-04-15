@@ -66,10 +66,11 @@
   format:check)
 - `node scripts/check-feature-memory.mjs --worktree`
 - manual smoke:
-  - push a trivial whitespace commit to the open PR and confirm the
-    `AI Review` run posts `@codex review` automatically without human
-    interaction
+  - push a trivial commit to an open PR and confirm the gate stays in
+    `trigger_mode=skip` (no bot-authored trigger comment is posted and
+    the gate passively polls for a same-head native review)
   - run `pnpm run review:switch -- --to gemini` and confirm the
-    variable flips, a `/gemini review` comment appears on the PR, and
-    the most recent failed `AI Review` run reruns
+    variable flips, a human-authored `/gemini review` comment appears
+    on the PR, and the most recent failed / timed-out / cancelled
+    `AI Review` run reruns
 - green required checks on the final PR head SHA
