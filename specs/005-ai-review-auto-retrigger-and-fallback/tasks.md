@@ -6,9 +6,8 @@
 
 ## Slice 2 — Auto-retrigger
 
-- [ ] Update `.github/workflows/ai-review.yml` `Resolve selected review policy` step to set `trigger_mode=comment` for Codex on `pull_request` events (keep `skip` only for `workflow_dispatch` with explicit `inputs.trigger_mode=skip`)
-- [ ] Teach `scripts/ai-review-gate.mjs` to pick the trigger comment text by selected backend (`@codex review` / `/gemini review` / `@claude review once`)
-- [ ] Add same-head dedupe guard in the gate so it does not post a duplicate trigger comment when a trusted human comment for the current head SHA already exists
+- [ ] Update `.github/workflows/ai-review.yml` `Resolve selected review policy` step to set `trigger_mode=comment` for Gemini only on `pull_request` events; keep `skip` for Codex (bot triggers rejected by Codex Cloud) and Claude (`claude-review.yml` gates on trusted-author events)
+- [ ] Add same-head dedupe guard in `ensureTriggerComment()` so Gemini trigger comments are reused when the current head SHA marker already exists within the last 30 minutes
 
 ## Slice 3 — Fallback helper
 

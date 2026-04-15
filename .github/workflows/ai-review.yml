@@ -73,10 +73,19 @@ jobs:
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             trigger_mode="${{ inputs.trigger_mode || 'skip' }}"
+          elif [ "$selected" = "codex" ]; then
+            # Codex Cloud rejects review triggers posted by GitHub bots
+            # (connector replies with "trigger did not come from a
+            # connected human Codex account"), so bot-posted `@codex
+            # review` cannot auto-retrigger on synchronize. Passive
+            # same-head detection stays in place and the
+            # pnpm run review:switch helper handles manual recovery.
+            trigger_mode="skip"
           elif [ "$selected" = "claude" ]; then
-            # Claude review is human-initiated only: claude-review.yml gates
-            # on trusted-author issue_comment events, so a bot-posted
-            # `@claude review once` would not dispatch the actual reviewer.
+            # Claude review is human-initiated only: claude-review.yml
+            # gates on trusted-author issue_comment events, so a
+            # bot-posted `@claude review once` would not dispatch the
+            # actual reviewer.
             trigger_mode="skip"
           else
             trigger_mode="comment"

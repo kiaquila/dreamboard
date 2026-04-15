@@ -6,29 +6,24 @@
   (`notepad.md`, `project-memory.json`) stops surfacing as untracked on
   every branch
 
-## Slice 2: Auto-retrigger in the `AI Review` workflow
+## Slice 2: Auto-retrigger for Gemini only
 
-- rewrite the `Resolve selected review policy` step in
+- update the `Resolve selected review policy` step in
   `.github/workflows/ai-review.yml`:
-  - keep `trigger_mode=skip` only for `workflow_dispatch` runs that
-    pass `inputs.trigger_mode=skip` (i.e. trusted human commands that
-    have already produced a native review comment themselves)
-  - for `pull_request` events (`opened`, `synchronize`, `reopened`,
-    `ready_for_review`), set `trigger_mode=comment` for all three
-    backends including Codex, so the gate posts the appropriate native
-    trigger comment for the current head SHA
-- teach `scripts/ai-review-gate.mjs` to pick the trigger comment text
-  by selected backend:
-  - `codex` → `@codex review`
-  - `gemini` → `/gemini review`
-  - `claude` → `@claude review once` (already handled)
-- add a same-head dedupe guard: before posting the trigger comment,
-  check existing PR comments for a matching trigger body that targets
-  the current head SHA within the last 30 minutes; skip posting if
-  one already exists
-- keep existing Gemini-specific note in place — Gemini already uses
-  `trigger_mode=comment`, the new change only generalizes Codex to the
-  same path
+  - `workflow_dispatch` runs respect `inputs.trigger_mode` (defaults
+    to `skip`)
+  - Codex stays on `trigger_mode=skip` with an inline comment noting
+    that Codex Cloud rejects bot-posted triggers
+  - Claude stays on `trigger_mode=skip` because `claude-review.yml`
+    gates on trusted-author issue_comment events
+  - Gemini (the only backend that accepts bot-posted triggers on
+    `synchronize`) falls through to `trigger_mode=comment`
+- `scripts/ai-review-gate.mjs` already picks the trigger comment text
+  by selected backend via `buildTriggerComment()`; no changes there
+- add a same-head dedupe guard in `ensureTriggerComment()`: before
+  posting a Gemini trigger comment, look for an existing gate comment
+  with the current head SHA's `metadataMarker` within the last 30
+  minutes; reuse the existing comment instead of posting a duplicate
 
 ## Slice 3: Fallback helper `scripts/switch-review-agent.mjs`
 

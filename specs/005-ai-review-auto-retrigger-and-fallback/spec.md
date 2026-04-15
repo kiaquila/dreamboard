@@ -19,15 +19,18 @@ review once`. Gemini is the exception because its PR-linked path already
 
 - Update `.github/workflows/ai-review.yml` so that on
   `pull_request: synchronize` events (and `opened` / `reopened` /
-  `ready_for_review`) the gate posts a native trigger comment for the
-  selected reviewer, including Codex. Current behavior uses
-  `trigger_mode=skip` for Codex, which prevents automatic re-review on
-  new commits.
+  `ready_for_review`) the gate posts `/gemini review` for the current
+  head SHA when `AI_REVIEW_AGENT=gemini`. Codex auto-retrigger on
+  `synchronize` is explicitly out of scope: Codex Cloud rejects
+  bot-posted `@codex review` triggers ("trigger did not come from a
+  connected human Codex account"), so the gate keeps
+  `trigger_mode=skip` for Codex and we document the manual recovery
+  path. Claude review stays human-initiated only for the same reason.
 - Preserve the existing `manual command → native-only` contract:
   trusted `@codex review` / `/gemini review` / `@claude review once`
   comments posted by humans must NOT be canceled by the auto-trigger.
-  Deduplicate by same-head check so the gate does not spam multiple
-  trigger comments for the same SHA.
+  Deduplicate Gemini trigger comments by same-head check so the gate
+  does not spam multiple trigger comments for the same SHA.
 - Add a small repository helper `scripts/switch-review-agent.mjs` that
   takes `--to <codex|gemini|claude>` and performs: (a)
   `gh variable set AI_REVIEW_AGENT --body <agent>`, (b) posts the
@@ -53,6 +56,10 @@ review once`. Gemini is the exception because its PR-linked path already
   / Claude findings; only the trigger behavior changes.
 - No automatic detection of rate-limit errors — fallback is still
   human-initiated through the helper, not automatic.
+- No Codex auto-retrigger on `synchronize`. Codex Cloud's
+  human-account requirement on review triggers cannot be satisfied
+  from a GitHub Actions workflow without a user PAT, which is not in
+  scope for this spec.
 - No Playwright or e2e test infrastructure.
 - No changes to `.gemini/config.yaml` or `.gemini/styleguide.md`; the
   existing Gemini review configuration is already correct for this
@@ -60,15 +67,15 @@ review once`. Gemini is the exception because its PR-linked path already
 
 ## Acceptance Criteria
 
-1. After a push to `fix/ai-review-auto-retrigger-and-fallback` that
-   lands a new head SHA on an open PR, the `AI Review` workflow run
-   posts a single native trigger comment for the selected reviewer
-   (`@codex review` for Codex, `/gemini review` for Gemini,
-   `@claude review once` for Claude) within one run, without any human
-   action.
-2. If a trusted human comment already triggered a native review for the
-   current head SHA, the workflow does not post a duplicate trigger
-   comment on the same SHA during the automatic retrigger path.
+1. After a push that lands a new head SHA on an open PR with
+   `AI_REVIEW_AGENT=gemini`, the `AI Review` workflow run posts a
+   single `/gemini review` trigger comment for the current head SHA
+   without any human action. Codex and Claude paths remain
+   `trigger_mode=skip` by design.
+2. If a trusted human comment already triggered a native Gemini review
+   for the current head SHA within the last 30 minutes, the workflow
+   does not post a duplicate trigger comment on the same SHA during
+   the automatic retrigger path.
 3. `scripts/switch-review-agent.mjs --to <agent>` flips
    `AI_REVIEW_AGENT` via `gh variable set`, posts the correct native
    trigger comment on the current branch's open PR (resolved via

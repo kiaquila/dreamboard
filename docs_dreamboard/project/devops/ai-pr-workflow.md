@@ -46,15 +46,22 @@ This is the canonical PR loop for `dreamboard`.
 - `AI Review` is the normalized required check regardless of the backend.
 - Low-severity-only findings are advisory and non-blocking.
 - With no repository override, the pull-request gate defaults to `codex`.
-- On every `pull_request` event (including `synchronize` after a new push),
-  the gate posts the native trigger comment for the selected reviewer
-  (`@codex review` for Codex, `/gemini review` for Gemini) so the reviewer
-  re-reviews the current head SHA without human interaction.
+- On `pull_request` events with `AI_REVIEW_AGENT=gemini`, the gate posts
+  `/gemini review` for the current head SHA so Gemini re-reviews new
+  commits automatically.
+- Codex auto-retrigger on `synchronize` is not supported: Codex Cloud
+  rejects bot-posted `@codex review` triggers (connector replies with
+  "trigger did not come from a connected human Codex account"). The gate
+  therefore keeps `trigger_mode=skip` for Codex and passively waits for a
+  same-head native review. After a new push, post `@codex review`
+  manually from a Codex-connected account, or run
+  `pnpm run review:switch -- --to gemini` to switch backends for this PR.
 - Claude review is human-initiated only: a trusted `@claude review once`
   comment dispatches the Claude review workflow through
   `ai-command-policy.yml`; the gate never auto-posts it.
-- Trigger comments are deduplicated per head SHA via a hidden metadata
-  marker so workflow reruns and repeated events do not spam the PR.
+- Trigger comments for Gemini are deduplicated per head SHA via a hidden
+  metadata marker so workflow reruns and repeated events do not spam the
+  PR.
 - Manual Gemini and Codex review commands stay native-only so they do not
   cancel the PR-linked `AI Review` check.
 - Rerunning the PR-linked `AI Review` workflow is enough to reuse same-head

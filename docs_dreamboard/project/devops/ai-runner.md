@@ -39,15 +39,20 @@ with an explanatory comment instead of silently skipping.
 `AI Review` is a normalization layer on top of native vendor review outputs.
 
 - Codex path waits for native GitHub PR review output from
-  `chatgpt-codex-connector[bot]` (default). On every `pull_request` event
-  (including `synchronize` after a new push), the gate posts `@codex review`
-  for the current head SHA so Codex Cloud re-reviews the latest commit
-  without human interaction.
+  `chatgpt-codex-connector[bot]` (default). Codex Cloud rejects review
+  triggers posted by GitHub bots — the connector replies with "trigger
+  did not come from a connected human Codex account" — so the gate
+  cannot auto-retrigger Codex on `synchronize`. On fresh PR open and
+  ready-for-review, Codex Cloud auto-reviews on its own; after a new
+  push on an already-reviewed PR, a human must post `@codex review`
+  from a Codex-connected account, or switch backend via
+  `pnpm run review:switch -- --to gemini`.
 - Gemini path waits for native GitHub PR review output from
   `gemini-code-assist[bot]` and classifies inline review comments by
-  `Critical`, `High`, `Medium`, and `Low` severity markers. The gate also
+  `Critical`, `High`, `Medium`, and `Low` severity markers. The gate
   posts `/gemini review` on every `pull_request` event for the current
-  head SHA.
+  head SHA when `AI_REVIEW_AGENT=gemini`, so Gemini re-reviews new
+  commits automatically.
 - Claude path waits for a top-level `claude[bot]` comment containing:
   - `AI_REVIEW_AGENT: claude`
   - `AI_REVIEW_SHA: <head sha>`
