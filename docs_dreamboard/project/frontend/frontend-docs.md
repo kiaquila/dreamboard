@@ -11,8 +11,19 @@ The current application is still a static frontend, but it is no longer entirely
 - [i18n.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/i18n.js) for locale dictionaries
 - [landing-photo.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/landing-photo.js) for the embedded landing media asset
 - [`src/assets/images/landing/`](/Users/kristina.kurashova/projects/dreamboard/src/assets/images/landing) for repository-owned landing artwork
+- `src/assets/favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` for browser tab and iOS home-screen icons (see [Favicon assets](#favicon-assets))
 
 This keeps the repo deployable as a static site while making future extraction to components and a typed frontend stack much safer.
+
+## Favicon assets
+
+Dreamboard ships three icon artifacts under `src/assets/`:
+
+- `favicon.svg` — scalable source of truth, single radial gradient (green-yellow → cyan → deep blue), transparent background
+- `favicon-32.png` — 32×32 legacy fallback for browsers without SVG-icon support
+- `apple-touch-icon.png` — 180×180 PNG with alpha for iOS "Add to Home Screen"
+
+`index.html` references all three via `<link rel>` tags right after `<title>`. PNG artifacts are pre-rendered from the SVG using macOS built-in tools (`qlmanage -t -s <size>` and `sips -z`) and committed to the repo; the static build copies them as-is. Regenerate PNGs only when `favicon.svg` changes.
 
 ## Repository Memory and Feature Loop
 
