@@ -1,14 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
-    <radialGradient id="db-body" cx="30%" cy="26%" r="102%">
-      <stop offset="0%" stop-color="#bae97a" />
-      <stop offset="15%" stop-color="#82dc9e" />
-      <stop offset="30%" stop-color="#3bcbcc" />
-      <stop offset="46%" stop-color="#1dc0e8" />
-      <stop offset="63%" stop-color="#1881de" />
-      <stop offset="82%" stop-color="#0f3cc4" />
-      <stop offset="100%" stop-color="#061a7a" />
+    <radialGradient id="db-body" cx="43%" cy="42%" r="72%">
+      <stop offset="0%" stop-color="#64eaf0" />
+      <stop offset="10%" stop-color="#42dce0" />
+      <stop offset="22%" stop-color="#22c8d6" />
+      <stop offset="40%" stop-color="#169dd6" />
+      <stop offset="62%" stop-color="#0e75d4" />
+      <stop offset="85%" stop-color="#0a4cc0" />
+      <stop offset="100%" stop-color="#062a90" />
     </radialGradient>
+    <radialGradient id="db-rim" cx="24%" cy="30%" r="42%">
+      <stop offset="0%" stop-color="#e3ec82" stop-opacity="0.85" />
+      <stop offset="25%" stop-color="#b8e078" stop-opacity="0.6" />
+      <stop offset="55%" stop-color="#6fcf9a" stop-opacity="0.3" />
+      <stop offset="85%" stop-color="#3fc9c0" stop-opacity="0.03" />
+      <stop offset="100%" stop-color="#3fc9c0" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="db-terminator" cx="78%" cy="82%" r="52%">
+      <stop offset="0%" stop-color="#041a65" stop-opacity="0.55" />
+      <stop offset="60%" stop-color="#041a65" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#041a65" stop-opacity="0" />
+    </radialGradient>
+    <filter id="db-clouds" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence
+        type="fractalNoise"
+        baseFrequency="0.004 0.018"
+        numOctaves="4"
+        seed="11"
+        result="n"
+      />
+      <feColorMatrix
+        in="n"
+        type="matrix"
+        values="0 0 0 0 1
+                0 0 0 0 1
+                0 0 0 0 1
+                0 0 0 1.7 -0.6"
+      />
+    </filter>
+    <clipPath id="db-clip">
+      <circle cx="512" cy="512" r="500" />
+    </clipPath>
   </defs>
-  <circle cx="256" cy="256" r="240" fill="url(#db-body)" />
+  <g clip-path="url(#db-clip)">
+    <rect x="12" y="12" width="1000" height="1000" fill="url(#db-body)" />
+    <rect x="12" y="12" width="1000" height="1000" fill="url(#db-rim)" />
+    <rect
+      x="12"
+      y="12"
+      width="1000"
+      height="1000"
+      fill="url(#db-terminator)"
+    />
+    <g opacity="0.34" transform="rotate(-35 512 512)">
+      <rect
+        x="-120"
+        y="100"
+        width="1250"
+        height="1250"
+        filter="url(#db-clouds)"
+      />
+    </g>
+  </g>
 </svg>
