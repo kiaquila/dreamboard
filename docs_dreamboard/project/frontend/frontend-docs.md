@@ -19,7 +19,7 @@ This keeps the repo deployable as a static site while making future extraction t
 
 Dreamboard ships three icon artifacts under `src/assets/`:
 
-- `favicon.svg` — scalable source of truth, single radial gradient (green-yellow → cyan → deep blue), transparent background
+- `favicon.svg` — scalable source of truth, planet-style sphere: three stacked radial gradients (cyan→blue body, warm green-yellow upper-left rim, dark lower-right terminator) plus a rotated `feTurbulence` cloud-streak overlay; transparent background, sphere fills the viewBox
 - `favicon-32.png` — 32×32 legacy fallback for browsers without SVG-icon support
 - `apple-touch-icon.png` — 180×180 PNG with alpha for iOS "Add to Home Screen"
 
