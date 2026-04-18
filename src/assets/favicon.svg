@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="db-body" cx="32%" cy="26%" r="80%">
+      <stop offset="0%" stop-color="#d7f79a" />
+      <stop offset="10%" stop-color="#a3ed9c" />
+      <stop offset="22%" stop-color="#5ee0bb" />
+      <stop offset="40%" stop-color="#24c8ea" />
+      <stop offset="62%" stop-color="#1a83e4" />
+      <stop offset="85%" stop-color="#1145c8" />
+      <stop offset="100%" stop-color="#081b86" />
+    </radialGradient>
+    <radialGradient id="db-gloss" cx="28%" cy="20%" r="32%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28" />
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="240" fill="url(#db-body)" />
+  <circle cx="256" cy="256" r="240" fill="url(#db-gloss)" />
+</svg>
