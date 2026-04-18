@@ -27,7 +27,12 @@ permissions:
   issues: write
 
 concurrency:
-  group: ai-review-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  group: >-
+    ai-review-${{ github.event_name }}-${{
+      github.event.pull_request.number ||
+      inputs.pr_number ||
+      github.ref
+    }}
   cancel-in-progress: true
 
 jobs:

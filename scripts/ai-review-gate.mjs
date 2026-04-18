@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
 import { appendFileSync, readFileSync } from "node:fs";
+import {
+  classifyCodexSetupReply,
+  classifyCodexSummaryComment,
+  codexReviewerLogins,
+  findLatestHeadActivationIndex,
+  matchesCodexReview,
+  matchesCodexSummaryComment,
+  pickAuthoritativeCodexSkipModeComment,
+} from "./ai-review-helpers.mjs";
 
 const token = process.env.GITHUB_TOKEN;
 const repository = process.env.GITHUB_REPOSITORY;
@@ -18,7 +27,6 @@ const triggeredAt = process.env.AI_REVIEW_TRIGGERED_AT;
 const outputPath = process.env.GITHUB_OUTPUT;
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 const claudeReviewerLogins = new Set(["claude[bot]"]);
-const codexReviewerLogins = new Set(["chatgpt-codex-connector[bot]"]);
 const geminiReviewerLogins = new Set(["gemini-code-assist[bot]"]);
 
 if (!token) {
@@ -146,6 +154,8 @@ const buildPullReviewCommentsPath = (sinceTimestamp) =>
   `/repos/${owner}/${repo}/pulls/${prNumber}/comments?per_page=100&sort=updated&direction=desc${buildSinceQuery(
     sinceTimestamp,
   )}`;
+const buildIssueTimelinePath = () =>
+  `/repos/${owner}/${repo}/issues/${prNumber}/timeline?per_page=100`;
 
 const prNumber =
   explicitPrNumber ||
@@ -258,15 +268,6 @@ const ensureTriggerComment = async () => {
   });
 };
 
-const matchesCodexReview = (review) =>
-  review.commit_id === headSha &&
-  codexReviewerLogins.has(review.user?.login || "") &&
-  (review.body || "").includes("Codex Review");
-
-const matchesCodexSummaryComment = (comment) =>
-  codexReviewerLogins.has(comment.user?.login || "") &&
-  /^Codex Review:/i.test((comment.body || "").trim());
-
 const matchesGeminiReview = (review) =>
   review.commit_id === headSha &&
   geminiReviewerLogins.has(review.user?.login || "");
@@ -286,101 +287,44 @@ const matchesClaudeComment = (comment) => {
   );
 };
 
+/**
+ * Generic latest-item picker.
+ * Filters items with matchFn, sorts descending by timestampFn, returns first or null.
+ *
+ * @param {object[]} items
+ * @param {(item: object) => boolean} matchFn
+ * @param {(item: object) => number} timestampFn
+ * @returns {object|null}
+ */
+const pickLatest = (items, matchFn, timestampFn) =>
+  items.filter(matchFn).sort((a, b) => timestampFn(b) - timestampFn(a))[0] ||
+  null;
+
+const reviewTimestamp = (r) => new Date(r.submitted_at || 0).getTime();
+const commentTimestamp = (c) =>
+  new Date(c.updated_at || c.created_at || 0).getTime();
+
 const pickLatestCodexReview = (reviews) =>
-  reviews
-    .filter((review) => review.submitted_at && matchesCodexReview(review))
-    .sort(
-      (a, b) =>
-        new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
-    )[0] || null;
+  pickLatest(
+    reviews,
+    (r) => r.submitted_at && matchesCodexReview(r, headSha),
+    reviewTimestamp,
+  );
 
 const pickLatestGeminiReview = (reviews) =>
-  reviews
-    .filter((review) => review.submitted_at && matchesGeminiReview(review))
-    .sort(
-      (left, right) =>
-        new Date(right.submitted_at).getTime() -
-        new Date(left.submitted_at).getTime(),
-    )[0] || null;
+  pickLatest(
+    reviews,
+    (r) => r.submitted_at && matchesGeminiReview(r),
+    reviewTimestamp,
+  );
 
 const pickLatestClaudeComment = (comments) =>
-  comments
-    .filter((comment) => matchesClaudeComment(comment))
-    .sort(
-      (a, b) =>
-        new Date(b.updated_at || b.created_at || 0).getTime() -
-        new Date(a.updated_at || a.created_at || 0).getTime(),
-    )[0] || null;
+  pickLatest(comments, matchesClaudeComment, commentTimestamp);
 
-const findLatestCurrentHeadClaudeComment = (comments) =>
-  comments
-    .filter((comment) => matchesClaudeComment(comment))
-    .sort(
-      (left, right) =>
-        new Date(right.updated_at || right.created_at || 0).getTime() -
-        new Date(left.updated_at || left.created_at || 0).getTime(),
-    )[0] || null;
-
-const findLatestCurrentHeadCodexReview = (reviews) =>
-  reviews
-    .filter((review) => review.submitted_at && matchesCodexReview(review))
-    .sort(
-      (left, right) =>
-        new Date(right.submitted_at).getTime() -
-        new Date(left.submitted_at).getTime(),
-    )[0] || null;
-
-const findLatestCurrentHeadGeminiReview = (reviews) =>
-  reviews
-    .filter((review) => review.submitted_at && matchesGeminiReview(review))
-    .sort(
-      (left, right) =>
-        new Date(right.submitted_at).getTime() -
-        new Date(left.submitted_at).getTime(),
-    )[0] || null;
-
-const classifyCodexSetupReply = (comment) => {
-  const body = (comment.body || "").trim();
-
-  if (/create an environment for this repo/i.test(body)) {
-    return {
-      outcome: "fail",
-      reason:
-        "Codex could not start the selected review because no Codex cloud environment is configured for this repository.",
-      details: [comment.html_url],
-    };
-  }
-
-  if (/create a codex account and connect to github/i.test(body)) {
-    return {
-      outcome: "fail",
-      reason:
-        "Codex could not start the selected review because the trigger did not come from a connected human Codex account.",
-      details: [comment.html_url],
-    };
-  }
-
-  return null;
-};
-
-const classifyCodexSummaryComment = (comment) => {
-  const body = (comment.body || "").trim();
-
-  if (/did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues/i.test(body)) {
-    return {
-      outcome: "pass",
-      reason: "Codex completed review with no major issues.",
-      details: [comment.html_url],
-    };
-  }
-
-  return {
-    outcome: "pending",
-    reason:
-      "Codex summary comment did not match a recognized no-findings reply.",
-    details: [comment.html_url],
-  };
-};
+// findLatestCurrentHead* had identical logic — aliases kept for call-site readability.
+const findLatestCurrentHeadCodexReview = pickLatestCodexReview;
+const findLatestCurrentHeadGeminiReview = pickLatestGeminiReview;
+const findLatestCurrentHeadClaudeComment = pickLatestClaudeComment;
 
 const extractCodexPriority = (body) => {
   const match = body.match(/\bP([0-3])\b/i);
@@ -601,6 +545,9 @@ const triggerTime = triggerComment
     ? new Date(triggeredAt).getTime()
     : Date.now();
 const deadline = Date.now() + maxWaitMs;
+let codexTimelineWarning = "";
+let codexTimelineWarningLogged = false;
+let codexTimelineHeadPendingLogged = false;
 
 while (Date.now() < deadline) {
   if (selectedAgent === "claude") {
@@ -700,83 +647,153 @@ while (Date.now() < deadline) {
       }
     }
 
-    const issueComments = await listPaginated(
-      buildIssueCommentsPath(triggerMode === "skip" ? 0 : triggerTime),
-    );
-    const recentIssueComments = issueComments.filter(
-      (comment) => new Date(comment.created_at || 0).getTime() >= triggerTime,
-    );
-    const summaryComment =
-      recentIssueComments
-        .filter((comment) => matchesCodexSummaryComment(comment))
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        )[0] || null;
+    if (triggerMode === "skip") {
+      let timelineEvents = null;
 
-    if (summaryComment) {
-      const mapped = classifyCodexSummaryComment(summaryComment);
+      try {
+        timelineEvents = await listPaginated(buildIssueTimelinePath());
+      } catch (error) {
+        codexTimelineWarning =
+          "Codex skip-mode could not read PR timeline, so summary/setup fallback is disabled until the timeline endpoint recovers.";
+        if (!codexTimelineWarningLogged) {
+          console.warn(
+            `${codexTimelineWarning} Continuing to poll for a formal review only. Root cause: ${error.message}`,
+          );
+          codexTimelineWarningLogged = true;
+        }
+      }
 
-      if (mapped.outcome !== "pending") {
+      if (timelineEvents) {
+        const headActivationIndex = findLatestHeadActivationIndex(
+          timelineEvents,
+          headSha,
+        );
+
+        if (headActivationIndex < 0) {
+          if (!codexTimelineHeadPendingLogged) {
+            console.warn(
+              `Codex skip-mode is waiting for PR timeline to expose the current head SHA ${headSha} before it can trust summary/setup comments.`,
+            );
+            codexTimelineHeadPendingLogged = true;
+          }
+        } else {
+          codexTimelineHeadPendingLogged = false;
+          const matchedComment = pickAuthoritativeCodexSkipModeComment({
+            timelineEvents,
+            headSha,
+          });
+
+          if (matchedComment) {
+            const { comment, classification, reviewState } = matchedComment;
+
+            setOutput("review_agent", selectedAgent);
+            setOutput("review_state", reviewState);
+            setOutput("review_url", comment.html_url);
+            setOutput("review_id", comment.id);
+
+            appendSummary([
+              "## AI Review Gate",
+              "",
+              `- Selected reviewer: \`${selectedAgent}\``,
+              `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
+              `- Matched reviewer comment: ${comment.html_url}`,
+              `- Review state: \`${reviewState}\``,
+              `- Result: ${classification.reason}`,
+              ...(classification.details?.length
+                ? [`- Evidence: ${classification.details.join(", ")}`]
+                : []),
+            ]);
+
+            if (classification.outcome === "fail") {
+              throw new Error(classification.reason);
+            }
+
+            console.log(classification.reason);
+            process.exit(0);
+          }
+        }
+      }
+    } else {
+      const issueComments = await listPaginated(
+        buildIssueCommentsPath(triggerTime),
+      );
+      const recentIssueComments = issueComments.filter(
+        (comment) => new Date(comment.created_at || 0).getTime() >= triggerTime,
+      );
+      const summaryComment =
+        recentIssueComments
+          .filter((comment) => matchesCodexSummaryComment(comment))
+          .sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime(),
+          )[0] || null;
+
+      if (summaryComment) {
+        const mapped = classifyCodexSummaryComment(summaryComment);
+
+        if (mapped.outcome !== "pending") {
+          setOutput("review_agent", selectedAgent);
+          setOutput("review_state", "COMMENTED_NO_FINDINGS");
+          setOutput("review_url", summaryComment.html_url);
+          setOutput("review_id", summaryComment.id);
+
+          appendSummary([
+            "## AI Review Gate",
+            "",
+            `- Selected reviewer: \`${selectedAgent}\``,
+            `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
+            `- Matched reviewer comment: ${summaryComment.html_url}`,
+            "- Review state: `COMMENTED_NO_FINDINGS`",
+            `- Result: ${mapped.reason}`,
+            ...(mapped.details?.length
+              ? [`- Evidence: ${mapped.details.join(", ")}`]
+              : []),
+          ]);
+
+          console.log(mapped.reason);
+          process.exit(0);
+        }
+      }
+
+      const recentConnectorReply =
+        issueComments
+          .filter(
+            (comment) =>
+              codexReviewerLogins.has(comment.user?.login || "") &&
+              new Date(comment.created_at || 0).getTime() >= triggerTime,
+          )
+          .sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime(),
+          )
+          .map((comment) => ({
+            comment,
+            classification: classifyCodexSetupReply(comment),
+          }))
+          .find((entry) => entry.classification) || null;
+
+      if (recentConnectorReply) {
+        const { comment, classification } = recentConnectorReply;
+
         setOutput("review_agent", selectedAgent);
-        setOutput("review_state", "COMMENTED_NO_FINDINGS");
-        setOutput("review_url", summaryComment.html_url);
-        setOutput("review_id", summaryComment.id);
+        setOutput("review_state", "SETUP_REQUIRED");
+        setOutput("review_url", comment.html_url);
+        setOutput("review_id", comment.id);
 
         appendSummary([
           "## AI Review Gate",
           "",
           `- Selected reviewer: \`${selectedAgent}\``,
           `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
-          `- Matched reviewer comment: ${summaryComment.html_url}`,
-          "- Review state: `COMMENTED_NO_FINDINGS`",
-          `- Result: ${mapped.reason}`,
-          ...(mapped.details?.length
-            ? [`- Evidence: ${mapped.details.join(", ")}`]
-            : []),
+          `- Connector reply: ${comment.html_url}`,
+          "- Review state: `SETUP_REQUIRED`",
+          `- Result: ${classification.reason}`,
         ]);
 
-        console.log(mapped.reason);
-        process.exit(0);
+        throw new Error(classification.reason);
       }
-    }
-
-    const recentConnectorReply =
-      issueComments
-        .filter(
-          (comment) =>
-            codexReviewerLogins.has(comment.user?.login || "") &&
-            new Date(comment.created_at || 0).getTime() >= triggerTime,
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        )
-        .map((comment) => ({
-          comment,
-          classification: classifyCodexSetupReply(comment),
-        }))
-        .find((entry) => entry.classification) || null;
-
-    if (recentConnectorReply) {
-      const { comment, classification } = recentConnectorReply;
-
-      setOutput("review_agent", selectedAgent);
-      setOutput("review_state", "SETUP_REQUIRED");
-      setOutput("review_url", comment.html_url);
-      setOutput("review_id", comment.id);
-
-      appendSummary([
-        "## AI Review Gate",
-        "",
-        `- Selected reviewer: \`${selectedAgent}\``,
-        `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
-        `- Connector reply: ${comment.html_url}`,
-        "- Review state: `SETUP_REQUIRED`",
-        `- Result: ${classification.reason}`,
-      ]);
-
-      throw new Error(classification.reason);
     }
   } else {
     const reviews = await listNewestPullReviews(
@@ -837,6 +854,7 @@ appendSummary([
   `- Selected reviewer: \`${selectedAgent}\``,
   `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
   `- Head SHA: \`${headSha}\``,
+  ...(codexTimelineWarning ? [`- Warning: ${codexTimelineWarning}`] : []),
   "- Result: no valid selected-reviewer output was detected before the timeout.",
 ]);
 
