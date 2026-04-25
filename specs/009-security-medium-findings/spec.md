@@ -31,7 +31,7 @@ i18n innerHTML и canvas. Critical/High = 0.
 Решение: реструктурировать `donateTextHtml` в `donateText[]` (typed array
 объектов `{type, value/href/text}`) и собрать DOM через `replaceChildren()`.
 
-### M3 — File input accept="image/*" пропускает SVG
+### M3 — File input accept="image/\*" пропускает SVG
 
 `accept="image/*"` разрешает SVG. CSP блокирует `<script>` внутри SVG,
 но `<foreignObject>` и CSS-based exfil могут пробить.
