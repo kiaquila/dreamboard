@@ -269,7 +269,23 @@ function applyLanguageUI({ syncPlaceholders = true } = {}) {
   const donateTextEl = document.getElementById("donateModalText");
   const donateCtaEl = document.getElementById("donateMatecitoLabel");
   if (donateTitleEl) donateTitleEl.innerText = t.donateTitle;
-  if (donateTextEl) donateTextEl.innerHTML = t.donateTextHtml;
+  if (donateTextEl) {
+    donateTextEl.replaceChildren();
+    for (const part of t.donateText) {
+      if (part.type === "text") {
+        donateTextEl.appendChild(document.createTextNode(part.value));
+      } else if (part.type === "link") {
+        const a = document.createElement("a");
+        a.href = part.href;
+        a.rel = "noopener noreferrer";
+        a.target = "_blank";
+        a.textContent = part.text;
+        donateTextEl.appendChild(a);
+      } else if (part.type === "br") {
+        donateTextEl.appendChild(document.createElement("br"));
+      }
+    }
+  }
   if (donateCtaEl) donateCtaEl.innerText = t.donateCta;
 
   // editor sidebar
@@ -944,8 +960,21 @@ function layoutBatchImages(images) {
 
 fileInput?.addEventListener("change", (e) => {
   const files = e.target.files;
+  const ALLOWED_MIME = new Set([
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/gif",
+  ]);
+  const allowed = Array.from(files).filter(
+    (f) => ALLOWED_MIME.has(f.type) && !f.name.toLowerCase().endsWith(".svg"),
+  );
+  if (!allowed.length) {
+    e.target.value = "";
+    return;
+  }
 
-  const loadPromises = Array.from(files).map((file) => {
+  const loadPromises = allowed.map((file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = function (f) {
