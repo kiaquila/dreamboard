@@ -38,6 +38,12 @@ This is the canonical PR loop for `dreamboard`.
 - If the selected implementation agent path is unavailable, stop and report the
   blocker instead of bypassing the loop.
 - A PR is not done while required checks are queued, running, or red.
+- Gate scripts (`scripts/check-feature-memory.mjs`,
+  `scripts/check-static-baseline.mjs`, `scripts/resolve-pr-context.mjs`,
+  `scripts/ai-review-gate.mjs`) execute only from `default_branch` via
+  `actions/checkout` with explicit `ref:`. PR Guard uses a two-checkout pattern
+  (`.gate-trusted/` for trusted scripts, workspace root for PR content), so a
+  PR cannot tamper with gate logic to bypass required checks.
 
 ## Review Contract
 
