@@ -32,11 +32,23 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Checkout
+      # Two-checkout pattern: trusted gate scripts come from main, PR tree is
+      # available in the workspace root for diff and filesystem checks.
+      # Without this a contributor could tamper with scripts/ in their PR to
+      # bypass required PR Guard checks.
+      - name: Checkout trusted gate scripts (default branch)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: .gate-trusted
+          fetch-depth: 1
+
+      - name: Checkout PR content
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+          clean: false
 
       - name: Resolve diff refs
         shell: bash
@@ -105,7 +117,7 @@ jobs:
           echo "Docs coverage OK."
 
       - name: Require complete feature memory for product changes
-        run: node scripts/check-feature-memory.mjs "$BASE_REF" "$HEAD_REF"
+        run: node .gate-trusted/scripts/check-feature-memory.mjs "$BASE_REF" "$HEAD_REF"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -120,4 +132,4 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate baseline files
-        run: pnpm run check:repo
+        run: node .gate-trusted/scripts/check-static-baseline.mjs

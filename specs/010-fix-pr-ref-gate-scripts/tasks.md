@@ -1,0 +1,24 @@
+# Tasks 010: Fix PR-ref gate scripts
+
+## F1 — ai-review.yml: checkout default_branch
+
+- [x] Заменить single checkout на explicit `ref: default_branch`
+- [x] Inline-комментарий с threat model
+
+## F2 — pr-guard.yml: two-checkout pattern
+
+- [x] Trusted checkout в `.gate-trusted/` first
+- [x] PR checkout в workspace root second с `clean: false`
+- [x] `node scripts/check-feature-memory.mjs` → `.gate-trusted/`
+- [x] `pnpm run check:repo` → `node .gate-trusted/scripts/check-static-baseline.mjs`
+
+## F3 — Docs
+
+- [x] `ai-pr-workflow.md` Hard Gates: пункт про trusted-base
+
+## CI / preflight
+
+- [x] `pnpm run preflight` зелёный локально
+- [ ] `guard` зелёный на PR
+- [ ] `baseline-checks` зелёный на PR
+- [ ] `ai-review` зелёный на PR
