@@ -32,23 +32,25 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      # Two-checkout pattern: trusted gate scripts come from main, PR tree is
-      # available in the workspace root for diff and filesystem checks.
-      # Without this a contributor could tamper with scripts/ in their PR to
-      # bypass required PR Guard checks.
+      # Two-checkout pattern: PR content lives in workspace root for diff and
+      # filesystem checks; trusted gate scripts come from main into a sub-path.
+      # Order matters: actions/checkout v6 wipes workspace root if it sees a
+      # non-empty directory without a matching .git, so PR must check out
+      # first while workspace is empty. The trusted sub-path checkout always
+      # ends with main's content even if the PR seeds an adversarial
+      # .gate-trusted/, because actions/checkout reinitializes the path.
+      - name: Checkout PR content
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+
       - name: Checkout trusted gate scripts (default branch)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.event.repository.default_branch }}
           path: .gate-trusted
           fetch-depth: 1
-
-      - name: Checkout PR content
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
-          clean: false
 
       - name: Resolve diff refs
         shell: bash

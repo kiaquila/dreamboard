@@ -7,10 +7,14 @@
 
 ## F2 — pr-guard.yml: two-checkout pattern
 
-- [x] Trusted checkout в `.gate-trusted/` first
-- [x] PR checkout в workspace root second с `clean: false`
+- [x] PR checkout в workspace root first
+- [x] Trusted checkout в `.gate-trusted/` second
 - [x] `node scripts/check-feature-memory.mjs` → `.gate-trusted/`
 - [x] `pnpm run check:repo` → `node .gate-trusted/scripts/check-static-baseline.mjs`
+- [x] Fix #1: первый прогон провалился (run 25027611454) — `actions/checkout`
+      v6 при втором checkout на workspace root делает "Deleting the contents",
+      сносит `.gate-trusted/`. `clean: false` тут не помогает — это другая
+      фаза. Решение: поменять порядок на PR-first.
 
 ## F3 — Docs
 

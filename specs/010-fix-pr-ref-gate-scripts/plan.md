@@ -27,25 +27,34 @@ Inline-комментарий объясняет threat model для будущ�
 Two-checkout:
 
 ```yaml
+- name: Checkout PR content
+  uses: actions/checkout@de0fac2e... # v6
+  with:
+    fetch-depth: 0
+    ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+
 - name: Checkout trusted gate scripts (default branch)
   uses: actions/checkout@de0fac2e... # v6
   with:
     ref: ${{ github.event.repository.default_branch }}
     path: .gate-trusted
     fetch-depth: 1
-
-- name: Checkout PR content
-  uses: actions/checkout@de0fac2e... # v6
-  with:
-    fetch-depth: 0
-    ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
-    clean: false
 ```
 
-Порядок важен: trusted сначала, PR с `clean: false` вторым. Если бы PR шёл
-первым, второй checkout из main мог бы быть уязвим к adversarial
-`.gate-trusted/.git/` в PR-tree. Если бы PR шёл вторым с `clean: true`,
-`git clean -ffdx` снёс бы `.gate-trusted/`.
+Порядок важен: PR-content first, trusted second. `actions/checkout` v6 при
+checkout в непустую директорию без matching `.git/` делает
+`Deleting the contents of '<path>'` — это `prepareExistingDirectory()`,
+fires до `clean` фазы и не блокируется `clean: false`. Если бы trusted шёл
+первым, второй checkout на workspace root снёс бы `.gate-trusted/` (как и
+случилось в первой попытке этого фикса, GH run 25027611454).
+
+Adversarial `.gate-trusted/` в PR-tree не страшен: второй checkout с
+`path: .gate-trusted` вызывает `prepareExistingDirectory()` для подпапки,
+который stomps non-matching content и переинициализирует с main. Даже если
+PR засеет `.gate-trusted/.git/` с фальшивым origin URL, action всё равно
+делает rm-rf и init заново. Если PR попадает в матчинг origin, `git fetch`
+пуллит реальный main (token-аутентифицированный), коллизию SHA подделать
+нельзя.
 
 Замена двух запусков скриптов:
 
