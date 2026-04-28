@@ -59,6 +59,17 @@ PR-checkout получает `clean: false`, чтобы `git clean -ffdx` не �
 - `ci.yml` baseline-checks — пока сознательно запускается на PR-tree
   (валидирует PR build).
 
+## Defensive add — pnpm workspace explicit packages
+
+Codex P1 finding: при появлении `.gate-trusted/package.json` под workspace
+root, pnpm в будущих версиях мог бы начать сканировать subdirs и принимать
+`.gate-trusted/` за второй workspace-проект. `pnpm-lock.yaml` имеет только
+root importer → `pnpm install --frozen-lockfile` падал бы.
+
+В pnpm 10.33 этого не происходит (`resolved 1` в реальном run), но защищаем
+явным `packages: ["."]` в `pnpm-workspace.yaml` — pnpm обязан использовать
+ровно root и не сканировать subdirs ни в одной версии.
+
 ## Acceptance
 
 - `pnpm run preflight` зелёный локально

@@ -15,6 +15,10 @@
       v6 при втором checkout на workspace root делает "Deleting the contents",
       сносит `.gate-trusted/`. `clean: false` тут не помогает — это другая
       фаза. Решение: поменять порядок на PR-first.
+- [x] Fix #2: Codex P1 finding (run 25028103989) — `pnpm-workspace.yaml` без
+      `packages:` мог бы триггерить scanning subdirs в будущих версиях pnpm,
+      и `.gate-trusted/package.json` ломал бы frozen-lockfile install.
+      Решение: явный `packages: ["."]` в `pnpm-workspace.yaml`.
 
 ## F3 — Docs
 
