@@ -52,9 +52,9 @@
 
 ## Документация
 
-- Конституция процесса: `.specify/memory/constitution.md`
-- Карта docs: `docs_dreamboard/README.md`
-- Идея проекта: `docs_dreamboard/project-idea.md`
+- Конституция процесса: @.specify/memory/constitution.md
+- Карта docs: @docs_dreamboard/README.md
+- Идея проекта: @docs_dreamboard/project-idea.md
 - Frontend: `docs_dreamboard/project/frontend/frontend-docs.md`
 - Orchestration: `docs_dreamboard/project/devops/ai-orchestration-protocol.md`
 - PR loop: `docs_dreamboard/project/devops/ai-pr-workflow.md`
