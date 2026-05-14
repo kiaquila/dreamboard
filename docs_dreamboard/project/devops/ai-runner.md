@@ -120,7 +120,7 @@ without a complete `specs/<feature-id>/` update.
 For `dreamboard`, product-code paths are:
 
 - `index.html`
-- `package.json` and `package-lock.json`
+- `package.json`, `pnpm-lock.yaml`, and `pnpm-workspace.yaml`
 - `.htmlvalidate.json`
 - `.github/workflows/`
 - `scripts/`
