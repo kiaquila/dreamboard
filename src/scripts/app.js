@@ -6,11 +6,12 @@ import {
   writeDraftSnapshotSyncFallback,
 } from "./draft-store.js";
 
-const LANG_KEYS = Object.keys(translations);
-const browserLang = navigator.language.split("-")[0].toUpperCase();
-let currentLang = LANG_KEYS.includes(browserLang)
-  ? browserLang
-  : LANG_KEYS[0] || "RU";
+const DEFAULT_LANG = "EN";
+const LOCALE_COOKIE_NAME = "dreamboard_locale";
+const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+const LANG_KEYS = ["EN", "RU", "ES"].filter((key) => translations[key]);
+const bootLocale = window.__dreamboardLocaleBoot?.initialLocale || DEFAULT_LANG;
+let currentLang = LANG_KEYS.includes(bootLocale) ? bootLocale : DEFAULT_LANG;
 const MOBILE_BREAKPOINT = 900;
 const DRAFT_SCHEMA_VERSION = 1;
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
@@ -79,6 +80,27 @@ let currentSaveStatusKey = "saveIdle";
 let draftBootstrapComplete = false;
 let draftBootstrapPromise = null;
 let rotateHintDismissed = false;
+
+function writeLocaleCookie(lang) {
+  const secureAttribute =
+    window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie =
+    [
+      `${LOCALE_COOKIE_NAME}=${encodeURIComponent(lang)}`,
+      `Max-Age=${LOCALE_COOKIE_MAX_AGE_SECONDS}`,
+      "Path=/",
+      "SameSite=Lax",
+    ].join("; ") + secureAttribute;
+}
+
+function revealLocaleBoot() {
+  if (window.__dreamboardLocaleBoot?.reveal) {
+    window.__dreamboardLocaleBoot.reveal();
+    return;
+  }
+
+  document.documentElement.removeAttribute("data-locale-pending");
+}
 
 const canvas = new fabric.Canvas("visionBoard", {
   width: 960,
@@ -319,11 +341,13 @@ function applyLanguageUI({ syncPlaceholders = true } = {}) {
   }
   applyToolbarTooltips();
   setSaveStatus(currentSaveStatusKey);
+  revealLocaleBoot();
 }
 
 function toggleLang() {
   const currentIndex = LANG_KEYS.indexOf(currentLang);
   currentLang = LANG_KEYS[(currentIndex + 1) % LANG_KEYS.length];
+  writeLocaleCookie(currentLang);
   applyLanguageUI();
   if (draftBootstrapComplete) {
     scheduleDraftSave();
@@ -382,7 +406,6 @@ function buildDraftSnapshot() {
   return {
     schemaVersion: DRAFT_SCHEMA_VERSION,
     updatedAt: new Date().toISOString(),
-    lang: currentLang,
     canvas: {
       width: canvas.getWidth(),
       height: canvas.getHeight(),
@@ -466,13 +489,8 @@ async function restoreDraftSnapshot(snapshot) {
 }
 
 async function bootstrapDraftState() {
+  applyLanguageUI();
   const snapshot = await readDraftSnapshot();
-
-  if (snapshot?.lang && LANG_KEYS.includes(snapshot.lang)) {
-    currentLang = snapshot.lang;
-  }
-
-  applyLanguageUI({ syncPlaceholders: !snapshot });
   if (snapshot) {
     await restoreDraftSnapshot(snapshot);
     setSaveStatus("saveSaved");

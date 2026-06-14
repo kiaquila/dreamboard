@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -20,6 +20,8 @@
       sizes="180x180"
       href="./src/assets/apple-touch-icon.png"
     />
+
+    <script src="./src/scripts/locale-boot.js"></script>
 
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;700&family=Lora:ital,wght@0,400;1,400&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Poppins:wght@400;700&family=Merriweather:wght@400;700&family=Pacifico&family=Caveat:wght@400;700&family=Dancing+Script:wght@700&family=Anton&family=Ubuntu:wght@400;700&family=Marck+Script&family=Bad+Script&display=swap"
@@ -43,7 +45,7 @@
         <div class="landing-header-bar">
           <h1>DREAM <span style="color: var(--pantone-yellow)">BOARD</span></h1>
           <div class="lang-switcher">
-            <button type="button" id="langBtn">RU</button>
+            <button type="button" id="langBtn">EN</button>
           </div>
         </div>
       </header>
@@ -57,10 +59,10 @@
               class="hero-title hero-title-center landing-title-unified"
               id="l-hero-title"
             >
-              Создай свою карту желаний бесплатно, без регистрации
+              Create your vision board for free — no registration
             </h2>
             <button type="button" class="cta-btn cta-btn-center" id="l-go-btn">
-              Вперед
+              Go
             </button>
           </div>
         </div>
@@ -72,7 +74,7 @@
           <div class="landing-two-col landing-two-col-what">
             <div class="slide-visual slide-visual-photo" aria-hidden="true">
               <div class="slide-overlay-title" id="l-what-title">
-                Что такое карта желаний?
+                What is a vision board?
               </div>
               <img
                 class="slide-photo"
@@ -83,10 +85,10 @@
 
             <div class="what-text-col">
               <p class="slide-text slide-text-what" id="l-what-text">
-                Карта желаний это мощный инструмент наглядной визуализации ваших
-                желаний по секторам жизни. Вы сами выбираете картинки, которые
-                вам откликаются и это повышает вероятность реализации желаний в
-                разы.
+                A vision board is a powerful tool for visualizing your goals
+                across life areas. You choose images that resonate with you —
+                and that can dramatically increase the odds of making your goals
+                real.
               </p>
             </div>
           </div>
@@ -100,9 +102,44 @@
             class="rules-title rules-title-landing landing-title-unified"
             id="l-rules-title"
           >
-            Правила создания карты желаний
+            Rules for creating a vision board
           </h3>
-          <ul class="rules-list rules-list-landing" id="l-rules-list"></ul>
+          <ul class="rules-list rules-list-landing" id="l-rules-list">
+            <li>
+              Bring a good mood with you — it helps you catch the right vibe
+            </li>
+            <li>
+              Place your current favorite photo in the center — one that feels
+              pleasant and connected to happiness, success, wealth, luxury, or
+              love
+            </li>
+            <li>
+              Write wishes specifically with numbers and facts, in affirmative
+              form as if it already happened (no “not”). For example: my income
+              is $10,000/month, I have 10,000 Instagram followers, etc.
+            </li>
+            <li>
+              Your wishes should be achievable within the time period you're
+              making the board for
+            </li>
+            <li>
+              An optimal horizon is 1–3 years — that's realistically enough time
+              to make many wishes come true
+            </li>
+            <li>
+              Add at least one wish that will come true very soon (a planned
+              trip, a big purchase, etc.). This signals your brain that the
+              mechanism works
+            </li>
+            <li>
+              Near your photo in the center you can add a foundational caption.
+              For example: My 2026
+            </li>
+            <li>
+              You can also add captions to images that aren't obvious. For
+              example: clear skin, C1-level English, etc.
+            </li>
+          </ul>
         </div>
       </section>
 
@@ -114,14 +151,14 @@
               class="hero-title hero-title-final landing-title-unified"
               id="l-final-title"
             >
-              Мечтам пора стать реальностью
+              It's time to make dreams real
             </h2>
             <button
               type="button"
               class="cta-btn cta-btn-center"
               id="l-final-btn"
             >
-              Вперед
+              Go
             </button>
           </div>
         </div>
@@ -166,7 +203,7 @@
             id="langBtnEditorMobile"
             aria-label="Switch language"
           >
-            RU
+            EN
           </button>
         </div>
       </div>
@@ -196,16 +233,16 @@
                   ></path>
                 </svg>
               </button>
-              <button type="button" id="langBtnEditor">RU</button>
+              <button type="button" id="langBtnEditor">EN</button>
             </div>
           </div>
 
           <div class="control-group" style="border-bottom: none">
             <div class="section-title" id="t-images" style="display: none">
-              Изображения
+              Images
             </div>
             <label for="fileInput" class="file-input-label" id="t-upload"
-              >Загрузить изображения</label
+              >Upload Images</label
             >
             <input
               type="file"
@@ -213,8 +250,8 @@
               multiple
               accept="image/png,image/jpeg,image/webp,image/gif"
             />
-            <button type="button" id="t-addtext">Добавить текст</button>
-            <button type="button" id="t-download">Скачать PNG</button>
+            <button type="button" id="t-addtext">Add Text</button>
+            <button type="button" id="t-download">Download PNG</button>
           </div>
         </aside>
 
@@ -366,12 +403,12 @@
     >
       <div class="editor-rotate-card">
         <div class="editor-rotate-header">
-          <h2 id="rotateHintTitle">В горизонтали удобнее</h2>
+          <h2 id="rotateHintTitle">Landscape gives you more room</h2>
           <button
             class="editor-rotate-close"
             type="button"
             id="rotateHintCloseBtn"
-            aria-label="Закрыть подсказку"
+            aria-label="Close the rotation hint"
           >
             <svg
               viewBox="0 0 24 24"
@@ -404,7 +441,7 @@
           </div>
           <div class="editor-rotate-copy">
             <p id="rotateHintText">
-              Редактор уже работает. Разверни телефон для более широкого холста.
+              Rotate your phone to work with the canvas more easily.
             </p>
           </div>
         </div>
@@ -461,13 +498,13 @@
       <div class="donate-modal">
         <div class="donate-modal-header">
           <h2 class="donate-modal-title" id="donateModalTitle">
-            Поддержать проект
+            Support the project
           </h2>
           <button
             class="donate-modal-close"
             type="button"
             id="donateModalCloseBtn"
-            aria-label="Закрыть"
+            aria-label="Close"
           >
             <svg
               viewBox="0 0 24 24"
@@ -484,15 +521,15 @@
         </div>
         <div class="donate-modal-content">
           <p class="donate-modal-text" id="donateModalText">
-            Если этот редактор был полезен — донаты приветствуются.<br /><br />Обратную
-            связь, а также идеи по улучшению вы можете отправить мне в личные
-            сообщения в
+            If this editor was helpful — tips are welcome.<br /><br />Feedback
+            and ideas for improvements: send me a DM on
             <a
               href="https://instagram.com/ks_aquila"
               rel="noopener noreferrer"
               target="_blank"
               >instagram.com/ks_aquila</a
-            >. Спасибо ❤️<br /><br />И пусть все задуманное исполнится ✨
+            >. Thank you ❤️<br /><br />May everything you've envisioned come
+            true ✨
           </p>
 
           <div class="donate-actions">
@@ -524,7 +561,7 @@
                   stroke-linejoin="round"
                 ></path>
               </svg>
-              <span id="donateMatecitoLabel">Задонатить</span>
+              <span id="donateMatecitoLabel">Leave a tip</span>
 
               <!-- Original embed (kept for compatibility) -->
               <img
