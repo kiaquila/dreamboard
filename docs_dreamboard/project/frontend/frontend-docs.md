@@ -90,6 +90,25 @@ The current editor now preserves the working board as a browser draft:
 - draft persistence is intentionally silent in the UI; the app keeps autosaving without a visible “draft saved” badge
 - locale preference is intentionally separate from draft persistence and lives in the `dreamboard_locale` cookie
 
+## Editor Reload Route
+
+The static app now treats `#editor` as the editor route:
+
+- entering the editor from landing controls pushes `#editor` into the URL
+- the head boot script marks `#editor` before CSS loads, so the landing view
+  does not flash during refresh
+- refreshing a browser tab while `#editor` is present opens the editor shell
+  immediately and then restores the local draft
+- editing controls and canvas interactions stay locked until draft restore
+  completes, so slow image-heavy drafts cannot overwrite new edits made during
+  bootstrap
+- browser back and forward navigation keep the visible view synchronized with
+  the hash route
+- using the editor home/back controls clears `#editor`, so a later reload stays
+  on the landing view
+- canvas contents still come from local draft persistence; the route stores only
+  the active view, not board data
+
 This keeps persistence local-first without introducing backend state or breaking the static deploy model.
 
 ## Planned Refactor Direction

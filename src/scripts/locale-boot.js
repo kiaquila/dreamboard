@@ -2,6 +2,7 @@
   const COOKIE_NAME = "dreamboard_locale";
   const DEFAULT_LOCALE = "EN";
   const SUPPORTED_LOCALES = new Set(["EN", "RU", "ES"]);
+  const EDITOR_ROUTE_HASH = "#editor";
 
   function readLocaleCookie() {
     const cookie = document.cookie
@@ -25,8 +26,14 @@
 
   const locale = readLocaleCookie();
   const initialLocale = locale || DEFAULT_LOCALE;
+  const initialView =
+    window.location.hash === EDITOR_ROUTE_HASH ? "editor" : "landing";
 
   document.documentElement.lang = initialLocale.toLowerCase();
+
+  if (initialView === "editor") {
+    document.documentElement.setAttribute("data-initial-view", "editor");
+  }
 
   if (locale && locale !== DEFAULT_LOCALE) {
     document.documentElement.setAttribute("data-locale-pending", "true");
@@ -39,6 +46,7 @@
   window.__dreamboardLocaleBoot = {
     locale,
     initialLocale,
+    initialView,
     reveal() {
       window.clearTimeout(revealFallbackTimer);
       document.documentElement.removeAttribute("data-locale-pending");

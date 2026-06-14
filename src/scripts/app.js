@@ -15,6 +15,7 @@ let currentLang = LANG_KEYS.includes(bootLocale) ? bootLocale : DEFAULT_LANG;
 const MOBILE_BREAKPOINT = 900;
 const DRAFT_SCHEMA_VERSION = 1;
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
+const EDITOR_ROUTE_HASH = "#editor";
 
 const landingView = document.getElementById("landingView");
 const editorView = document.getElementById("editorView");
@@ -79,6 +80,7 @@ let suppressDraftPersistence = false;
 let currentSaveStatusKey = "saveIdle";
 let draftBootstrapComplete = false;
 let draftBootstrapPromise = null;
+let editorInteractionLocked = false;
 let rotateHintDismissed = false;
 
 function writeLocaleCookie(lang) {
@@ -402,6 +404,56 @@ function syncBodyOverflow() {
       : "";
 }
 
+function isEditorActionBlocked() {
+  return editorInteractionLocked || !draftBootstrapComplete;
+}
+
+function setEditorInteractionLocked(locked) {
+  editorInteractionLocked = locked;
+  document.body.classList.toggle("is-editor-restoring", locked);
+  editorView.setAttribute("aria-busy", locked ? "true" : "false");
+  canvas.selection = !locked;
+  canvas.skipTargetFind = locked;
+
+  canvas.getObjects().forEach((object) => {
+    if (object.isPlaceholder) {
+      object.selectable = false;
+      object.evented = false;
+      return;
+    }
+
+    object.selectable = !locked;
+    object.evented = !locked;
+  });
+
+  if (locked) {
+    canvas.discardActiveObject();
+    hideObjectMenu();
+    hideColorPopup();
+    hideFontPopup();
+  }
+
+  canvas.renderAll();
+}
+
+function isEditorRouteActive() {
+  return window.location.hash === EDITOR_ROUTE_HASH;
+}
+
+function pushEditorRoute() {
+  if (isEditorRouteActive()) return;
+
+  window.history.pushState(null, "", EDITOR_ROUTE_HASH);
+}
+
+function clearEditorRoute() {
+  if (!isEditorRouteActive()) return;
+
+  const url = new URL(window.location.href);
+  url.hash = "";
+  window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+}
+
 function buildDraftSnapshot() {
   return {
     schemaVersion: DRAFT_SCHEMA_VERSION,
@@ -499,6 +551,7 @@ async function bootstrapDraftState() {
   }
 
   draftBootstrapComplete = true;
+  setEditorInteractionLocked(false);
 }
 
 function persistDraftOnExit() {
@@ -509,20 +562,44 @@ function persistDraftOnExit() {
   void persistDraftSnapshot(snapshot);
 }
 
-async function goToEditor() {
-  if (draftBootstrapPromise) {
-    await draftBootstrapPromise;
-  }
+function clearInitialViewMarker() {
+  document.documentElement.removeAttribute("data-initial-view");
+}
+
+function showEditorShell() {
   landingView.style.display = "none";
   editorView.style.display = "block";
   document.body.classList.add("is-editor-active");
+  setEditorInteractionLocked(!draftBootstrapComplete);
   rotateHintDismissed = false;
   syncBodyOverflow();
   closeSidebar();
   syncEditorViewport();
+  clearInitialViewMarker();
 }
 
-function goToLanding() {
+async function goToEditor({ updateRoute = true } = {}) {
+  if (updateRoute) {
+    pushEditorRoute();
+  }
+
+  showEditorShell();
+
+  if (draftBootstrapPromise) {
+    await draftBootstrapPromise;
+    if (document.body.classList.contains("is-editor-active")) {
+      setEditorInteractionLocked(false);
+      syncEditorViewport();
+    }
+  }
+}
+
+function goToLanding({ updateRoute = true } = {}) {
+  if (updateRoute) {
+    clearEditorRoute();
+  }
+
+  setEditorInteractionLocked(false);
   landingView.style.display = "block";
   editorView.style.display = "none";
   document.body.classList.remove("is-editor-active");
@@ -533,10 +610,22 @@ function goToLanding() {
   hideFontPopup();
   syncBodyOverflow();
   syncRotateHintVisibility();
+  clearInitialViewMarker();
   requestAnimationFrame(() => {
     updateLandingViewportVars();
     landingView.scrollTo({ top: 0, behavior: "smooth" });
   });
+}
+
+function syncViewWithRoute() {
+  if (isEditorRouteActive()) {
+    void goToEditor({ updateRoute: false });
+    return;
+  }
+
+  if (document.body.classList.contains("is-editor-active")) {
+    goToLanding({ updateRoute: false });
+  }
 }
 
 function hideColorPopup() {
@@ -747,6 +836,8 @@ function syncTextToolStates(obj) {
 }
 
 function toggleBold() {
+  if (isEditorActionBlocked()) return;
+
   const obj = canvas.getActiveObject();
   if (!obj || !(obj.type === "i-text" || obj.type === "text")) return;
   const next = obj.fontWeight === "bold" ? "normal" : "bold";
@@ -758,6 +849,8 @@ function toggleBold() {
 }
 
 function toggleItalic() {
+  if (isEditorActionBlocked()) return;
+
   const obj = canvas.getActiveObject();
   if (!obj || !(obj.type === "i-text" || obj.type === "text")) return;
   const next = obj.fontStyle === "italic" ? "normal" : "italic";
@@ -769,6 +862,8 @@ function toggleItalic() {
 }
 
 function toggleUnderline() {
+  if (isEditorActionBlocked()) return;
+
   const obj = canvas.getActiveObject();
   if (!obj || !(obj.type === "i-text" || obj.type === "text")) return;
   obj.set("underline", !obj.underline);
@@ -779,6 +874,8 @@ function toggleUnderline() {
 }
 
 function duplicateSelectedText() {
+  if (isEditorActionBlocked()) return;
+
   const obj = canvas.getActiveObject();
   if (!obj || !(obj.type === "i-text" || obj.type === "text")) return;
 
@@ -977,6 +1074,11 @@ function layoutBatchImages(images) {
 }
 
 fileInput?.addEventListener("change", (e) => {
+  if (isEditorActionBlocked()) {
+    e.target.value = "";
+    return;
+  }
+
   const files = e.target.files;
   const ALLOWED_MIME = new Set([
     "image/png",
@@ -1015,6 +1117,8 @@ fileInput?.addEventListener("change", (e) => {
 });
 
 function addText() {
+  if (isEditorActionBlocked()) return;
+
   const text = new fabric.IText(translations[currentLang].defaultText, {
     left: canvas.width / 2,
     top: canvas.height / 2,
@@ -1042,6 +1146,8 @@ function addText() {
 }
 
 function changeZIndex(direction) {
+  if (isEditorActionBlocked()) return;
+
   const obj = canvas.getActiveObject();
   if (!obj) return;
 
@@ -1060,6 +1166,8 @@ function changeZIndex(direction) {
 }
 
 function deleteSelected() {
+  if (isEditorActionBlocked()) return;
+
   const activeObjects = canvas.getActiveObjects();
   canvas.discardActiveObject();
   canvas.remove(...activeObjects);
@@ -1071,6 +1179,8 @@ function deleteSelected() {
 }
 
 function exportBoard() {
+  if (isEditorActionBlocked()) return;
+
   placeholders.forEach((p) => p.set("visible", false));
   canvas.discardActiveObject();
   hideObjectMenu();
@@ -1240,6 +1350,8 @@ function positionObjectMenu() {
 }
 
 omTextColor.addEventListener("input", () => {
+  if (isEditorActionBlocked()) return;
+
   const obj = canvas.getActiveObject();
   if (!obj || !(obj.type === "i-text" || obj.type === "text")) return;
   obj.set("fill", omTextColor.value);
@@ -1249,10 +1361,20 @@ omTextColor.addEventListener("input", () => {
 });
 
 canvas.on("selection:created", () => {
+  if (editorInteractionLocked) {
+    hideObjectMenu();
+    return;
+  }
+
   menuUserPositioned = false;
   positionObjectMenu();
 });
 canvas.on("selection:updated", () => {
+  if (editorInteractionLocked) {
+    hideObjectMenu();
+    return;
+  }
+
   menuUserPositioned = false;
   positionObjectMenu();
 });
@@ -1312,6 +1434,8 @@ canvas.on("text:changed", () => {
   }
 
   function onStart(e) {
+    if (isEditorActionBlocked()) return;
+
     if (e.touches && e.touches.length === 2) {
       const active = canvas.getActiveObject();
       const targetObject = active && !active.isPlaceholder ? active : null;
@@ -1442,6 +1566,7 @@ canvas.on("mouse:down", () => {
 
 window.addEventListener("keydown", (e) => {
   if (editorView.style.display !== "block") return;
+  if (isEditorActionBlocked()) return;
 
   const active = canvas.getActiveObject();
   const editingText = active && active.type === "i-text" && active.isEditing;
@@ -1558,6 +1683,9 @@ window.visualViewport?.addEventListener("resize", () => {
   syncEditorViewport({ dismissForLandscape: true });
 });
 
+window.addEventListener("hashchange", syncViewWithRoute);
+window.addEventListener("popstate", syncViewWithRoute);
+
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
     persistDraftOnExit();
@@ -1572,4 +1700,8 @@ window.addEventListener("pagehide", () => {
 updateLandingViewportVars();
 syncRotateHintVisibility();
 setLandingPhotos();
+if (isEditorRouteActive()) {
+  showEditorShell();
+}
 draftBootstrapPromise = bootstrapDraftState();
+syncViewWithRoute();
