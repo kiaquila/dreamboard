@@ -7,6 +7,7 @@ The current application is still a static frontend, but it is no longer entirely
 - [index.html](/Users/kristina.kurashova/projects/dreamboard/index.html) for the app shell and semantic markup
 - [app.css](/Users/kristina.kurashova/projects/dreamboard/src/styles/app.css) for the full visual layer
 - [app.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/app.js) for landing and editor orchestration
+- [locale-boot.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/locale-boot.js) for early cookie-based locale boot before the main module runs
 - [draft-store.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/draft-store.js) for browser-side draft persistence
 - [i18n.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/i18n.js) for locale dictionaries
 - [landing-photo.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/landing-photo.js) for the embedded landing media asset
@@ -57,6 +58,18 @@ The current static app now treats phone layouts as a separate editor mode:
 - phone landscape switches into a true side-by-side shell so the tools and canvas use the wider viewport instead of reusing the portrait bottom-sheet layout
 - editor return controls are icon-only, with localized tooltips instead of visible labels to keep the shell visually lighter
 
+## Locale Boot
+
+The static shell is English-first. The app does not infer language from
+`navigator.language`; a first-time visitor without a locale cookie sees English
+until they explicitly choose another language.
+
+Explicit language choices are stored in the first-party `dreamboard_locale`
+cookie. A small same-origin boot script reads that cookie before the main module
+runs, sets the document language, and only hides the body briefly when a known
+non-English preference exists so the main module can apply localized copy before
+the page becomes visible. Invalid or missing cookie values fall back to English.
+
 ## Build Contract
 
 The repository keeps a static build layer:
@@ -69,12 +82,13 @@ The repository keeps a static build layer:
 
 The current editor now preserves the working board as a browser draft:
 
-- the draft snapshot stores the current locale plus a Fabric JSON representation of all non-placeholder user objects
+- the draft snapshot stores a Fabric JSON representation of all non-placeholder user objects
 - the primary storage layer is IndexedDB, which is a better fit than `localStorage` for image-heavy boards and structured data
 - `localStorage` remains only as a lightweight fallback when IndexedDB is unavailable
 - save operations are debounced during editing and flushed again on `visibilitychange` / `pagehide`
 - the draft is restored automatically the next time the editor opens in the same browser
 - draft persistence is intentionally silent in the UI; the app keeps autosaving without a visible “draft saved” badge
+- locale preference is intentionally separate from draft persistence and lives in the `dreamboard_locale` cookie
 
 This keeps persistence local-first without introducing backend state or breaking the static deploy model.
 

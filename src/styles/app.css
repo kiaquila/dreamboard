@@ -28,6 +28,10 @@ html {
   overflow: hidden;
 }
 
+html[data-locale-pending="true"] body {
+  visibility: hidden;
+}
+
 /* =========
            LANDING
            ========= */
