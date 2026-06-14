@@ -99,6 +99,9 @@ The static app now treats `#editor` as the editor route:
   does not flash during refresh
 - refreshing a browser tab while `#editor` is present opens the editor shell
   immediately and then restores the local draft
+- editing controls and canvas interactions stay locked until draft restore
+  completes, so slow image-heavy drafts cannot overwrite new edits made during
+  bootstrap
 - browser back and forward navigation keep the visible view synchronized with
   the hash route
 - using the editor home/back controls clears `#editor`, so a later reload stays

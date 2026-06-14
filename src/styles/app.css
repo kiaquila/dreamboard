@@ -773,6 +773,12 @@ button:hover {
   box-sizing: border-box;
 }
 
+body.is-editor-restoring .canvas-area,
+body.is-editor-restoring .control-group,
+body.is-editor-restoring .object-menu {
+  pointer-events: none;
+}
+
 .canvas-wrapper {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   background: white;

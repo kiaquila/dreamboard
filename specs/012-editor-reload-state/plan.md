@@ -11,8 +11,10 @@
 - On initial load, open the editor automatically when the hash route is present.
 - Mark the initial editor route before CSS loads so the landing view cannot
   paint first.
+- Lock canvas-mutating editor controls until draft restore has completed.
 - Listen for hash changes so browser back/forward stays in sync with the view.
-- Keep draft bootstrap sequencing intact before showing the editor.
+- Keep draft bootstrap sequencing intact while showing the editor shell
+  immediately.
 
 ## Slice 3: Documentation and Validation
 

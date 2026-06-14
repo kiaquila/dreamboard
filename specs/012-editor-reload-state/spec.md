@@ -13,6 +13,8 @@ draft in the same browser session.
   view.
 - Continue relying on local draft persistence for canvas objects and uploaded
   images.
+- Keep editor interactions locked while the local draft restore is still
+  pending.
 - Document the editor route and draft restore contract.
 
 ## Non-Goals
@@ -30,7 +32,8 @@ draft in the same browser session.
 3. Refreshing while on the editor route does not flash the landing view before
    the editor appears.
 4. A saved local draft restores uploaded images and text objects after refresh.
-5. Returning to the landing view clears the editor route so future reloads stay
+5. Editor controls cannot mutate the canvas before draft restore completes.
+6. Returning to the landing view clears the editor route so future reloads stay
    on the landing view.
-6. Browser back/forward navigation switches between landing and editor routes.
-7. `pnpm run ci` passes.
+7. Browser back/forward navigation switches between landing and editor routes.
+8. `pnpm run ci` passes.
