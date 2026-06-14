@@ -32,6 +32,18 @@ html[data-locale-pending="true"] body {
   visibility: hidden;
 }
 
+html[data-initial-view="editor"] .landing-view {
+  display: none;
+}
+
+html[data-initial-view="editor"] .editor-view {
+  display: block;
+}
+
+html[data-initial-view="editor"] .sticky-footer {
+  display: none;
+}
+
 /* =========
            LANDING
            ========= */

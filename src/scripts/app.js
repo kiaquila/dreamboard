@@ -15,6 +15,7 @@ let currentLang = LANG_KEYS.includes(bootLocale) ? bootLocale : DEFAULT_LANG;
 const MOBILE_BREAKPOINT = 900;
 const DRAFT_SCHEMA_VERSION = 1;
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
+const EDITOR_ROUTE_HASH = "#editor";
 
 const landingView = document.getElementById("landingView");
 const editorView = document.getElementById("editorView");
@@ -402,6 +403,24 @@ function syncBodyOverflow() {
       : "";
 }
 
+function isEditorRouteActive() {
+  return window.location.hash === EDITOR_ROUTE_HASH;
+}
+
+function pushEditorRoute() {
+  if (isEditorRouteActive()) return;
+
+  window.history.pushState(null, "", EDITOR_ROUTE_HASH);
+}
+
+function clearEditorRoute() {
+  if (!isEditorRouteActive()) return;
+
+  const url = new URL(window.location.href);
+  url.hash = "";
+  window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+}
+
 function buildDraftSnapshot() {
   return {
     schemaVersion: DRAFT_SCHEMA_VERSION,
@@ -509,10 +528,11 @@ function persistDraftOnExit() {
   void persistDraftSnapshot(snapshot);
 }
 
-async function goToEditor() {
-  if (draftBootstrapPromise) {
-    await draftBootstrapPromise;
-  }
+function clearInitialViewMarker() {
+  document.documentElement.removeAttribute("data-initial-view");
+}
+
+function showEditorShell() {
   landingView.style.display = "none";
   editorView.style.display = "block";
   document.body.classList.add("is-editor-active");
@@ -520,9 +540,27 @@ async function goToEditor() {
   syncBodyOverflow();
   closeSidebar();
   syncEditorViewport();
+  clearInitialViewMarker();
 }
 
-function goToLanding() {
+async function goToEditor({ updateRoute = true } = {}) {
+  if (updateRoute) {
+    pushEditorRoute();
+  }
+
+  showEditorShell();
+
+  if (draftBootstrapPromise) {
+    await draftBootstrapPromise;
+    syncEditorViewport();
+  }
+}
+
+function goToLanding({ updateRoute = true } = {}) {
+  if (updateRoute) {
+    clearEditorRoute();
+  }
+
   landingView.style.display = "block";
   editorView.style.display = "none";
   document.body.classList.remove("is-editor-active");
@@ -533,10 +571,22 @@ function goToLanding() {
   hideFontPopup();
   syncBodyOverflow();
   syncRotateHintVisibility();
+  clearInitialViewMarker();
   requestAnimationFrame(() => {
     updateLandingViewportVars();
     landingView.scrollTo({ top: 0, behavior: "smooth" });
   });
+}
+
+function syncViewWithRoute() {
+  if (isEditorRouteActive()) {
+    void goToEditor({ updateRoute: false });
+    return;
+  }
+
+  if (document.body.classList.contains("is-editor-active")) {
+    goToLanding({ updateRoute: false });
+  }
 }
 
 function hideColorPopup() {
@@ -1558,6 +1608,9 @@ window.visualViewport?.addEventListener("resize", () => {
   syncEditorViewport({ dismissForLandscape: true });
 });
 
+window.addEventListener("hashchange", syncViewWithRoute);
+window.addEventListener("popstate", syncViewWithRoute);
+
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
     persistDraftOnExit();
@@ -1572,4 +1625,8 @@ window.addEventListener("pagehide", () => {
 updateLandingViewportVars();
 syncRotateHintVisibility();
 setLandingPhotos();
+if (isEditorRouteActive()) {
+  showEditorShell();
+}
 draftBootstrapPromise = bootstrapDraftState();
+syncViewWithRoute();
