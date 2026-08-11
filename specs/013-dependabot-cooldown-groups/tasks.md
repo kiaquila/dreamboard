@@ -6,4 +6,4 @@
 - [x] T013c: Add the `minor-and-patch` version-update group to each ecosystem.
 - [x] T013d: Document the Dependabot policy in the DevOps delivery playbook.
 - [x] T013e: Validate the YAML structure and run repository preflight.
-- [ ] T013f: Open a draft pull request.
+- [x] T013f: Open a draft pull request.
