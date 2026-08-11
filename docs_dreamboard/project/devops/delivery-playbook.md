@@ -22,6 +22,14 @@ Do not merge while any of these are true:
 - the active review backend has unresolved blocking findings
 - the Vercel preview is failing or visibly broken for the changed flow
 
+## Dependabot Configuration
+
+Keep grouped Dependabot version updates scoped to each package ecosystem. The
+`minor-and-patch` group combines only minor and patch version updates; major
+updates remain individual pull requests. GitHub Actions does not support the
+SemVer-specific cooldown keys, so its configuration uses only `default-days`.
+The npm configuration may retain SemVer-specific cooldown periods.
+
 ## Production Smoke
 
 After merge to `main`, verify the production URL documented in
