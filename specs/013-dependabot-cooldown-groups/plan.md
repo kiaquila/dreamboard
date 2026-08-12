@@ -1,0 +1,31 @@
+# Plan 013: Dependabot Cooldown and Update Groups
+
+## Approach
+
+Update the Dependabot configuration, its DevOps documentation, and the
+feature-memory records. The two `updates` entries keep separate group
+definitions because Dependabot groups version updates per ecosystem. Include
+the minimal pnpm override and lockfile changes needed to remediate the OSV
+findings.
+
+## Changes
+
+1. Remove the three SemVer-specific cooldown keys from `github-actions` while
+   preserving `default-days: 7`.
+2. Add a `minor-and-patch` group under each ecosystem with
+   `applies-to: version-updates` and `update-types` of `minor` and `patch`.
+3. Record the supported cooldown and grouping policy in the DevOps playbook.
+4. Add feature memory for the configuration change.
+5. Update the existing pnpm override for `brace-expansion` and add one for
+   `fast-uri`, then regenerate only the lockfile entries required by those
+   overrides.
+
+## Verification
+
+- Parse `.github/dependabot.yml` as YAML.
+- Assert the GitHub Actions entry has only `default-days` under `cooldown`.
+- Assert each ecosystem has its own `minor-and-patch` group with only minor
+  and patch update types.
+- Run OSV Scanner against `pnpm-lock.yaml` and confirm no known
+  vulnerabilities remain.
+- Run the repository preflight check.
