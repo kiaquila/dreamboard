@@ -23,8 +23,9 @@ routine update PR volume without bundling ecosystems together.
 - Keep major updates as individual pull requests.
 - Keep npm's existing SemVer-specific cooldown values.
 - Document this Dependabot policy in the DevOps delivery playbook.
+- Pin the vulnerable transitive `brace-expansion` and `fast-uri` packages to
+  their patched releases through pnpm overrides so the OSV Scan gate passes.
 
 ## Out of Scope
 
-- Updating dependency versions, manifests, or lockfiles.
 - Changing Dependabot schedules, labels, limits, or security-update behavior.

@@ -7,3 +7,5 @@
 - [x] T013d: Document the Dependabot policy in the DevOps delivery playbook.
 - [x] T013e: Validate the YAML structure and run repository preflight.
 - [x] T013f: Open a draft pull request.
+- [x] T013g: Update vulnerable transitive pnpm overrides and lockfile entries
+      for the OSV Scan gate.

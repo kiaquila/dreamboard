@@ -13,6 +13,9 @@ group definitions because Dependabot groups version updates per ecosystem.
    `applies-to: version-updates` and `update-types` of `minor` and `patch`.
 3. Record the supported cooldown and grouping policy in the DevOps playbook.
 4. Add feature memory for the configuration change.
+5. Update the existing pnpm override for `brace-expansion` and add one for
+   `fast-uri`, then regenerate only the lockfile entries required by those
+   overrides.
 
 ## Verification
 
@@ -20,4 +23,6 @@ group definitions because Dependabot groups version updates per ecosystem.
 - Assert the GitHub Actions entry has only `default-days` under `cooldown`.
 - Assert each ecosystem has its own `minor-and-patch` group with only minor
   and patch update types.
+- Run OSV Scanner against `pnpm-lock.yaml` and confirm no known
+  vulnerabilities remain.
 - Run the repository preflight check.
