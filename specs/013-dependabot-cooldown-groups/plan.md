@@ -2,8 +2,11 @@
 
 ## Approach
 
-Update only `.github/dependabot.yml`. The two `updates` entries keep separate
-group definitions because Dependabot groups version updates per ecosystem.
+Update the Dependabot configuration, its DevOps documentation, and the
+feature-memory records. The two `updates` entries keep separate group
+definitions because Dependabot groups version updates per ecosystem. Include
+the minimal pnpm override and lockfile changes needed to remediate the OSV
+findings.
 
 ## Changes
 

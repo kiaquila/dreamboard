@@ -9,3 +9,4 @@
 - [x] T013f: Open a draft pull request.
 - [x] T013g: Update vulnerable transitive pnpm overrides and lockfile entries
       for the OSV Scan gate.
+- [x] T013h: Align the feature plan scope with the complete PR change set.
