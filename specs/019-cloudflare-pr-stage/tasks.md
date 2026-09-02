@@ -6,5 +6,5 @@
 - [x] Add automated validation.
 - [x] Update durable deployment documentation.
 - [x] Run the full repository checks.
-- [ ] Open the implementation pull request.
+- [x] Open the implementation pull request.
 - [ ] Connect Cloudflare Workers Builds and verify a PR preview.
