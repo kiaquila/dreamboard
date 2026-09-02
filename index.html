@@ -21,7 +21,7 @@
       href="./src/assets/apple-touch-icon.png"
     />
 
-    <script src="./src/scripts/locale-boot.js"></script>
+    <script src="./src/scripts/view-boot.js"></script>
 
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;700&family=Lora:ital,wght@0,400;1,400&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Poppins:wght@400;700&family=Merriweather:wght@400;700&family=Pacifico&family=Caveat:wght@400;700&family=Dancing+Script:wght@700&family=Anton&family=Ubuntu:wght@400;700&family=Marck+Script&family=Bad+Script&display=swap"
@@ -42,11 +42,15 @@
     <!-- LANDING VIEW -->
     <div class="landing-view" id="landingView">
       <header class="landing-header" aria-label="Header">
-        <div class="landing-header-bar">
-          <h1>DREAM <span style="color: var(--pantone-yellow)">BOARD</span></h1>
-          <div class="lang-switcher">
-            <button type="button" id="langBtn">EN</button>
-          </div>
+        <div class="brand-mark">
+          <span class="brand-tag"
+            ><strong
+              >ks<i class="brand-dot" aria-hidden="true"></i
+              ><span class="visually-hidden"> </span>design</strong
+            >
+            · lab</span
+          >
+          <span class="brand-tag brand-tag-study">study 01 — dream board</span>
         </div>
       </header>
 
@@ -55,9 +59,9 @@
         <canvas class="hero-dots" aria-hidden="true"></canvas>
         <div class="landing-wrap landing-wrap-full">
           <div class="hero-center">
-            <h2 class="hero-title hero-title-center" id="l-hero-title">
-              Create your vision board for free — no registration
-            </h2>
+            <h1 class="hero-title hero-title-center" id="l-hero-title">
+              Create your vision board for free
+            </h1>
             <button type="button" class="cta-btn cta-btn-center" id="l-go-btn">
               Go
             </button>
@@ -146,7 +150,7 @@
         <div class="landing-wrap landing-wrap-full">
           <div class="hero-center">
             <h2 class="hero-title hero-title-final" id="l-final-title">
-              It's time to make dreams real
+              It's time to make dreams come true
             </h2>
             <button
               type="button"
@@ -180,8 +184,18 @@
             ></path>
           </svg>
         </button>
-        <div class="editor-mobile-brand" aria-hidden="true">
-          DREAM <span style="color: var(--pantone-yellow)">BOARD</span>
+        <div
+          class="editor-mobile-brand brand-mark brand-mark-stacked"
+          aria-hidden="true"
+        >
+          <span class="brand-tag"
+            ><strong
+              >ks<i class="brand-dot" aria-hidden="true"></i
+              ><span class="visually-hidden"> </span>design</strong
+            >
+            · lab</span
+          >
+          <span class="brand-tag brand-tag-study">study 01 — dream board</span>
         </div>
         <div class="editor-mobile-actions">
           <button
@@ -192,14 +206,6 @@
           >
             ☰
           </button>
-          <button
-            type="button"
-            class="editor-mobile-lang"
-            id="langBtnEditorMobile"
-            aria-label="Switch language"
-          >
-            EN
-          </button>
         </div>
       </div>
       <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -207,9 +213,18 @@
       <div class="app-container">
         <aside class="sidebar" id="sidebar">
           <div class="sidebar-header">
-            <h1>
-              DREAM <span style="color: var(--pantone-yellow)">BOARD</span>
-            </h1>
+            <div class="brand-mark brand-mark-stacked">
+              <span class="brand-tag"
+                ><strong
+                  >ks<i class="brand-dot" aria-hidden="true"></i
+                  ><span class="visually-hidden"> </span>design</strong
+                >
+                · lab</span
+              >
+              <span class="brand-tag brand-tag-study"
+                >study 01 — dream board</span
+              >
+            </div>
             <div class="sidebar-header-actions">
               <button
                 type="button"
@@ -228,7 +243,6 @@
                   ></path>
                 </svg>
               </button>
-              <button type="button" id="langBtnEditor">EN</button>
             </div>
           </div>
 

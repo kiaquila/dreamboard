@@ -1,5 +1,10 @@
 # Spec 010: default English cookie locale
 
+> Superseded by `specs/015-ember-brand-english-only/`. The app is now
+> English-only: the locale switcher, the `dreamboard_locale` cookie, and the
+> RU/ES dictionaries described below no longer exist. Kept as a record of how
+> the English-first default was reached.
+
 ## Goal
 
 Make English the no-preference first render for the static app, and persist an

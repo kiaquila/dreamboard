@@ -7,9 +7,9 @@ The current application is still a static frontend, but it is no longer entirely
 - [index.html](/Users/kristina.kurashova/projects/dreamboard/index.html) for the app shell and semantic markup
 - [app.css](/Users/kristina.kurashova/projects/dreamboard/src/styles/app.css) for the full visual layer
 - [app.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/app.js) for landing and editor orchestration
-- [locale-boot.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/locale-boot.js) for early cookie-based locale boot before the main module runs
+- [view-boot.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/view-boot.js) for marking the initial view before the main module runs
 - [draft-store.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/draft-store.js) for browser-side draft persistence
-- [i18n.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/i18n.js) for locale dictionaries
+- [strings.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/strings.js) for the single English copy source
 - [landing-photo.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/landing-photo.js) for the embedded landing media asset
 - [hero-mountains.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/hero-mountains.js) for the dotted-mountain hero canvas (see [Hero dotted mountains](#hero-dotted-mountains))
 - [`src/assets/images/landing/`](/Users/kristina.kurashova/projects/dreamboard/src/assets/images/landing) for repository-owned landing artwork (currently the halftone mountain tone source)
@@ -76,19 +76,52 @@ The current static app now treats phone layouts as a separate editor mode:
 - the object menu docks near the bottom of the canvas on mobile instead of chasing the selected object into cramped positions
 - portrait phone editor remains usable; landscape is now a recommendation surfaced through a non-blocking floating hint card instead of a hard gate, because mobile web orientation locks are not reliable enough to block entry
 - phone landscape switches into a true side-by-side shell so the tools and canvas use the wider viewport instead of reusing the portrait bottom-sheet layout
-- editor return controls are icon-only, with localized tooltips instead of visible labels to keep the shell visually lighter
+- editor return controls are icon-only, with tooltips instead of visible labels to keep the shell visually lighter
 
-## Locale Boot
+## Brand Chrome
 
-The static shell is English-first. The app does not infer language from
-`navigator.language`; a first-time visitor without a locale cookie sees English
-until they explicitly choose another language.
+The app has no wordmark of its own. Landing and editor both carry the studio
+chrome transplanted from `ember.ks-design.art`: a `ks·design · lab` tag and a
+`study 01 — dream board` tag, rendered as `.brand-mark` with `.brand-tag`
+children.
 
-Explicit language choices are stored in the first-party `dreamboard_locale`
-cookie. A small same-origin boot script reads that cookie before the main module
-runs, sets the document language, and only hides the body briefly when a known
-non-English preference exists so the main module can apply localized copy before
-the page becomes visible. Invalid or missing cookie values fall back to English.
+The mark is a faithful copy of the Ember original, not a re-interpretation:
+
+- typeface is the Ember system stack (`--brand-font`), not the app's DM Sans
+- 11px, uppercase, `0.22em` letter-spacing, `--brand-muted` on the tag and
+  `--brand-ink` on the `strong` half
+- the dot between `ks` and `design` is the same indigo-to-cyan gradient
+  (`--brand-dot-a` / `--brand-dot-b`) with a `visually-hidden` space after it so
+  screen readers still hear two words
+
+Layout differs by shell because the space does:
+
+- landing uses the Ember arrangement, both tags on one row, pushed apart
+- the editor sidebar stacks the tags and shrinks them, because the rail shares
+  its width with the back control
+- below 360px the landing tags shrink so the row never wraps
+- the rotated portrait editor rail leaves roughly 104px for the mark, which no
+  readable size fits, so it shows the `ks·design · lab` tag alone
+
+No tag is ever allowed to wrap. Any change to the tag text or to the rail width
+needs re-measuring: the widest tag against the space its shell actually gives
+it, at 320px in both orientations as well as at desktop.
+
+The landing hero heading is the document `h1`. Removing the old wordmark removed
+the only `h1`, and the hero title is the page's real top-level heading.
+
+## Language
+
+The app ships English only. There is no locale switcher, no locale cookie, no
+locale dictionaries, and no `navigator.language` sniffing. All user-visible copy
+lives in one place, `src/scripts/strings.js`, and `index.html` declares
+`lang="en"` statically.
+
+## View Boot
+
+A small same-origin boot script runs before the stylesheet loads and marks the
+document with `data-initial-view="editor"` when the URL already carries the
+`#editor` route. See [Editor Reload Route](#editor-reload-route).
 
 ## Build Contract
 
@@ -108,7 +141,6 @@ The current editor now preserves the working board as a browser draft:
 - save operations are debounced during editing and flushed again on `visibilitychange` / `pagehide`
 - the draft is restored automatically the next time the editor opens in the same browser
 - draft persistence is intentionally silent in the UI; the app keeps autosaving without a visible “draft saved” badge
-- locale preference is intentionally separate from draft persistence and lives in the `dreamboard_locale` cookie
 
 ## Editor Reload Route
 
@@ -137,7 +169,7 @@ The recommended target architecture for the next phase is:
 
 - `Vite + React + TypeScript`
 - dedicated components for landing and editor shells
-- extracted locales, assets, and editor services
+- extracted copy, assets, and editor services
 - extraction of the mobile editor shell into dedicated components instead of shared static DOM branches
 - stronger visual and interaction parity between landing and editor on small screens
 
