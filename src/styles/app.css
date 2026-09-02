@@ -10,12 +10,18 @@
   --editor-mobile-header-offset: 68px;
   --editor-mobile-topbar-height: 74px;
   --editor-mobile-sheet-gap: 16px;
-  --landing-hero-image: url("../assets/images/landing/dreamboard-wallpaper.jpg");
 
   --landing-bg: #ececec;
   --landing-bg-2: #f3f3f3;
   --landing-text-dark: #2b2b2b;
   --landing-text-mid: #6b6b6b;
+
+  /* Hero slides: paper and ink of the dotted mountains, footer tones */
+  --landing-paper: #f4f2ee;
+  --landing-ink: #1b1b1b;
+  --footer-muted: #8a877f;
+  --footer-line: rgba(27, 27, 27, 0.18);
+  --footer-accent: #b07f2f;
 }
 
 body,
@@ -265,20 +271,42 @@ h1 {
   margin-top: 26px;
 }
 
-/* Fullscreen background image for slide 1 and 4 */
+/* Hero slides: the text block sits in the free sky above the mountains */
+.landing-section.bg-hero .hero-center {
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: clamp(32px, 12vh, 140px);
+}
+
+.landing-section.bg-hero .hero-title {
+  align-self: center;
+  max-width: 880px;
+  text-align: center;
+}
+
+.landing-section.bg-hero .cta-btn-center {
+  margin-top: 22px;
+}
+
+/* Hero slides (1 and 4): paper background with a dotted-mountain canvas behind the content */
 .landing-section.bg-hero {
-  background-image:
-    radial-gradient(
-      circle at top,
-      rgba(255, 255, 255, 0.5),
-      rgba(255, 255, 255, 0.08) 32%,
-      rgba(24, 24, 24, 0.1) 100%
-    ),
-    var(--landing-hero-image),
-    linear-gradient(135deg, #ebe5dc 0%, #d8d4cc 48%, #c1b8ac 100%);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+  background: var(--landing-paper);
+}
+
+.hero-dots {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.landing-section.bg-hero .landing-wrap {
+  position: relative;
+  z-index: 1;
 }
 
 /* Slide 2 photo layout */
@@ -1113,22 +1141,30 @@ body.is-editor-restoring .object-menu {
   fill: var(--volcanic-grass);
 }
 
-/* Футер (как в редакторе) */
+/* Footer: one quiet centred line, same idiom as ember.ks-design.art */
 .sticky-footer {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 45px;
+  height: var(--footer-height);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  background: #1e1e1ef2;
+  padding: 0 16px;
+  box-sizing: border-box;
+  background: transparent;
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   font-size: 12px;
-  color: #888;
-  font-family: Inter, sans-serif;
+  letter-spacing: 0.06em;
+  color: var(--footer-muted);
+  text-align: center;
   z-index: 100;
+  pointer-events: none;
+}
+
+.sticky-footer p {
+  margin: 0;
 }
 
 body.is-editor-active .sticky-footer {
@@ -1136,46 +1172,23 @@ body.is-editor-active .sticky-footer {
 }
 
 .sticky-footer a {
-  color: #888;
+  pointer-events: auto;
+  color: var(--landing-ink);
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
+  border-bottom: 1px solid var(--footer-line);
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .sticky-footer a:hover {
-  color: #888;
+  color: var(--footer-accent);
+  border-color: var(--footer-accent);
 }
 
-.footer-inner {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 0 20px;
-  box-sizing: border-box;
-}
-
-.icon-outline {
-  width: 16px;
-  height: 16px;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.icon-outline path,
-.icon-outline rect,
-.icon-outline circle {
-  stroke: currentColor;
-}
-
-.footer-copyright-icon {
-  width: 10.35px;
-  height: 10.35px;
-}
-
-.footer-name {
-  font-size: 0.85em;
+.sticky-footer a:focus-visible {
+  outline: 2px solid var(--landing-ink);
+  outline-offset: 2px;
 }
 
 /* ==========================
@@ -1380,19 +1393,6 @@ body.is-editor-active .app-container {
   .landing-header-bar h1 {
     font-size: 24px;
     letter-spacing: -1.2px;
-  }
-
-  body:not(.is-editor-active) .sticky-footer {
-    background: transparent;
-    color: rgba(59, 58, 54, 0.68);
-  }
-
-  body:not(.is-editor-active) .sticky-footer a {
-    color: rgba(59, 58, 54, 0.68);
-  }
-
-  body:not(.is-editor-active) .footer-inner {
-    text-shadow: 0 1px 14px rgba(255, 255, 255, 0.9);
   }
 
   .editor-mobile-topbar {
@@ -1754,12 +1754,6 @@ body.is-editor-active .app-container {
   color: rgb(58, 58, 58);
 }
 
-/* Move "Вперед" button lower on slide 1 and 4 */
-#landingView #slide1 .cta-btn-center,
-#landingView #slide4 .cta-btn-center {
-  margin-top: calc(26px + 50px);
-}
-
 /* Slide 3: make title much larger and shift it left; move rules text right */
 #landingView #slide3 .rules-title-landing {
   font-size: clamp(30px, 4.8vw, 58px);
@@ -1787,19 +1781,6 @@ body.is-editor-active .app-container {
     margin-left: 30px !important;
     width: calc(100% - 30px);
   }
-  #landingView #slide1 .cta-btn-center,
-  #landingView #slide4 .cta-btn-center {
-    margin-top: calc(26px + 35px);
-  }
-}
-
-/* ============================
-   RU: растянуть заголовки 1 и 4 экранов
-   ============================ */
-html[lang="ru"] #slide1 .landing-title-unified,
-html[lang="ru"] #slide4 .landing-title-unified {
-  max-width: 1200px; /* растягивает контейнер */
-  width: calc(100% - 80px); /* даёт больше воздуха по строке */
 }
 
 /* Donate modal (glass / Material 3) */

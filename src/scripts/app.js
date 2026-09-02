@@ -1,5 +1,6 @@
 import { translations } from "./i18n.js";
 import { LANDING_PHOTO_JACKET } from "./landing-photo.js";
+import { initHeroMountains } from "./hero-mountains.js";
 import {
   readDraftSnapshot,
   writeDraftSnapshot,
@@ -1700,6 +1701,7 @@ window.addEventListener("pagehide", () => {
 updateLandingViewportVars();
 syncRotateHintVisibility();
 setLandingPhotos();
+initHeroMountains(document.querySelectorAll(".landing-section.bg-hero"));
 if (isEditorRouteActive()) {
   showEditorShell();
 }
