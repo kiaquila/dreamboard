@@ -149,6 +149,8 @@ The current editor now preserves the working board as a browser draft:
 - save operations are debounced during editing and flushed again on `visibilitychange` / `pagehide`
 - the draft is restored automatically the next time the editor opens in the same browser
 - draft persistence is intentionally silent in the UI; the app keeps autosaving without a visible “draft saved” badge
+- the save-status elements and the JavaScript that drove them are fully removed, not hidden: there is no `#saveIndicator` markup, no `setSaveStatus()` helper, and no save-status copy keys
+- reintroducing a save indicator therefore means adding markup, styles, and a status helper together, in a slice that revisits the silent-persistence decision
 
 ## Editor Reload Route
 

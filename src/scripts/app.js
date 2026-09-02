@@ -23,8 +23,6 @@ const rotateHintCloseButton = document.getElementById("rotateHintCloseBtn");
 const fileInput = document.getElementById("fileInput");
 const addTextButton = document.getElementById("t-addtext");
 const downloadButton = document.getElementById("t-download");
-const saveIndicator = document.getElementById("saveIndicator");
-const saveIndicatorMobile = document.getElementById("saveIndicatorMobile");
 
 // Editor elements
 const objectMenu = document.getElementById("objectMenu");
@@ -63,7 +61,6 @@ const FONT_FAMILIES = [
 let placeholders = [];
 let draftSaveTimer = null;
 let suppressDraftPersistence = false;
-let currentSaveStatusKey = "saveIdle";
 let draftBootstrapComplete = false;
 let draftBootstrapPromise = null;
 let editorInteractionLocked = false;
@@ -183,17 +180,6 @@ function applyToolbarTooltips() {
   omFontFamilyBtn.setAttribute("data-tooltip", t.ttFont);
 }
 
-function setSaveStatus(statusKey) {
-  currentSaveStatusKey = statusKey;
-  const label = strings[statusKey] || "";
-
-  [saveIndicator, saveIndicatorMobile].forEach((node) => {
-    if (!node) return;
-    node.textContent = label;
-    node.hidden = true;
-  });
-}
-
 function applyStaticCopy({ syncPlaceholders = true } = {}) {
   const t = strings;
 
@@ -259,7 +245,6 @@ function applyStaticCopy({ syncPlaceholders = true } = {}) {
     createPlaceholders();
   }
   applyToolbarTooltips();
-  setSaveStatus(currentSaveStatusKey);
 }
 
 function scrollToSlide(id) {
@@ -386,17 +371,13 @@ async function persistDraftSnapshot(snapshot = buildDraftSnapshot()) {
 
   try {
     await writeDraftSnapshot(snapshot);
-    setSaveStatus("saveSaved");
   } catch (error) {
     console.error("Could not persist dreamboard draft.", error);
-    setSaveStatus("saveError");
   }
 }
 
 function scheduleDraftSave({ immediate = false } = {}) {
   if (!draftBootstrapComplete || suppressDraftPersistence) return;
-
-  setSaveStatus("saveSaving");
 
   if (draftSaveTimer) {
     window.clearTimeout(draftSaveTimer);
@@ -451,9 +432,6 @@ async function bootstrapDraftState() {
   const snapshot = await readDraftSnapshot();
   if (snapshot) {
     await restoreDraftSnapshot(snapshot);
-    setSaveStatus("saveSaved");
-  } else {
-    setSaveStatus("saveIdle");
   }
 
   draftBootstrapComplete = true;
