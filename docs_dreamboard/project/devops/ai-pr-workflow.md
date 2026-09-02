@@ -34,6 +34,11 @@ This is the canonical PR loop for `dreamboard`.
 
 - Product changes in `index.html`, `src/`, future app code, or runtime config do
   not start without an active `specs/<feature-id>/` folder.
+- Dependency-only updates are exempt from product documentation and feature
+  memory, while still running the full repository baseline. The guard verifies
+  that `package.json` changes are limited to dependency fields, and it accepts
+  GitHub Actions updates only when a pinned `uses:` revision changes while its
+  action coordinate, including any action subpath, remains unchanged.
 - Local product edits in the main checkout do not count as completed work.
 - If the selected implementation agent path is unavailable, stop and report the
   blocker instead of bypassing the loop.
@@ -41,9 +46,11 @@ This is the canonical PR loop for `dreamboard`.
 - Gate scripts (`scripts/check-feature-memory.mjs`,
   `scripts/check-static-baseline.mjs`, `scripts/resolve-pr-context.mjs`,
   `scripts/ai-review-gate.mjs`) execute only from `default_branch` via
-  `actions/checkout` with explicit `ref:`. PR Guard uses a two-checkout pattern
+  pinned `actions/checkout` v7 with explicit `ref:`. PR Guard uses a two-checkout pattern
   (`.gate-trusted/` for trusted scripts, workspace root for PR content), so a
   PR cannot tamper with gate logic to bypass required checks.
+- CI and PR Guard pin `actions/setup-node` v7 and explicitly select Node 24,
+  matching the repository's declared Node 24.8-or-newer runtime policy.
 
 ## Review Contract
 
