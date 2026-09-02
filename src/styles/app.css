@@ -1394,11 +1394,13 @@ body.is-editor-active .app-container {
     letter-spacing: 0.16em;
   }
 
-  /* The editor rail is narrow: keep each tag on one line */
+  /* The editor rail is narrow: keep each tag on one line. Tracking is trimmed
+     below the Ember 0.22em so the study tag still has headroom at the tightest
+     landscape rail, where system-ui resolves to different metrics per OS. */
   .sidebar-header .brand-tag,
   .editor-mobile-brand .brand-tag {
     font-size: 9px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
   }
 
   .editor-mobile-topbar {
@@ -1687,6 +1689,13 @@ body.is-editor-active .app-container {
   body.is-editor-active .sidebar .brand-tag {
     font-size: 8px;
     letter-spacing: 0.1em;
+  }
+
+  /* Rotated portrait leaves ~104px of rail for the mark, which is not enough
+     for the study tag at Ember tracking. Keep the studio tag, drop the build
+     label, rather than wrapping or shrinking it into illegibility. */
+  body.is-editor-active .sidebar .brand-tag-study {
+    display: none;
   }
 
   body.is-editor-active .sidebar .sidebar-header-actions {

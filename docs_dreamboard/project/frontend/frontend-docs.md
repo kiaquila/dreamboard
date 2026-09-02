@@ -97,9 +97,15 @@ The mark is a faithful copy of the Ember original, not a re-interpretation:
 Layout differs by shell because the space does:
 
 - landing uses the Ember arrangement, both tags on one row, pushed apart
-- the editor sidebar stacks the tags and shrinks them, because the rail is
-  roughly 220px wide next to the back control
+- the editor sidebar stacks the tags and shrinks them, because the rail shares
+  its width with the back control
 - below 360px the landing tags shrink so the row never wraps
+- the rotated portrait editor rail leaves roughly 104px for the mark, which no
+  readable size fits, so it shows the `ks·design · lab` tag alone
+
+No tag is ever allowed to wrap. Any change to the tag text or to the rail width
+needs re-measuring: the widest tag against the space its shell actually gives
+it, at 320px in both orientations as well as at desktop.
 
 The landing hero heading is the document `h1`. Removing the old wordmark removed
 the only `h1`, and the hero title is the page's real top-level heading.

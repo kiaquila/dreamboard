@@ -24,6 +24,7 @@ tighten two landing headlines.
 - No new framework, routing layer, or backend.
 - No change to canvas, export, or draft-persistence behaviour.
 - No redesign of the landing slides beyond the two headline strings.
+- No change to how narrow the rotated portrait editor rail is.
 - No change to the footer landed in the previous hero PR.
 
 ## Acceptance Criteria
@@ -31,7 +32,8 @@ tighten two landing headlines.
 1. No `DREAM BOARD` wordmark renders anywhere in the app.
 2. Landing and editor both show the Ember mark, and its computed font stack,
    size, letter-spacing, colours, and dot gradient match the Ember original.
-3. The header mark stays on one line down to a 320px viewport.
+3. Every visible tag stays on one line at every supported viewport, landing
+   header and editor rail alike, down to 320px in both orientations.
 4. No language switcher exists in the DOM, the stylesheet, or the scripts.
 5. `src/scripts/` contains no locale dictionaries and no locale cookie code.
 6. The document still exposes exactly one `h1`.

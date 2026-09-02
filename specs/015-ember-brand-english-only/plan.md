@@ -16,10 +16,30 @@ Markup mirrors Ember exactly, including the `visually-hidden` space that keeps
 between them.
 
 `.brand-mark` is the row arrangement used on landing. `.brand-mark-stacked` is
-the column variant for the editor rail, which is roughly 220px wide and shares
-that width with the back control. Two breakpoints keep the mark on one line:
-tags drop to 9px inside the editor rail below 900px, and the landing tags drop
-to 9px below 360px.
+the column variant for the editor rail, which shares its width with the back
+control.
+
+Keeping every tag on one line is a per-shell calculation, because the space each
+shell offers differs by an order of magnitude. Measured against the widest tag,
+`study 01 — dream board`:
+
+| Shell                         | Space for the mark | Tag needs | Handling            |
+| ----------------------------- | ------------------ | --------- | ------------------- |
+| landing, 1440px               | 1390px             | 202px     | Ember 11px / 0.22em |
+| landing, 361px to 900px       | 329px and up       | 168px     | 10px / 0.16em       |
+| landing, 320px to 360px       | 288px              | 145px     | 9px / 0.12em        |
+| editor rail, 480px landscape  | 146px              | 140px     | 9px / 0.08em        |
+| editor rail, rotated portrait | 104px              | 129px     | study tag hidden    |
+
+The rotated portrait rail is the one case with no size that both fits and stays
+readable: 104px of rail would need roughly 5px type with no tracking. It shows
+the `ks·design · lab` tag alone instead, which fits at 8px with room to spare.
+Dropping the build label there is a better trade than wrapping the mark into a
+vertical smear of characters, which is what the first attempt did.
+
+Rail tracking is trimmed to 0.08em rather than the Ember 0.22em so the tightest
+landscape rail keeps a margin: `system-ui` resolves to different faces per OS,
+and a 2px margin measured on one machine is not a margin at all.
 
 ## Removing the language layer
 
