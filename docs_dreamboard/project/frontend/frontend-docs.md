@@ -120,9 +120,16 @@ lives in one place, `src/scripts/strings.js`, and `index.html` declares
 
 ## View Boot
 
-A small same-origin boot script runs before the stylesheet loads and marks the
-document with `data-initial-view="editor"` when the URL already carries the
-`#editor` route. See [Editor Reload Route](#editor-reload-route).
+A small same-origin boot script runs at the top of `<body>`, before any editor
+markup is parsed or painted. When the URL already carries the `#editor` route
+it marks the document with `data-initial-view="editor"` and adds
+`is-editor-active` to `<body>`.
+
+It sits in `<body>` rather than `<head>` because it needs `document.body` to
+exist. The editor shell is styled through `body.is-editor-active`, and
+`app.js` is a deferred module, so without that class the first paint of a
+direct `#editor` load would use the pre-active mobile layout and then snap to
+the final one. See [Editor Reload Route](#editor-reload-route).
 
 ## Build Contract
 
@@ -148,8 +155,9 @@ The current editor now preserves the working board as a browser draft:
 The static app now treats `#editor` as the editor route:
 
 - entering the editor from landing controls pushes `#editor` into the URL
-- the head boot script marks `#editor` before CSS loads, so the landing view
-  does not flash during refresh
+- the boot script marks `#editor` before the first paint, so the landing view
+  does not flash during refresh and the mobile editor paints its final layout
+  straight away
 - refreshing a browser tab while `#editor` is present opens the editor shell
   immediately and then restores the local draft
 - editing controls and canvas interactions stay locked until draft restore

@@ -11,4 +11,6 @@
 - [x] Merge current `main` after the redesign and English-only work landed,
       then re-apply the removal against the new markup, styles and script.
 - [x] Re-measure editor geometry against `main` after that merge.
+- [x] Apply the final editor layout during `#editor` bootstrap so removing the
+      topbar does not change the pre-module frame.
 - [ ] Run `pnpm run preflight` and publish one pull request.

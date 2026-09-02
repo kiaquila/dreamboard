@@ -15,13 +15,31 @@ That topbar can never render:
   `body.is-editor-active .editor-mobile-topbar { display: none; }`.
 
 Because the editor view is only visible while `is-editor-active` is set, both
-branches resolve to `display: none`. Browser verification at 1440x900,
+branches resolve to `display: none` once `app.js` has run. Browser verification at 1440x900,
 768x1024, 390x844 and 844x390 returns `display: none` and a 0x0 rect in every
 case; removing `is-editor-active` by hand in the console makes the same node
 render as a 74px bar, which confirms the class is the only thing hiding it.
 
 The block is leftover from the phone-landscape editor refactor (spec 002),
 which replaced the mobile drawer layout with a permanent left tool rail.
+
+## Bootstrap exception
+
+There is one window where the topbar did render. `view-boot.js` is a blocking
+classic script that sets `data-initial-view="editor"` on a direct load or
+refresh of `#editor`, and CSS shows the editor view from that attribute.
+`app.js` is a deferred module, so `body.is-editor-active` is only added later.
+At 390x844 the pre-module frame measured a real 390x74 topbar with
+`display: flex`, an off-screen sidebar, and `.canvas-area` padded 88px at the
+top to clear the bar.
+
+Deleting the topbar alone would leave that frame with no chrome and a
+`.canvas-area` top padding of 20px, moving `.canvas-wrapper` from x=14 w=362
+to x=20 w=350 until the module loaded. So `view-boot.js` now also adds
+`is-editor-active` itself, and its script tag moved from `<head>` to the top
+of `<body>` so `document.body` exists when it runs. The first paint of a
+direct `#editor` load is now the final editor layout, which also removes a
+pre-existing snap where the sidebar animated in from off-screen.
 
 ## Goal
 
