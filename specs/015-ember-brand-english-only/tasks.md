@@ -13,3 +13,4 @@
 - [x] Run `pnpm run preflight`
 - [x] Fix the wrapping brand tag in the narrow editor rail (Codex P2)
 - [x] Re-measure every tag against its available width across 11 viewports
+- [x] Enforce no-wrap behavior for brand tags in the rotated portrait rail

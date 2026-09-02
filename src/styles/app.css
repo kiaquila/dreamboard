@@ -125,6 +125,7 @@ html[data-initial-view="editor"] .sticky-footer {
   font-weight: 400;
   line-height: 1.35;
   letter-spacing: 0.22em;
+  white-space: nowrap;
   text-transform: uppercase;
   color: var(--brand-muted);
 }
