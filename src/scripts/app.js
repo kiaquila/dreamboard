@@ -18,7 +18,6 @@ const canvasArea = document.querySelector(".canvas-area");
 const heroGoButton = document.getElementById("l-go-btn");
 const finalGoButton = document.getElementById("l-final-btn");
 const editorBackButton = document.getElementById("editorBackBtn");
-const editorBackButtonMobile = document.getElementById("editorBackBtnMobile");
 const rotateHint = document.getElementById("editorRotateHint");
 const rotateHintCloseButton = document.getElementById("rotateHintCloseBtn");
 const fileInput = document.getElementById("fileInput");
@@ -42,11 +41,6 @@ const colorPopup = document.getElementById("colorPopup");
 const fontPopup = document.getElementById("fontPopup");
 const omFontFamilyBtn = document.getElementById("om-fontFamilyBtn");
 const omFontFamilyLabel = document.getElementById("om-fontFamilyLabel");
-
-// Editor mobile sidebar controls
-const sidebar = document.getElementById("sidebar");
-const sidebarOverlay = document.getElementById("sidebarOverlay");
-const mobileMenuBtn = document.getElementById("mobileMenuBtn");
 
 const FONT_FAMILIES = [
   "DM Sans",
@@ -161,10 +155,6 @@ function dismissRotateHint() {
 function syncEditorViewport({ dismissForLandscape = false } = {}) {
   syncRotateHintVisibility({ dismissForLandscape });
 
-  if (!isMobilePortraitViewport()) {
-    closeSidebar();
-  }
-
   if (editorView.style.display !== "block") {
     return;
   }
@@ -176,37 +166,6 @@ function syncEditorViewport({ dismissForLandscape = false } = {}) {
     });
   });
 }
-
-function syncMenuButtonState() {
-  if (!mobileMenuBtn) return;
-
-  mobileMenuBtn.setAttribute(
-    "aria-expanded",
-    sidebar.classList.contains("is-open") ? "true" : "false",
-  );
-}
-
-function openSidebar() {
-  if (!isMobileLayout()) return;
-  sidebar.classList.add("is-open");
-  sidebarOverlay.classList.add("is-open");
-  syncMenuButtonState();
-}
-
-function closeSidebar() {
-  sidebar.classList.remove("is-open");
-  sidebarOverlay.classList.remove("is-open");
-  syncMenuButtonState();
-}
-
-if (mobileMenuBtn) {
-  mobileMenuBtn.addEventListener("click", () => {
-    if (!sidebar.classList.contains("is-open")) openSidebar();
-    else closeSidebar();
-  });
-}
-if (sidebarOverlay) sidebarOverlay.addEventListener("click", closeSidebar);
-syncMenuButtonState();
 
 function applyToolbarTooltips() {
   const t = strings;
@@ -291,13 +250,10 @@ function applyStaticCopy({ syncPlaceholders = true } = {}) {
   document.getElementById("rotateHintTitle").innerText = t.rotateHintTitle;
   document.getElementById("rotateHintText").innerText = t.rotateHintText;
   editorBackButton?.setAttribute("aria-label", t.backHome);
-  editorBackButtonMobile?.setAttribute("aria-label", t.backHome);
   rotateHintCloseButton?.setAttribute("aria-label", t.rotateHintDismiss);
   rotateHintCloseButton?.setAttribute("title", t.rotateHintDismiss);
   editorBackButton?.setAttribute("data-tooltip", t.backHome);
   editorBackButton?.setAttribute("title", t.backHome);
-  editorBackButtonMobile?.setAttribute("data-tooltip", t.backHome);
-  editorBackButtonMobile?.setAttribute("title", t.backHome);
 
   if (syncPlaceholders) {
     createPlaceholders();
@@ -523,7 +479,6 @@ function showEditorShell() {
   setEditorInteractionLocked(!draftBootstrapComplete);
   rotateHintDismissed = false;
   syncBodyOverflow();
-  closeSidebar();
   syncEditorViewport();
   clearInitialViewMarker();
 }
@@ -554,7 +509,6 @@ function goToLanding({ updateRoute = true } = {}) {
   editorView.style.display = "none";
   document.body.classList.remove("is-editor-active");
   rotateHintDismissed = false;
-  closeSidebar();
   hideObjectMenu();
   hideColorPopup();
   hideFontPopup();
@@ -739,7 +693,6 @@ omFontFamilyBtn.addEventListener("click", (e) => {
 heroGoButton?.addEventListener("click", goToEditor);
 finalGoButton?.addEventListener("click", goToEditor);
 editorBackButton?.addEventListener("click", goToLanding);
-editorBackButtonMobile?.addEventListener("click", goToLanding);
 addTextButton?.addEventListener("click", addText);
 downloadButton?.addEventListener("click", exportBoard);
 omForward.addEventListener("click", () => changeZIndex("forward"));
@@ -1057,7 +1010,6 @@ fileInput?.addEventListener("change", (e) => {
 
   Promise.all(loadPromises).then((imgs) => {
     layoutBatchImages(imgs.filter(Boolean));
-    if (isMobileLayout()) closeSidebar();
     e.target.value = "";
     scheduleDraftSave();
   });
@@ -1082,8 +1034,6 @@ function addText() {
   canvas.setActiveObject(text);
   enforceTextOnTop();
   canvas.renderAll();
-
-  if (isMobileLayout()) closeSidebar();
 
   setTimeout(() => {
     text.enterEditing();

@@ -21,8 +21,6 @@
       href="./src/assets/apple-touch-icon.png"
     />
 
-    <script src="./src/scripts/view-boot.js"></script>
-
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@400;700&family=Montserrat:wght@400;700&family=Lora:ital,wght@0,400;1,400&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Poppins:wght@400;700&family=Merriweather:wght@400;700&family=Pacifico&family=Caveat:wght@400;700&family=Dancing+Script:wght@700&family=Anton&family=Ubuntu:wght@400;700&family=Marck+Script&family=Bad+Script&display=swap"
       rel="stylesheet"
@@ -39,6 +37,8 @@
   </head>
 
   <body>
+    <script src="./src/scripts/view-boot.js"></script>
+
     <!-- LANDING VIEW -->
     <div class="landing-view" id="landingView">
       <header class="landing-header" aria-label="Header">
@@ -166,50 +166,6 @@
 
     <!-- EDITOR VIEW -->
     <div class="editor-view" id="editorView">
-      <div class="editor-mobile-topbar">
-        <button
-          class="topbar-icon-btn topbar-back-btn tooltip-trigger"
-          id="editorBackBtnMobile"
-          type="button"
-          aria-label="Back to start page"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M15 18l-6-6 6-6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            ></path>
-          </svg>
-        </button>
-        <div
-          class="editor-mobile-brand brand-mark brand-mark-stacked"
-          aria-hidden="true"
-        >
-          <span class="brand-tag"
-            ><strong
-              >ks<i class="brand-dot" aria-hidden="true"></i
-              ><span class="visually-hidden"> </span>design</strong
-            >
-            · lab</span
-          >
-          <span class="brand-tag brand-tag-study">study 01 — dream board</span>
-        </div>
-        <div class="editor-mobile-actions">
-          <button
-            class="topbar-icon-btn mobile-menu-btn"
-            id="mobileMenuBtn"
-            type="button"
-            aria-label="Open tools"
-          >
-            ☰
-          </button>
-        </div>
-      </div>
-      <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
       <div class="app-container">
         <aside class="sidebar" id="sidebar">
           <div class="sidebar-header">
