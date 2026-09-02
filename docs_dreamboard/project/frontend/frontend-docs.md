@@ -36,7 +36,7 @@ Hero slides 1 and 4 no longer use a photo background. `hero-mountains.js` mounts
 - dots are drawn from cached circle sprites grouped by 12 alpha levels, which keeps a 1440x900 frame (about 7.6k dots) cheap enough for 60 fps
 - when a hero slide is at least half visible (IntersectionObserver), the dots assemble over 2.6 s from the summits downward ("snowcap"): each dot's delay grows with its depth below the skyline of its column, then it fades in, grows from zero and lifts 6 px into place
 - `prefers-reduced-motion: reduce` skips the animation and paints the final frame
-- the field is rebuilt on resize (debounced 200 ms); the paper colour is `--landing-paper` (`#f4f2ee`), ink is `--landing-ink` (`#1b1b1b`)
+- the field is built lazily from the canvas' CSS size when a slide is about to play and rebuilt on resize (debounced 200 ms); a hidden landing (boot straight into `#editor`, or a resize while the editor is open) reports a zero-size canvas and is measured again when the slide is shown; the paper colour is `--landing-paper` (`#f4f2ee`), ink is `--landing-ink` (`#1b1b1b`)
 
 To regenerate the tone source from a new artwork, downscale it with `sips -s format jpeg -s formatOptions 72 -Z 1200 <source> --out src/assets/images/landing/hero-mountains-halftone.jpg`; only luminance matters, so a small JPEG is enough.
 

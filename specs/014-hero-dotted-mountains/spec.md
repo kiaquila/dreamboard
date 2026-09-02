@@ -25,7 +25,8 @@ Ember (ember.ks-design.art): одна центрированная приглу�
   16 px), строит точки (радиус = темнота ячейки), рисует их кэшированными
   спрайтами и анимирует сборку 2.6 с при попадании слайда в viewport
   (IntersectionObserver, порог 0.5). Учитывает `prefers-reduced-motion`
-  (сразу финальный кадр) и пересчитывает поле при resize с debounce.
+  (сразу финальный кадр), пересчитывает поле при resize с debounce и
+  меряет скрытый лендинг (старт сразу в `#editor`) только при показе.
 - `index.html`: `<canvas class="hero-dots">` в слайдах 1 и 4, hero-заголовки
   центрируются и поднимаются в свободное "небо", footer получает разметку
   Ember: `Designed by <a>ks-design</a> · Built with AI workflows`.

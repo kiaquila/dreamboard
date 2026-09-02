@@ -180,30 +180,48 @@ class HeroDots {
     this.reducedMotion =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    this.resize();
+    this.progress = 0;
+    this.syncSize();
   }
 
-  resize() {
+  /**
+   * Rebuilds the dot field for the canvas' current CSS size and returns
+   * whether the canvas is measurable. A hidden landing (boot straight into
+   * `#editor`, or a window resize while the editor is open) reports a
+   * zero-size rect; sizing is then deferred until the slide is shown again,
+   * which `play()` handles on the next intersection.
+   */
+  syncSize() {
     const rect = this.canvas.getBoundingClientRect();
-    const width = Math.max(1, Math.round(rect.width));
-    const height = Math.max(1, Math.round(rect.height));
+    const width = Math.round(rect.width);
+    const height = Math.round(rect.height);
+    if (width < 2 || height < 2) return false;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (
+      this.field &&
+      this.field.width === width &&
+      this.field.height === height &&
+      dpr === this.dpr
+    ) {
+      return true;
+    }
     if (dpr !== this.dpr) this.sprites.clear();
     this.dpr = dpr;
     this.canvas.width = Math.round(width * dpr);
     this.canvas.height = Math.round(height * dpr);
     this.field = sampleField(this.image, width, height);
     this.render(this.progress);
+    return true;
   }
 
   play() {
     cancelAnimationFrame(this.frame);
     // Nothing to animate for reduced-motion users or a hidden tab: paint the final frame.
-    if (this.reducedMotion || document.hidden) {
-      this.progress = 1;
-      this.render(1);
-      return;
-    }
+    const still = this.reducedMotion || document.hidden;
+    this.progress = still ? 1 : 0;
+    if (!this.syncSize()) return;
+    this.render(this.progress);
+    if (still) return;
     const startedAt = performance.now();
     const tick = (now) => {
       this.progress = clamp((now - startedAt) / ASSEMBLE_DURATION_MS, 0, 1);
@@ -235,6 +253,7 @@ class HeroDots {
 
   render(progress) {
     const { ctx, field, dpr } = this;
+    if (!field) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, field.width, field.height);
 
@@ -289,7 +308,9 @@ function loadImage(url) {
 
 /**
  * Mounts a dotted-mountain canvas into every hero section and assembles it
- * whenever that section scrolls (or is switched) into view.
+ * whenever that section scrolls (or is switched) into view. Sizing happens
+ * lazily inside `play()`, so a landing that is hidden at boot is measured
+ * only once it is actually shown.
  */
 export async function initHeroMountains(sections) {
   const targets = Array.from(sections || []);
@@ -325,7 +346,7 @@ export async function initHeroMountains(sections) {
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      for (const scene of scenes) scene?.resize();
+      for (const scene of scenes) scene?.syncSize();
     }, REGENERATE_DELAY_MS);
   });
 
