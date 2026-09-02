@@ -40,13 +40,13 @@ jobs:
       # ends with main's content even if the PR seeds an adversarial
       # .gate-trusted/, because actions/checkout reinitializes the path.
       - name: Checkout PR content
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
 
       - name: Checkout trusted gate scripts (default branch)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           ref: ${{ github.event.repository.default_branch }}
           path: .gate-trusted
