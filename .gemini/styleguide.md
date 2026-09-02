@@ -5,7 +5,7 @@ Prioritize:
 - mobile layout regressions
 - editor/canvas behavior correctness
 - export/download safety
-- i18n consistency
+- English-only copy consistency
 - build and deploy safety for Vercel
 - maintainability risks in the current static app
 

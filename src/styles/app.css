@@ -22,6 +22,14 @@
   --footer-muted: #8a877f;
   --footer-line: rgba(27, 27, 27, 0.18);
   --footer-accent: #b07f2f;
+
+  /* Brand chrome, transplanted from ember.ks-design.art */
+  --brand-font: ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
+  --brand-ink: #2a2722;
+  --brand-muted: #807b72;
+  --brand-dot-a: #818cf8;
+  --brand-dot-b: #22d3ee;
+  --brand-dot: linear-gradient(135deg, var(--brand-dot-a), var(--brand-dot-b));
 }
 
 body,
@@ -32,10 +40,6 @@ html {
   font-family: "DM Sans", sans-serif;
   background-color: var(--bg-color);
   overflow: hidden;
-}
-
-html[data-locale-pending="true"] body {
-  visibility: hidden;
 }
 
 html[data-initial-view="editor"] .landing-view {
@@ -89,25 +93,65 @@ html[data-initial-view="editor"] .sticky-footer {
   pointer-events: auto;
 }
 
-.landing-header-inner {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.landing-header-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-/* Заголовок + кнопка языка как в редакторе */
+/* Brand mark + editor return control */
 .sidebar-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+/* =========
+   BRAND MARK (ember.ks-design.art chrome)
+   ========= */
+
+.brand-mark {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+.brand-mark-stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.brand-tag {
+  font-family: var(--brand-font);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brand-muted);
+}
+
+.brand-tag strong {
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+
+.brand-dot {
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 50%;
+  background: var(--brand-dot);
+  margin: 0 0.3em 0 -0.07em;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .editor-mobile-topbar {
@@ -121,60 +165,8 @@ html[data-initial-view="editor"] .sticky-footer {
 }
 
 .editor-mobile-brand {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--volcanic-grass);
-  text-transform: uppercase;
-}
-
-.editor-mobile-lang {
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 48px;
-  height: 40px;
-  border-radius: 20px;
-  padding: 0 14px;
-  border: 1px solid #e6e6e6;
-  background: #fff;
-  color: var(--volcanic-grass);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-h1 {
-  font-size: 28px;
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: -1.5px;
-}
-
-.landing-header h1,
-.sidebar-header h1 {
-  display: inline-flex;
-  align-items: center;
-}
-
-.lang-switcher button {
-  background: transparent !important;
-  color: #888 !important;
-  border: 1px solid #eee !important;
-  padding: 8px 12px !important;
-  cursor: pointer;
-  font-weight: 700;
-  border-radius: 6px;
-  font-family: "DM Sans", sans-serif;
-  text-transform: uppercase;
-  font-size: 12px !important;
-  line-height: 1;
-  min-width: 44px;
-}
-
-.lang-switcher button:hover {
-  border-color: #ccc !important;
-  color: #000 !important;
+  text-align: center;
 }
 
 .landing-section {
@@ -1393,9 +1385,20 @@ body.is-editor-active .app-container {
     padding: calc(16px + env(safe-area-inset-top)) 16px 8px;
   }
 
-  .landing-header-bar h1 {
-    font-size: 24px;
-    letter-spacing: -1.2px;
+  .landing-header .brand-mark {
+    gap: 12px;
+  }
+
+  .brand-tag {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+  }
+
+  /* The editor rail is narrow: keep each tag on one line */
+  .sidebar-header .brand-tag,
+  .editor-mobile-brand .brand-tag {
+    font-size: 9px;
+    letter-spacing: 0.1em;
   }
 
   .editor-mobile-topbar {
@@ -1422,10 +1425,6 @@ body.is-editor-active .app-container {
     text-align: center;
     padding-left: 8px;
     padding-right: 8px;
-  }
-
-  .sidebar .sidebar-header .lang-switcher {
-    display: none;
   }
 
   .app-container {
@@ -1560,6 +1559,18 @@ body.is-editor-active .app-container {
   }
 }
 
+/* Narrowest phones: keep the header chrome on a single line */
+@media (max-width: 360px) {
+  .landing-header .brand-mark {
+    gap: 8px;
+  }
+
+  .landing-header .brand-tag {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+  }
+}
+
 @media (max-width: 900px) {
   body.is-editor-active .editor-mobile-topbar {
     display: none;
@@ -1667,14 +1678,15 @@ body.is-editor-active .app-container {
     min-width: 0;
   }
 
-  body.is-editor-active .sidebar .sidebar-header h1 {
-    font-size: 14px;
-    letter-spacing: -0.5px;
+  body.is-editor-active .sidebar .sidebar-header .brand-mark {
     flex: 1 1 auto;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
+    gap: 2px;
+  }
+
+  body.is-editor-active .sidebar .brand-tag {
+    font-size: 8px;
+    letter-spacing: 0.1em;
   }
 
   body.is-editor-active .sidebar .sidebar-header-actions {
@@ -1691,13 +1703,6 @@ body.is-editor-active .app-container {
   body.is-editor-active .sidebar .editor-home-btn svg {
     width: 10px;
     height: 10px;
-  }
-
-  body.is-editor-active .sidebar #langBtnEditor {
-    min-width: 24px;
-    height: 24px;
-    padding: 0 6px;
-    font-size: 10px;
   }
 
   body.is-editor-active .sidebar .control-group {

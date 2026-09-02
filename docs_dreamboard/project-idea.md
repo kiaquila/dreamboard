@@ -20,6 +20,8 @@ The current app is a strong prototype, and the repository is now on a safer refa
 - the mobile editor now also uses a dedicated landscape layout so the canvas and tool rail actually benefit from rotation
 - landing artwork is now repository-owned under `src/assets/` instead of living as a root-level loose file
 - editor state now survives refresh/return inside the same browser through a local draft snapshot
+- the app is English-only: the language switcher and the RU/ES dictionaries are gone, and copy lives in one module
+- landing and editor carry the `ks·design · lab` studio chrome from `ember.ks-design.art` instead of a DreamBoard wordmark
 
 ## Infra Goal
 
