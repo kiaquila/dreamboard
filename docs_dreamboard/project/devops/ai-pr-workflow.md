@@ -46,7 +46,7 @@ This is the canonical PR loop for `dreamboard`.
 - Gate scripts (`scripts/check-feature-memory.mjs`,
   `scripts/check-static-baseline.mjs`, `scripts/resolve-pr-context.mjs`,
   `scripts/ai-review-gate.mjs`) execute only from `default_branch` via
-  `actions/checkout` with explicit `ref:`. PR Guard uses a two-checkout pattern
+  pinned `actions/checkout` v7 with explicit `ref:`. PR Guard uses a two-checkout pattern
   (`.gate-trusted/` for trusted scripts, workspace root for PR content), so a
   PR cannot tamper with gate logic to bypass required checks.
 
