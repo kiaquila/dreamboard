@@ -70,12 +70,12 @@ The editor now uses container-based canvas sizing instead of raw viewport math:
 
 The current static app now treats phone layouts as a separate editor mode:
 
-- a fixed mobile top bar keeps the primary entry points reachable
-- tool controls open as a bottom sheet instead of an off-canvas desktop sidebar
-- the canvas reserves safe space for the top bar and sticky footer
+- there is no separate mobile top bar: the editor shell is the tool rail plus the canvas, and the sidebar header carries the back and language controls in every layout
+- the tool rail is always on screen in the mobile editor, so there is no drawer, no burger button, and no scrim overlay to open or close
+- the canvas reserves safe space for the sticky footer and the safe-area insets
 - the object menu docks near the bottom of the canvas on mobile instead of chasing the selected object into cramped positions
 - portrait phone editor remains usable; landscape is now a recommendation surfaced through a non-blocking floating hint card instead of a hard gate, because mobile web orientation locks are not reliable enough to block entry
-- phone landscape switches into a true side-by-side shell so the tools and canvas use the wider viewport instead of reusing the portrait bottom-sheet layout
+- phone landscape uses the side-by-side shell directly, and phone portrait reaches the same shell by rotating the whole editor view, so both orientations share one tool-rail layout
 - editor return controls are icon-only, with localized tooltips instead of visible labels to keep the shell visually lighter
 
 ## Locale Boot

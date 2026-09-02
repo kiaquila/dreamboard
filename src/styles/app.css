@@ -7,9 +7,6 @@
   --top-gap: 20px;
   --footer-height: 45px;
   --editor-shell-gap: 20px;
-  --editor-mobile-header-offset: 68px;
-  --editor-mobile-topbar-height: 74px;
-  --editor-mobile-sheet-gap: 16px;
 
   --landing-bg: #ececec;
   --landing-bg-2: #f3f3f3;
@@ -108,40 +105,6 @@ html[data-initial-view="editor"] .sticky-footer {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.editor-mobile-topbar {
-  display: none;
-}
-
-.editor-mobile-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.editor-mobile-brand {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--volcanic-grass);
-  text-transform: uppercase;
-}
-
-.editor-mobile-lang {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 48px;
-  height: 40px;
-  border-radius: 20px;
-  padding: 0 14px;
-  border: 1px solid #e6e6e6;
-  background: #fff;
-  color: var(--volcanic-grass);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 h1 {
@@ -1197,53 +1160,11 @@ body.is-editor-active .sticky-footer {
 /* ==========================
            MOBILE ADAPTATION (<= 900px) — editor sidebar
            ========================== */
-.topbar-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: static;
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  padding: 0;
-  background: #fff;
-  color: var(--volcanic-grass);
-  border: 1px solid #e6e6e6;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.14),
-    0 2px 6px rgba(0, 0, 0, 0.12);
-  line-height: 1;
-  cursor: pointer;
-}
-
-.topbar-icon-btn svg {
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
-.mobile-menu-btn {
-  font-size: 20px;
-  font-weight: 900;
-}
-
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 190;
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-}
-
 .editor-rotate-hint {
   position: fixed;
   left: max(14px, calc(env(safe-area-inset-left) + 14px));
   right: max(14px, calc(env(safe-area-inset-right) + 14px));
-  top: calc(
-    var(--editor-mobile-topbar-height) + env(safe-area-inset-top) + 12px
-  );
+  top: max(14px, calc(env(safe-area-inset-top) + 14px));
   z-index: 260;
   pointer-events: none;
   opacity: 0;
@@ -1398,32 +1319,6 @@ body.is-editor-active .app-container {
     letter-spacing: -1.2px;
   }
 
-  .editor-mobile-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 240;
-    padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
-    min-height: var(--editor-mobile-topbar-height);
-    box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .editor-mobile-topbar .editor-mobile-brand {
-    flex: 1 1 auto;
-    text-align: center;
-    padding-left: 8px;
-    padding-right: 8px;
-  }
-
   .sidebar .sidebar-header .lang-switcher {
     display: none;
   }
@@ -1433,47 +1328,8 @@ body.is-editor-active .app-container {
   }
 
   .sidebar {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: calc(
-      var(--footer-height) + var(--editor-mobile-sheet-gap) +
-        env(safe-area-inset-bottom)
-    );
-    width: auto;
-    height: auto;
-    max-height: min(
-      420px,
-      calc(
-        100dvh - var(--footer-height) - var(--editor-mobile-topbar-height) -
-          40px
-      )
-    );
     z-index: 200;
-    transform: translateY(calc(100% + 24px));
-    transition: transform 0.22s ease;
-    box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.14);
-    border: 1px solid #ececec;
-    border-radius: 28px;
-    padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
     gap: 16px;
-  }
-
-  .sidebar::before {
-    content: "";
-    width: 44px;
-    height: 5px;
-    border-radius: 999px;
-    background: #d8d8d8;
-    align-self: center;
-  }
-
-  .sidebar.is-open {
-    transform: translateY(0);
-  }
-
-  .sidebar-overlay.is-open {
-    display: block;
   }
 
   .sidebar .sidebar-header {
@@ -1502,13 +1358,6 @@ body.is-editor-active .app-container {
     font-size: 13px;
   }
 
-  .canvas-area {
-    padding: calc(
-        var(--editor-mobile-topbar-height) + env(safe-area-inset-top) + 14px
-      )
-      14px calc(var(--footer-height) + 22px + env(safe-area-inset-bottom));
-  }
-
   .canvas-wrapper {
     width: 100%;
     border-radius: 28px;
@@ -1522,26 +1371,12 @@ body.is-editor-active .app-container {
     gap: 8px;
   }
 
-  body.is-editor-active .sidebar {
-    bottom: calc(var(--editor-mobile-sheet-gap) + env(safe-area-inset-bottom));
-    max-height: min(
-      420px,
-      calc(100dvh - var(--editor-mobile-topbar-height) - 28px)
-    );
-  }
-
   body.is-editor-active .canvas-area {
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
 }
 
 @media (max-width: 900px) {
-  .editor-rotate-hint {
-    top: calc(
-      var(--editor-mobile-topbar-height) + env(safe-area-inset-top) + 10px
-    );
-  }
-
   .editor-rotate-card {
     border-radius: 24px;
     padding: 16px;
@@ -1561,10 +1396,6 @@ body.is-editor-active .app-container {
 }
 
 @media (max-width: 900px) {
-  body.is-editor-active .editor-mobile-topbar {
-    display: none;
-  }
-
   body.is-editor-active .app-container {
     height: 100dvh;
     flex-direction: row;
@@ -1587,18 +1418,10 @@ body.is-editor-active .app-container {
       calc(18px + env(safe-area-inset-bottom));
   }
 
-  body.is-editor-active .sidebar::before {
-    display: none;
-  }
-
   body.is-editor-active .sidebar .sidebar-header {
     position: static;
     padding: 0 0 10px;
     background: transparent;
-  }
-
-  body.is-editor-active .sidebar-overlay {
-    display: none !important;
   }
 
   body.is-editor-active .canvas-area {
@@ -1613,10 +1436,6 @@ body.is-editor-active .app-container {
     max-height: calc(
       100dvh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
     );
-  }
-
-  body.is-editor-active .editor-rotate-hint {
-    top: max(14px, calc(env(safe-area-inset-top) + 14px));
   }
 
   body.is-editor-active .object-menu.is-mobile-dock {
@@ -1646,10 +1465,6 @@ body.is-editor-active .app-container {
 
   body.is-editor-active .sticky-footer {
     display: none;
-  }
-
-  body.is-editor-active .editor-rotate-hint {
-    top: max(14px, calc(env(safe-area-inset-top) + 14px));
   }
 
   body.is-editor-active .sidebar {
