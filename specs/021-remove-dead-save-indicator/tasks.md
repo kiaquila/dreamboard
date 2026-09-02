@@ -12,4 +12,6 @@
 - [x] Remove the four unused save-status keys from `src/scripts/strings.js`
 - [x] Update `docs_dreamboard/project/frontend/frontend-docs.md`
 - [x] Run `pnpm run preflight`
+- [x] Merge current `main` (topbar removal, Cloudflare stage) and re-verify
+      that no save-status symbol survives in `index.html`, `src/` or `tests/`
 - [ ] Open the PR and drive it to merge-ready
