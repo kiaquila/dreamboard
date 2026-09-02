@@ -19,7 +19,7 @@
     "worktree:new": "node scripts/new-worktree.mjs"
   },
   "devDependencies": {
-    "html-validate": "^10.11.3",
+    "html-validate": "^11.8.0",
     "prettier": "^3.9.6"
   },
   "packageManager": "pnpm@10.33.0",
