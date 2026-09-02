@@ -19,7 +19,7 @@
 - Один implementation loop = один worktree, одна ветка и один PR
 - При изменении поведения UI, workflow или build/deploy обновляй `specs/` и `docs_dreamboard/`
 - Не ломай `pnpm run build`: проект должен оставаться deployable как статический сайт
-- При review фокусируйся на mobile layout, editor behavior, export safety, i18n consistency и maintainability
+- При review фокусируйся на mobile layout, editor behavior, export safety, English-only copy consistency и maintainability
 - Стиль commit-message: только subject (≤72 chars, conventional prefix `fix:`/`chore:`/`docs:`/etc.); body не пишу, кроме случая с неочевидным «why»; длинный контекст идёт в PR description, не в commit body.
 - Перед каждым `git push` прогоняй `pnpm run preflight` — он локально повторяет то, что делают PR Guard и CI (feature-memory gate + baseline + html + build + format).
 - Не используй `—` (em-dash) в README и публичных docs; AI-slop tell; заменять на точку, двоеточие, запятую или middle-dot.
