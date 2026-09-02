@@ -11,7 +11,7 @@ board.
 - Static single-file web app (`index.html`) with assets under `src/`
 - Canvas editor built on [Fabric.js](https://fabricjs.com/) (v5.3.1, via CDN)
 - Build: `scripts/build-static.mjs` → `dist/index.html`
-- Hosting: Vercel (Git integration, preview deploys for PRs)
+- Hosting: Vercel production plus Cloudflare Workers PR stage (Git integrations)
 - CI: GitHub Actions (`baseline-checks`, `guard`, `AI Review`)
 
 ## Getting started
@@ -34,7 +34,9 @@ server to preview the build.
 
 | Command                         | Purpose                                                |
 | ------------------------------- | ------------------------------------------------------ |
-| `pnpm run build`                | Build static `dist/index.html` for Vercel              |
+| `pnpm run build`                | Build static `dist/index.html` for both hosts          |
+| `pnpm run stage:deploy`         | Deploy the stable Cloudflare staging Worker            |
+| `pnpm run stage:preview`        | Upload an isolated Cloudflare preview version          |
 | `pnpm run check:repo`           | Repository baseline checks                             |
 | `pnpm run check:html`           | HTML validation via `html-validate`                    |
 | `pnpm run check:feature-memory` | Enforce `specs/<feature-id>/` for product changes      |
@@ -66,6 +68,8 @@ dreamboard/
 ├── .specify/memory/            # Constitution and process rules
 ├── .github/workflows/          # CI, guard, AI review, deploy policy
 ├── vercel.json                 # Vercel build/output configuration
+├── wrangler.json               # Cloudflare PR-stage configuration
+├── worker/                     # Cloudflare response-header wrapper
 └── AGENTS.md / CLAUDE.md       # Agent onboarding
 ```
 

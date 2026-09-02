@@ -10,6 +10,8 @@ This is the canonical PR loop for `dreamboard`.
 - GitHub Actions runs `baseline-checks`, `guard`, and `AI Review`.
 - Vercel provides preview deployments for PRs and production deploy on merge to
   `main`.
+- Cloudflare Workers Builds provides an additional isolated staging URL for
+  every PR; the stable Cloudflare Worker is staging, not production.
 - A human remains the final merge authority.
 
 ## Standard Loop
@@ -28,6 +30,7 @@ This is the canonical PR loop for `dreamboard`.
    - `guard`
    - `AI Review`
    - healthy Vercel preview deployment
+   - healthy Cloudflare Workers preview deployment
 10. Keep fixing the same branch until only human approval and merge remain.
 
 ## Hard Gates
@@ -85,6 +88,7 @@ The current PR head SHA is merge-ready only when:
 - `guard` is green
 - `AI Review` is green
 - Vercel preview is healthy for the changed flow
+- Cloudflare Workers preview is healthy for the changed flow
 - no blocking review findings remain unresolved
 - no merge conflicts remain
 
@@ -93,4 +97,5 @@ The current PR head SHA is merge-ready only when:
 - `docs_dreamboard/project/devops/macos-local-runners.md`
 - `docs_dreamboard/project/devops/ai-orchestration-protocol.md`
 - `docs_dreamboard/project/devops/vercel-cd.md`
+- `docs_dreamboard/project/devops/cloudflare-stage.md`
 - `docs_dreamboard/project/devops/delivery-playbook.md`
