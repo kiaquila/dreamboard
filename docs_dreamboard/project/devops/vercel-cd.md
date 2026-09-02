@@ -8,6 +8,10 @@ This repository uses **Vercel Git integration** as the canonical CD layer.
 - Merge to `main` creates a Vercel production deployment
 - GitHub Actions remain the canonical CI and AI-review layer
 
+Cloudflare Workers is an additional PR staging layer, not the production host.
+Its independent Git integration and rollback contract are documented in
+[`cloudflare-stage.md`](./cloudflare-stage.md).
+
 This is intentionally different from `vb-influencer`, which deploys to EC2 through a GitHub Actions workflow. For `dreamboard`, Vercel-native Git deploys are the simpler and safer fit because the app is a static frontend.
 
 ## Connected Project

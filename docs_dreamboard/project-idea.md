@@ -31,9 +31,10 @@ Before deeper refactoring, the repository must follow the standard delivery path
 2. required checks in GitHub
 3. AI review routing through repository policy with Gemini as the default reviewer
 4. Vercel preview deploys on PR
-5. Vercel production deploys on merge to `main`
-6. repository memory through `.specify/`, `docs_dreamboard/`, and `specs/`
-7. local macOS worktree orchestration for implementation tasks
+5. Cloudflare Workers publishes an isolated staging URL for every PR
+6. Vercel production deploys on merge to `main`
+7. repository memory through `.specify/`, `docs_dreamboard/`, and `specs/`
+8. local macOS worktree orchestration for implementation tasks
 
 ## Next Product Goal
 

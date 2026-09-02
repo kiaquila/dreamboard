@@ -128,7 +128,7 @@ document with `data-initial-view="editor"` when the URL already carries the
 The repository keeps a static build layer:
 
 - `pnpm run build` copies [index.html](/Users/kristina.kurashova/projects/dreamboard/index.html) and the full [`src/`](/Users/kristina.kurashova/projects/dreamboard/src) tree into `dist/`
-- Vercel reads `dist/` as the output directory
+- Vercel and Cloudflare Workers Static Assets read `dist/` as the output directory
 - `pnpm run ci` validates repo baseline, HTML, formatting, and build output
 
 ## Draft Persistence
