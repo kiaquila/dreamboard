@@ -11,7 +11,8 @@ The current application is still a static frontend, but it is no longer entirely
 - [draft-store.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/draft-store.js) for browser-side draft persistence
 - [i18n.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/i18n.js) for locale dictionaries
 - [landing-photo.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/landing-photo.js) for the embedded landing media asset
-- [`src/assets/images/landing/`](/Users/kristina.kurashova/projects/dreamboard/src/assets/images/landing) for repository-owned landing artwork
+- [hero-mountains.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/hero-mountains.js) for the dotted-mountain hero canvas (see [Hero dotted mountains](#hero-dotted-mountains))
+- [`src/assets/images/landing/`](/Users/kristina.kurashova/projects/dreamboard/src/assets/images/landing) for repository-owned landing artwork (currently the halftone mountain tone source)
 - `src/assets/favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` for browser tab and iOS home-screen icons (see [Favicon assets](#favicon-assets))
 
 This keeps the repo deployable as a static site while making future extraction to components and a typed frontend stack much safer.
@@ -25,6 +26,23 @@ Dreamboard ships three icon artifacts under `src/assets/`:
 - `apple-touch-icon.png` — 180×180 PNG with alpha for iOS "Add to Home Screen"
 
 `index.html` references all three via `<link rel>` tags right after `<title>`. PNG artifacts are pre-rendered from the SVG using macOS built-in tools (`qlmanage -t -s <size>` and `sips -z`) and committed to the repo; the static build copies them as-is. Regenerate PNGs only when `favicon.svg` changes.
+
+## Hero dotted mountains
+
+Hero slides 1 and 4 no longer use a photo background. `hero-mountains.js` mounts a `<canvas class="hero-dots">` behind the hero content and builds the artwork from dots:
+
+- the tone source is `src/assets/images/landing/hero-mountains-halftone.jpg` (1200x675, a compressed copy of the "Halftone Alpine Serenity" wallpaper); it is drawn to cover the section width, anchored to the bottom, and on tall phone viewports it keeps at least 62% of the height
+- the section is split into a square grid (`width / 176`, clamped to 4..16 px); every cell becomes one dot whose radius follows the averaged darkness of the pixels under it, so the far ridges stay faint and the shadow faces read almost solid
+- dots are drawn from cached circle sprites grouped by 12 alpha levels, which keeps a 1440x900 frame (about 7.6k dots) cheap enough for 60 fps
+- when a hero slide is at least half visible (IntersectionObserver), the dots assemble over 2.6 s from the summits downward ("snowcap"): each dot's delay grows with its depth below the skyline of its column, then it fades in, grows from zero and lifts 6 px into place
+- `prefers-reduced-motion: reduce` skips the animation and paints the final frame
+- the field is rebuilt on resize (debounced 200 ms); the paper colour is `--landing-paper` (`#f4f2ee`), ink is `--landing-ink` (`#1b1b1b`)
+
+To regenerate the tone source from a new artwork, downscale it with `sips -s format jpeg -s formatOptions 72 -Z 1200 <source> --out src/assets/images/landing/hero-mountains-halftone.jpg`; only luminance matters, so a small JPEG is enough.
+
+## Landing footer
+
+The sticky footer keeps its fixed 45px slot (slides reserve that height) but is now a single quiet line in the Ember style: transparent background, DM Sans 12px with 0.06em tracking, muted colour, and the `ks-design` link underlined with a hairline that turns gold on hover. The footer text is a brand line and is intentionally not localised.
 
 ## Repository Memory and Feature Loop
 
