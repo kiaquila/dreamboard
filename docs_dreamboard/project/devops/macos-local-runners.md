@@ -26,7 +26,7 @@ macOS helpers for:
 
 ## Prerequisites
 
-- macOS with `git`, `gh`, and Node.js 24 available
+- macOS with `git`, `gh`, and Node.js 24.8 or newer available
 - authenticated GitHub CLI for repository variable updates and PR creation
 - Claude Code available locally as the primary implementation agent
 - Codex app or Codex CLI available locally only when you want to hand off the
