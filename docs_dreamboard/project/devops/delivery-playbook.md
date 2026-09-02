@@ -5,7 +5,8 @@ merge.
 
 ## Preview Checklist
 
-For any app-facing PR, verify on the Vercel preview:
+For any app-facing PR, verify the same commit on both the Vercel preview and the
+versioned Cloudflare Workers preview:
 
 - landing page loads without layout breakage
 - editor opens and renders the Fabric canvas
@@ -21,6 +22,8 @@ Do not merge while any of these are true:
 - required GitHub checks are pending or failing
 - the active review backend has unresolved blocking findings
 - the Vercel preview is failing or visibly broken for the changed flow
+- the Cloudflare Workers preview is failing or visibly broken for the changed
+  flow
 
 ## Dependabot Configuration
 

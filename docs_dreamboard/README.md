@@ -19,9 +19,10 @@
 5. `docs_dreamboard/project/devops/ai-runner.md`
 6. `docs_dreamboard/project/devops/ai-pr-workflow.md`
 7. `docs_dreamboard/project/devops/macos-local-runners.md`
-8. `specs/<feature-id>/spec.md`
-9. `specs/<feature-id>/plan.md`
-10. `specs/<feature-id>/tasks.md`
+8. `docs_dreamboard/project/devops/cloudflare-stage.md`
+9. `specs/<feature-id>/spec.md`
+10. `specs/<feature-id>/plan.md`
+11. `specs/<feature-id>/tasks.md`
 
 ## Structure
 
