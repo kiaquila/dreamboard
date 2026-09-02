@@ -78,6 +78,11 @@ jobs:
           echo "Changed files:"
           echo "$changed"
 
+          if node .gate-trusted/scripts/check-feature-memory.mjs --dependency-only "$BASE_REF" "$HEAD_REF"; then
+            echo "Dependency-manifest-only change — durable docs are not required."
+            exit 0
+          fi
+
           tracked_change=false
           while IFS= read -r f; do
             case "$f" in

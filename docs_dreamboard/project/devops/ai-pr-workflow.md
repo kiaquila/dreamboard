@@ -34,6 +34,11 @@ This is the canonical PR loop for `dreamboard`.
 
 - Product changes in `index.html`, `src/`, future app code, or runtime config do
   not start without an active `specs/<feature-id>/` folder.
+- Dependency-only updates are exempt from product documentation and feature
+  memory, while still running the full repository baseline. The guard verifies
+  that `package.json` changes are limited to dependency fields, and it accepts
+  GitHub Actions updates only when a pinned `uses:` revision changes while its
+  action coordinate, including any action subpath, remains unchanged.
 - Local product edits in the main checkout do not count as completed work.
 - If the selected implementation agent path is unavailable, stop and report the
   blocker instead of bypassing the loop.

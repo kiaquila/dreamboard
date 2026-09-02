@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const inspectWorktree = args.includes("--worktree");
-const filteredArgs = args.filter((arg) => arg !== "--worktree");
+const inspectDependencyOnly = args.includes("--dependency-only");
+const filteredArgs = args.filter(
+  (arg) => arg !== "--worktree" && arg !== "--dependency-only",
+);
 const repoRoot = resolve(process.cwd());
 
 const git = (args) =>
@@ -52,12 +55,139 @@ const changedFiles = git(diffArgs)
   .map((file) => file.trim())
   .filter(Boolean);
 
+const isDependencyManifest = (file) =>
+  file === "package.json" || file === "pnpm-lock.yaml";
+
+const dependencyFields = new Set([
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies",
+]);
+
+const readManifest = (ref, fromWorktree = false) => {
+  try {
+    if (fromWorktree) {
+      return JSON.parse(
+        readFileSync(resolve(repoRoot, "package.json"), "utf8"),
+      );
+    }
+
+    return JSON.parse(git(["show", `${ref}:package.json`]));
+  } catch {
+    return null;
+  }
+};
+
+const withoutDependencyFields = (manifest) => {
+  if (!manifest) {
+    return null;
+  }
+
+  return Object.fromEntries(
+    Object.entries(manifest).filter(([field]) => !dependencyFields.has(field)),
+  );
+};
+
+const usesPinChangeOnly = () => {
+  const workflowFiles = changedFiles.filter((file) =>
+    file.startsWith(".github/workflows/"),
+  );
+
+  if (workflowFiles.length === 0) {
+    return true;
+  }
+
+  const changedLines = git(
+    inspectWorktree
+      ? ["diff", "--unified=0", "HEAD", "--", ...workflowFiles]
+      : [
+          "diff",
+          "--unified=0",
+          `${baseRef}...${headRef}`,
+          "--",
+          ...workflowFiles,
+        ],
+  )
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith("+") || line.startsWith("-"))
+    .filter((line) => !line.startsWith("+++") && !line.startsWith("---"));
+
+  const pinnedUse =
+    /^[+-]\s*uses:\s*([\w.-]+(?:\/[\w.-]+)+)@([a-f0-9]{40})(?:\s+#.*)?$/i;
+
+  if (changedLines.length === 0 || changedLines.length % 2 !== 0) {
+    return false;
+  }
+
+  for (let index = 0; index < changedLines.length; index += 2) {
+    const previous = changedLines[index];
+    const next = changedLines[index + 1];
+    const previousMatch = previous.match(pinnedUse);
+    const nextMatch = next.match(pinnedUse);
+
+    if (
+      !previousMatch ||
+      !nextMatch ||
+      !previous.startsWith("-") ||
+      !next.startsWith("+") ||
+      previousMatch[1] !== nextMatch[1]
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const isDependencyOnlyChange = () => {
+  if (changedFiles.length === 0) {
+    return false;
+  }
+
+  if (
+    !changedFiles.every(
+      (file) =>
+        isDependencyManifest(file) || file.startsWith(".github/workflows/"),
+    )
+  ) {
+    return false;
+  }
+
+  if (changedFiles.includes("package.json")) {
+    const comparisonBase = inspectWorktree
+      ? headRef
+      : git(["merge-base", baseRef, headRef]);
+    const baseManifest = readManifest(comparisonBase);
+    const headManifest = readManifest(headRef, inspectWorktree);
+
+    if (
+      !baseManifest ||
+      !headManifest ||
+      JSON.stringify(withoutDependencyFields(baseManifest)) !==
+        JSON.stringify(withoutDependencyFields(headManifest))
+    ) {
+      return false;
+    }
+  }
+
+  return usesPinChangeOnly();
+};
+
+if (inspectDependencyOnly) {
+  process.exit(isDependencyOnlyChange() ? 0 : 1);
+}
+
+if (isDependencyOnlyChange()) {
+  console.log("Dependency-only change; feature memory is not required.");
+  process.exit(0);
+}
+
 // Build-contract and repository-owned orchestration changes should participate
 // in the same feature-memory rule as UI code.
 const isProductPath = (file) =>
   file === "index.html" ||
-  file === "package.json" ||
-  file === "pnpm-lock.yaml" ||
+  isDependencyManifest(file) ||
   file === "pnpm-workspace.yaml" ||
   file === "vercel.json" ||
   file === ".htmlvalidate.json" ||
