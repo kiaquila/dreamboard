@@ -8,4 +8,7 @@
 - [x] Remove the unreachable script lookups, listeners and sidebar functions.
 - [x] Re-measure editor geometry and confirm it matches the baseline.
 - [x] Update `docs_dreamboard/project/frontend/frontend-docs.md`.
+- [x] Merge current `main` after the redesign and English-only work landed,
+      then re-apply the removal against the new markup, styles and script.
+- [x] Re-measure editor geometry against `main` after that merge.
 - [ ] Run `pnpm run preflight` and publish one pull request.

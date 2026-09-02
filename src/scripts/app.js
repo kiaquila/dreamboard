@@ -1,4 +1,4 @@
-import { translations } from "./i18n.js";
+import { strings } from "./strings.js";
 import { LANDING_PHOTO_JACKET } from "./landing-photo.js";
 import { initHeroMountains } from "./hero-mountains.js";
 import {
@@ -7,12 +7,6 @@ import {
   writeDraftSnapshotSyncFallback,
 } from "./draft-store.js";
 
-const DEFAULT_LANG = "EN";
-const LOCALE_COOKIE_NAME = "dreamboard_locale";
-const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
-const LANG_KEYS = ["EN", "RU", "ES"].filter((key) => translations[key]);
-const bootLocale = window.__dreamboardLocaleBoot?.initialLocale || DEFAULT_LANG;
-let currentLang = LANG_KEYS.includes(bootLocale) ? bootLocale : DEFAULT_LANG;
 const MOBILE_BREAKPOINT = 900;
 const DRAFT_SCHEMA_VERSION = 1;
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
@@ -23,8 +17,6 @@ const editorView = document.getElementById("editorView");
 const canvasArea = document.querySelector(".canvas-area");
 const heroGoButton = document.getElementById("l-go-btn");
 const finalGoButton = document.getElementById("l-final-btn");
-const landingLangButton = document.getElementById("langBtn");
-const editorLangButton = document.getElementById("langBtnEditor");
 const editorBackButton = document.getElementById("editorBackBtn");
 const rotateHint = document.getElementById("editorRotateHint");
 const rotateHintCloseButton = document.getElementById("rotateHintCloseBtn");
@@ -76,27 +68,6 @@ let draftBootstrapComplete = false;
 let draftBootstrapPromise = null;
 let editorInteractionLocked = false;
 let rotateHintDismissed = false;
-
-function writeLocaleCookie(lang) {
-  const secureAttribute =
-    window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie =
-    [
-      `${LOCALE_COOKIE_NAME}=${encodeURIComponent(lang)}`,
-      `Max-Age=${LOCALE_COOKIE_MAX_AGE_SECONDS}`,
-      "Path=/",
-      "SameSite=Lax",
-    ].join("; ") + secureAttribute;
-}
-
-function revealLocaleBoot() {
-  if (window.__dreamboardLocaleBoot?.reveal) {
-    window.__dreamboardLocaleBoot.reveal();
-    return;
-  }
-
-  document.documentElement.removeAttribute("data-locale-pending");
-}
 
 const canvas = new fabric.Canvas("visionBoard", {
   width: 960,
@@ -197,7 +168,7 @@ function syncEditorViewport({ dismissForLandscape = false } = {}) {
 }
 
 function applyToolbarTooltips() {
-  const t = translations[currentLang];
+  const t = strings;
   omDelete.setAttribute("data-tooltip", t.ttDelete);
   omCopy.setAttribute("data-tooltip", t.ttCopy);
 
@@ -214,7 +185,7 @@ function applyToolbarTooltips() {
 
 function setSaveStatus(statusKey) {
   currentSaveStatusKey = statusKey;
-  const label = translations[currentLang]?.[statusKey] || "";
+  const label = strings[statusKey] || "";
 
   [saveIndicator, saveIndicatorMobile].forEach((node) => {
     if (!node) return;
@@ -223,8 +194,8 @@ function setSaveStatus(statusKey) {
   });
 }
 
-function applyLanguageUI({ syncPlaceholders = true } = {}) {
-  const t = translations[currentLang];
+function applyStaticCopy({ syncPlaceholders = true } = {}) {
+  const t = strings;
 
   // landing
   const heroTitleEl = document.getElementById("l-hero-title");
@@ -284,29 +255,11 @@ function applyLanguageUI({ syncPlaceholders = true } = {}) {
   editorBackButton?.setAttribute("data-tooltip", t.backHome);
   editorBackButton?.setAttribute("title", t.backHome);
 
-  // lang labels (landing + editor)
-  document.getElementById("langBtn").innerText = currentLang;
-  document.getElementById("langBtnEditor").innerText = currentLang;
-
-  // html lang
-  document.documentElement.lang = currentLang.toLowerCase();
-
   if (syncPlaceholders) {
     createPlaceholders();
   }
   applyToolbarTooltips();
   setSaveStatus(currentSaveStatusKey);
-  revealLocaleBoot();
-}
-
-function toggleLang() {
-  const currentIndex = LANG_KEYS.indexOf(currentLang);
-  currentLang = LANG_KEYS[(currentIndex + 1) % LANG_KEYS.length];
-  writeLocaleCookie(currentLang);
-  applyLanguageUI();
-  if (draftBootstrapComplete) {
-    scheduleDraftSave();
-  }
 }
 
 function scrollToSlide(id) {
@@ -336,7 +289,7 @@ function updateLandingViewportVars() {
 }
 
 function renderLandingRules() {
-  const t = translations[currentLang];
+  const t = strings;
   const ul = document.getElementById("l-rules-list");
   if (!ul) return;
 
@@ -494,7 +447,7 @@ async function restoreDraftSnapshot(snapshot) {
 }
 
 async function bootstrapDraftState() {
-  applyLanguageUI();
+  applyStaticCopy();
   const snapshot = await readDraftSnapshot();
   if (snapshot) {
     await restoreDraftSnapshot(snapshot);
@@ -737,8 +690,6 @@ omFontFamilyBtn.addEventListener("click", (e) => {
   toggleFontPopup();
 });
 
-landingLangButton?.addEventListener("click", toggleLang);
-editorLangButton?.addEventListener("click", toggleLang);
 heroGoButton?.addEventListener("click", goToEditor);
 finalGoButton?.addEventListener("click", goToEditor);
 editorBackButton?.addEventListener("click", goToLanding);
@@ -866,18 +817,18 @@ function createPlaceholders() {
 
   const w = canvas.width;
   const h = canvas.height;
-  const langData = translations[currentLang].sectors;
+  const sectorLabels = strings.sectors;
 
   const positions = [
-    { t: langData[0], cx: 0.5, cy: 0.5 },
-    { t: langData[1], cx: 0.5, cy: 0.18 },
-    { t: langData[2], cx: 0.18, cy: 0.5 },
-    { t: langData[3], cx: 0.18, cy: 0.18 },
-    { t: langData[4], cx: 0.18, cy: 0.82 },
-    { t: langData[5], cx: 0.5, cy: 0.82 },
-    { t: langData[6], cx: 0.82, cy: 0.82 },
-    { t: langData[7], cx: 0.82, cy: 0.5 },
-    { t: langData[8], cx: 0.82, cy: 0.18 },
+    { t: sectorLabels[0], cx: 0.5, cy: 0.5 },
+    { t: sectorLabels[1], cx: 0.5, cy: 0.18 },
+    { t: sectorLabels[2], cx: 0.18, cy: 0.5 },
+    { t: sectorLabels[3], cx: 0.18, cy: 0.18 },
+    { t: sectorLabels[4], cx: 0.18, cy: 0.82 },
+    { t: sectorLabels[5], cx: 0.5, cy: 0.82 },
+    { t: sectorLabels[6], cx: 0.82, cy: 0.82 },
+    { t: sectorLabels[7], cx: 0.82, cy: 0.5 },
+    { t: sectorLabels[8], cx: 0.82, cy: 0.18 },
   ];
 
   const columnGap = Math.max(12, w * 0.035);
@@ -1067,7 +1018,7 @@ fileInput?.addEventListener("change", (e) => {
 function addText() {
   if (isEditorActionBlocked()) return;
 
-  const text = new fabric.IText(translations[currentLang].defaultText, {
+  const text = new fabric.IText(strings.defaultText, {
     left: canvas.width / 2,
     top: canvas.height / 2,
     fontFamily: "DM Sans",

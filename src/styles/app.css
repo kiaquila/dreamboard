@@ -7,6 +7,7 @@
   --top-gap: 20px;
   --footer-height: 45px;
   --editor-shell-gap: 20px;
+  --editor-mobile-sheet-gap: 16px;
 
   --landing-bg: #ececec;
   --landing-bg-2: #f3f3f3;
@@ -19,6 +20,14 @@
   --footer-muted: #8a877f;
   --footer-line: rgba(27, 27, 27, 0.18);
   --footer-accent: #b07f2f;
+
+  /* Brand chrome, transplanted from ember.ks-design.art */
+  --brand-font: ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
+  --brand-ink: #2a2722;
+  --brand-muted: #807b72;
+  --brand-dot-a: #818cf8;
+  --brand-dot-b: #22d3ee;
+  --brand-dot: linear-gradient(135deg, var(--brand-dot-a), var(--brand-dot-b));
 }
 
 body,
@@ -29,10 +38,6 @@ html {
   font-family: "DM Sans", sans-serif;
   background-color: var(--bg-color);
   overflow: hidden;
-}
-
-html[data-locale-pending="true"] body {
-  visibility: hidden;
 }
 
 html[data-initial-view="editor"] .landing-view {
@@ -86,58 +91,66 @@ html[data-initial-view="editor"] .sticky-footer {
   pointer-events: auto;
 }
 
-.landing-header-inner {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.landing-header-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-/* Заголовок + кнопка языка как в редакторе */
+/* Brand mark + editor return control */
 .sidebar-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
-h1 {
-  font-size: 28px;
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: -1.5px;
+/* =========
+   BRAND MARK (ember.ks-design.art chrome)
+   ========= */
+
+.brand-mark {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
 }
 
-.landing-header h1,
-.sidebar-header h1 {
-  display: inline-flex;
-  align-items: center;
+.brand-mark-stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
-.lang-switcher button {
-  background: transparent !important;
-  color: #888 !important;
-  border: 1px solid #eee !important;
-  padding: 8px 12px !important;
-  cursor: pointer;
-  font-weight: 700;
-  border-radius: 6px;
-  font-family: "DM Sans", sans-serif;
+.brand-tag {
+  font-family: var(--brand-font);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.22em;
+  white-space: nowrap;
   text-transform: uppercase;
-  font-size: 12px !important;
-  line-height: 1;
-  min-width: 44px;
+  color: var(--brand-muted);
 }
 
-.lang-switcher button:hover {
-  border-color: #ccc !important;
-  color: #000 !important;
+.brand-tag strong {
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+
+.brand-dot {
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 50%;
+  background: var(--brand-dot);
+  margin: 0 0.3em 0 -0.07em;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .landing-section {
@@ -1164,7 +1177,6 @@ body.is-editor-active .sticky-footer {
   position: fixed;
   left: max(14px, calc(env(safe-area-inset-left) + 14px));
   right: max(14px, calc(env(safe-area-inset-right) + 14px));
-  top: max(14px, calc(env(safe-area-inset-top) + 14px));
   z-index: 260;
   pointer-events: none;
   opacity: 0;
@@ -1314,13 +1326,21 @@ body.is-editor-active .app-container {
     padding: calc(16px + env(safe-area-inset-top)) 16px 8px;
   }
 
-  .landing-header-bar h1 {
-    font-size: 24px;
-    letter-spacing: -1.2px;
+  .landing-header .brand-mark {
+    gap: 12px;
   }
 
-  .sidebar .sidebar-header .lang-switcher {
-    display: none;
+  .brand-tag {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+  }
+
+  /* The editor rail is narrow: keep each tag on one line. Tracking is trimmed
+     below the Ember 0.22em so the study tag still has headroom at the tightest
+     landscape rail, where system-ui resolves to different metrics per OS. */
+  .sidebar-header .brand-tag {
+    font-size: 9px;
+    letter-spacing: 0.08em;
   }
 
   .app-container {
@@ -1328,7 +1348,22 @@ body.is-editor-active .app-container {
   }
 
   .sidebar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(
+      var(--footer-height) + var(--editor-mobile-sheet-gap) +
+        env(safe-area-inset-bottom)
+    );
+    width: auto;
+    height: auto;
     z-index: 200;
+    transform: translateY(calc(100% + 24px));
+    transition: transform 0.22s ease;
+    box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.14);
+    border: 1px solid #ececec;
+    border-radius: 28px;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
     gap: 16px;
   }
 
@@ -1395,6 +1430,18 @@ body.is-editor-active .app-container {
   }
 }
 
+/* Narrowest phones: keep the header chrome on a single line */
+@media (max-width: 360px) {
+  .landing-header .brand-mark {
+    gap: 8px;
+  }
+
+  .landing-header .brand-tag {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+  }
+}
+
 @media (max-width: 900px) {
   body.is-editor-active .app-container {
     height: 100dvh;
@@ -1438,6 +1485,10 @@ body.is-editor-active .app-container {
     );
   }
 
+  body.is-editor-active .editor-rotate-hint {
+    top: max(14px, calc(env(safe-area-inset-top) + 14px));
+  }
+
   body.is-editor-active .object-menu.is-mobile-dock {
     width: min(420px, calc(100% - 28px));
   }
@@ -1467,6 +1518,10 @@ body.is-editor-active .app-container {
     display: none;
   }
 
+  body.is-editor-active .editor-rotate-hint {
+    top: max(14px, calc(env(safe-area-inset-top) + 14px));
+  }
+
   body.is-editor-active .sidebar {
     width: min(158px, 42vw);
     flex: 0 0 min(158px, 42vw);
@@ -1482,14 +1537,22 @@ body.is-editor-active .app-container {
     min-width: 0;
   }
 
-  body.is-editor-active .sidebar .sidebar-header h1 {
-    font-size: 14px;
-    letter-spacing: -0.5px;
+  body.is-editor-active .sidebar .sidebar-header .brand-mark {
     flex: 1 1 auto;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
+    gap: 2px;
+  }
+
+  body.is-editor-active .sidebar .brand-tag {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+  }
+
+  /* Rotated portrait leaves ~104px of rail for the mark, which is not enough
+     for the study tag at Ember tracking. Keep the studio tag, drop the build
+     label, rather than wrapping or shrinking it into illegibility. */
+  body.is-editor-active .sidebar .brand-tag-study {
+    display: none;
   }
 
   body.is-editor-active .sidebar .sidebar-header-actions {
@@ -1506,13 +1569,6 @@ body.is-editor-active .app-container {
   body.is-editor-active .sidebar .editor-home-btn svg {
     width: 10px;
     height: 10px;
-  }
-
-  body.is-editor-active .sidebar #langBtnEditor {
-    min-width: 24px;
-    height: 24px;
-    padding: 0 6px;
-    font-size: 10px;
   }
 
   body.is-editor-active .sidebar .control-group {

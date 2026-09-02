@@ -8,7 +8,7 @@
 
 **Current implementation:** static single-file web app  
 **Core editor dependency:** Fabric.js  
-**Deploy target:** Vercel via Git integration  
+**Deploy targets:** Vercel production + Cloudflare PR stage via Git integration<br>
 **Owner:** personal project, single user
 
 ## Current Phase & Status
@@ -22,6 +22,7 @@
 | Repository memory and feature-memory flow | IN PROGRESS                         |
 | CI / AI review orchestration              | COMPLETE                            |
 | Production deploy flow                    | COMPLETE via Vercel Git integration |
+| Pull-request stage                        | COMPLETE via Cloudflare Workers     |
 
 ## Project Structure
 
@@ -34,6 +35,8 @@ dreamboard/
 ├── index.html                          # Current app shell
 ├── package.json                        # Repo tooling for CI, local orchestration, and build
 ├── vercel.json                         # Vercel build/output configuration
+├── wrangler.json                       # Cloudflare Worker stage configuration
+├── worker/index.js                     # Cloudflare response-header wrapper
 ├── scripts/
 │   ├── build-static.mjs                # Static build to dist/
 │   ├── check-static-baseline.mjs       # Repository baseline checks
@@ -61,6 +64,7 @@ dreamboard/
 - One implementation loop uses one worktree, one branch, and one PR.
 - Required GitHub checks are `baseline-checks`, `guard`, and `AI Review`.
 - Vercel handles preview deployments for pull requests and production deployment for `main` through Git integration.
+- Cloudflare Workers Builds publishes an additional isolated stage for every pull request; `main` updates the stable `dreamboard` staging Worker.
 - Durable workflow docs live under `docs_dreamboard/project/devops/`.
 - Local orchestration state lives under `.claude/` and is gitignored.
 - Local worktrees are created inside `<repoRoot>/.claude/worktrees/<slug>/` so they stay inside the repository.
@@ -101,7 +105,7 @@ relevant durable doc under `docs_dreamboard/`, `AGENTS.md`, or `CLAUDE.md`.
 
 ### 3. Preserve static-site deployability
 
-Even while the app is still a single-file prototype, changes must keep `pnpm run build` producing a deployable `dist/index.html` artifact for Vercel.
+Even while the app is still a single-file prototype, changes must keep `pnpm run build` producing a deployable `dist/index.html` artifact for Vercel and Cloudflare.
 
 ### 4. One worker equals one worktree
 

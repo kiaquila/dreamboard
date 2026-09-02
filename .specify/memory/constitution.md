@@ -23,7 +23,7 @@ through Vercel without relying on hidden session memory.
 5. Merge-ready means the full loop is green.
    A task is done only when the current PR head SHA has green
    `baseline-checks`, `guard`, and `AI Review`, no unresolved blocking review
-   findings, and a healthy Vercel preview for the changed scope.
+   findings, and healthy Vercel and Cloudflare previews for the changed scope.
 6. Production changes come from Git only.
    No direct edits in Vercel or the browser; production updates happen only
    through merge to `main` and Vercel Git integration.
@@ -58,9 +58,9 @@ through Vercel without relying on hidden session memory.
   requests.
 - Gemini
   Fallback review backend on GitHub pull requests.
-- GitHub Actions + Vercel
-  Execute required checks, review normalization, previews, and production
-  deployment.
+- GitHub Actions + Vercel + Cloudflare
+  Execute required checks, review normalization, previews, staging, and
+  production deployment.
 
 ## Standard Feature Loop
 
@@ -72,7 +72,8 @@ through Vercel without relying on hidden session memory.
 6. Implement the scoped change on that branch only.
 7. Update `tasks.md`, tests, and durable docs.
 8. Open or update the same PR.
-9. Wait for `baseline-checks`, `guard`, `AI Review`, and Vercel preview.
+9. Wait for `baseline-checks`, `guard`, `AI Review`, Vercel preview, and
+   Cloudflare Workers preview.
 10. Iterate on the same branch until the PR is merge-ready.
 
 ## macOS Local Runner Contract

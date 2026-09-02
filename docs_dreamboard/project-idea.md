@@ -20,6 +20,8 @@ The current app is a strong prototype, and the repository is now on a safer refa
 - the mobile editor now also uses a dedicated landscape layout so the canvas and tool rail actually benefit from rotation
 - landing artwork is now repository-owned under `src/assets/` instead of living as a root-level loose file
 - editor state now survives refresh/return inside the same browser through a local draft snapshot
+- the app is English-only: the language switcher and the RU/ES dictionaries are gone, and copy lives in one module
+- landing and editor carry the `ks·design · lab` studio chrome from `ember.ks-design.art` instead of a DreamBoard wordmark
 
 ## Infra Goal
 
@@ -29,9 +31,10 @@ Before deeper refactoring, the repository must follow the standard delivery path
 2. required checks in GitHub
 3. AI review routing through repository policy with Gemini as the default reviewer
 4. Vercel preview deploys on PR
-5. Vercel production deploys on merge to `main`
-6. repository memory through `.specify/`, `docs_dreamboard/`, and `specs/`
-7. local macOS worktree orchestration for implementation tasks
+5. Cloudflare Workers publishes an isolated staging URL for every PR
+6. Vercel production deploys on merge to `main`
+7. repository memory through `.specify/`, `docs_dreamboard/`, and `specs/`
+8. local macOS worktree orchestration for implementation tasks
 
 ## Next Product Goal
 
