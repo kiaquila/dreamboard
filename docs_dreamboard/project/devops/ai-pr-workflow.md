@@ -49,6 +49,8 @@ This is the canonical PR loop for `dreamboard`.
   pinned `actions/checkout` v7 with explicit `ref:`. PR Guard uses a two-checkout pattern
   (`.gate-trusted/` for trusted scripts, workspace root for PR content), so a
   PR cannot tamper with gate logic to bypass required checks.
+- CI and PR Guard pin `actions/setup-node` v7 and explicitly select Node 24,
+  matching the repository's declared Node 24.8-or-newer runtime policy.
 
 ## Review Contract
 
