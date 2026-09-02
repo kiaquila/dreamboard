@@ -34,11 +34,13 @@ Hero slides 1 and 4 no longer use a photo background. `hero-mountains.js` mounts
 - the tone source is `src/assets/images/landing/hero-mountains-halftone.jpg` (1200x675, a compressed copy of the "Halftone Alpine Serenity" wallpaper); it is drawn to cover the section width, anchored to the bottom, and on tall phone viewports it keeps at least 62% of the height
 - the section is split into a square grid (`width / 176`, clamped to 4..16 px); every cell becomes one dot whose radius follows the averaged darkness of the pixels under it, so the far ridges stay faint and the shadow faces read almost solid
 - dots are drawn from cached circle sprites grouped by 12 alpha levels, which keeps a 1440x900 frame (about 7.6k dots) cheap enough for 60 fps
-- when a hero slide is at least half visible (IntersectionObserver), the dots assemble over 2.6 s from the summits downward ("snowcap"): each dot's delay grows with its depth below the skyline of its column, then it fades in, grows from zero and lifts 6 px into place
+- when a hero slide is at least half visible (IntersectionObserver with an explicit `intersectionRatio >= 0.5` check, so the initial observation of a sliver does not start it), the dots assemble over 2.6 s from the summits downward ("snowcap"): each dot's delay grows with its depth below the skyline of its column, then it fades in, grows from zero and lifts 6 px into place
 - `prefers-reduced-motion: reduce` skips the animation and paints the final frame
 - the field is built lazily from the canvas' CSS size when a slide is about to play and rebuilt on resize (debounced 200 ms); a hidden landing (boot straight into `#editor`, or a resize while the editor is open) reports a zero-size canvas and is measured again when the slide is shown; the paper colour is `--landing-paper` (`#f4f2ee`), ink is `--landing-ink` (`#1b1b1b`)
 
 To regenerate the tone source from a new artwork, downscale it with `sips -s format jpeg -s formatOptions 72 -Z 1200 <source> --out src/assets/images/landing/hero-mountains-halftone.jpg`; only luminance matters, so a small JPEG is enough.
+
+Hero copy is centred and starts `clamp(24px, 10vh, 140px)` below the fixed header; the hero sections always reserve `--landing-header-h` on top, including the phone layout where other slides flatten their padding, so a short landscape viewport does not push the headline under the brand controls.
 
 ## Landing footer
 

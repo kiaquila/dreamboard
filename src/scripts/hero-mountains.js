@@ -22,6 +22,7 @@ const MIN_BAND_HEIGHT = 0.62;
 const ASSEMBLE_DURATION_MS = 2600;
 const ALPHA_BUCKETS = 12;
 const REGENERATE_DELAY_MS = 200;
+const PLAY_VISIBILITY = 0.5;
 
 const clamp = (value, min, max) =>
   value < min ? min : value > max ? max : value;
@@ -329,14 +330,22 @@ export async function initHeroMountains(sections) {
     return canvas ? new HeroDots(canvas, image) : null;
   });
 
+  // The initial observation reports any overlap, so check the ratio explicitly:
+  // a hero starts assembling only once at least half of it is on screen.
   const observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
         const scene = scenes[targets.indexOf(entry.target)];
-        if (scene && entry.isIntersecting) scene.play();
+        if (
+          scene &&
+          entry.isIntersecting &&
+          entry.intersectionRatio >= PLAY_VISIBILITY
+        ) {
+          scene.play();
+        }
       }
     },
-    { threshold: 0.5 },
+    { threshold: PLAY_VISIBILITY },
   );
   targets.forEach((section, index) => {
     if (scenes[index]) observer.observe(section);

@@ -275,7 +275,7 @@ h1 {
 .landing-section.bg-hero .hero-center {
   justify-content: flex-start;
   align-items: center;
-  padding-top: clamp(32px, 12vh, 140px);
+  padding-top: clamp(24px, 10vh, 140px);
 }
 
 .landing-section.bg-hero .hero-title {
@@ -288,11 +288,14 @@ h1 {
   margin-top: 22px;
 }
 
-/* Hero slides (1 and 4): paper background with a dotted-mountain canvas behind the content */
+/* Hero slides (1 and 4): paper background with a dotted-mountain canvas behind the content.
+   The fixed header is always reserved here, including the <= 900px layout that
+   otherwise flattens the section padding to 46px. */
 .landing-section.bg-hero {
   position: relative;
   overflow: hidden;
   background: var(--landing-paper);
+  padding-top: var(--landing-header-h, 0px);
 }
 
 .hero-dots {
