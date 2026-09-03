@@ -19,6 +19,8 @@
       padding, confirm the shadow is no longer cut at the footer line
 - [x] Rebase onto merged PR #37; bring the rotated-portrait rail (58px since
       `7aebb89`) to the 48px touch height
+- [x] Codex P2: add the desktop `.canvas-area` floor so a short window
+      scrolls stage and footer instead of overlapping them
 - [ ] Run `pnpm run preflight`
 - [ ] Open the PR (stacked on PR #37 until it merges) and drive it to
       merge-ready

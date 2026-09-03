@@ -54,8 +54,11 @@ min-height: 0; overflow: auto`) above `.canvas-area`; drop `overflow: auto`
 Low. No JavaScript changes. The only structural change is one extra flex
 column around `.canvas-area`; every mobile rule targets `.canvas-area`,
 `.canvas-wrapper` or `.sidebar` and keeps working one level deeper. Moving
-the scroll container one level up only matters when the canvas hits its
-minimum size in a very short window; the column then scrolls, footer
-included, instead of the stage alone. The landing loses two unused tokens
+the scroll container one level up matters when the canvas hits its 520px
+minimum in a very short window: with `min-height: 0` alone the stage shrank
+under the canvas and the footer painted over it (Codex P2 on the first
+head). The desktop floor `min-height: calc(--editor-canvas-min-height +
+--top-gap)` on `.canvas-area` mirrors the `getCanvasTargetSize()` clamp, so
+the column grows past the viewport and scrolls stage and footer together. The landing loses two unused tokens
 and two classes. Desktop editor is the only
 place that gains a footer, and the phone shells were measured unchanged.

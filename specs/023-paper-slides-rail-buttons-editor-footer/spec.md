@@ -97,5 +97,9 @@ preview (2026-09-02):
    `overflow: visible` so the canvas shadow is not clipped at the line;
    `#appFooter` stays hidden.
 4. Below 900px `.editor-footer` is hidden and the phone shell is unchanged.
-5. `pnpm run preflight` is green and the frontend docs describe the slide
+5. At 1440 x 500 (shorter than the 520px minimum canvas) the footer top is not
+   above the canvas bottom: `.canvas-area` keeps
+   `min-height: calc(--editor-canvas-min-height + --top-gap)` and the
+   `.canvas-stage` column scrolls stage and footer together.
+6. `pnpm run preflight` is green and the frontend docs describe the slide
    tone, the rail heights and the two footer placements.

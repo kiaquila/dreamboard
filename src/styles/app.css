@@ -30,6 +30,11 @@
   --editor-btn-height: 40px;
   --editor-btn-height-touch: 48px;
 
+  /* Smallest canvas the desktop editor renders; app.js getCanvasTargetSize()
+     clamps to the same 520px, and the stage floor below keeps the footer from
+     painting over a canvas that can no longer shrink. */
+  --editor-canvas-min-height: 520px;
+
   --landing-text-dark: #2b2b2b;
   --landing-text-mid: #6b6b6b;
 
@@ -821,6 +826,15 @@ button:active {
   padding: var(--top-gap) var(--editor-shell-gap) 0;
   position: relative;
   box-sizing: border-box;
+}
+
+/* In a window shorter than the minimum canvas the stage cannot shrink any
+   further, so it must not let the footer slot cut into it: the floor makes the
+   column taller than the viewport and it scrolls stage and footer together. */
+@media (min-width: 901px) {
+  .canvas-area {
+    min-height: calc(var(--editor-canvas-min-height) + var(--top-gap));
+  }
 }
 
 body.is-editor-restoring .canvas-area,
