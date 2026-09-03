@@ -911,6 +911,10 @@ body.is-editor-restoring .object-menu {
   background: var(--btn-bg-hover);
 }
 
+.object-menu .om-btn:active {
+  background: var(--btn-bg-active);
+}
+
 .object-menu .om-icon-btn {
   width: 40px;
   min-width: 40px;
