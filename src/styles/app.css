@@ -1630,17 +1630,19 @@ body.is-editor-active .app-container {
     gap: 8px;
   }
 
+  /* The rail is only ~137px wide, so the labels get smaller type and side
+     padding, but the tools keep the standard 58px pill. */
   body.is-editor-active .sidebar .control-group button,
   body.is-editor-active .sidebar .file-input-label {
-    min-height: 0;
-    height: auto;
-    border-radius: var(--btn-radius);
-    font-size: 11px;
-    padding: 6px 10px;
+    min-height: var(--btn-height);
+    padding: 0 10px;
+    font-size: 12px;
     line-height: 1.2;
     letter-spacing: -0.2px;
     white-space: normal;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
   }
 }

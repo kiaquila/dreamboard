@@ -58,6 +58,7 @@ How it is applied:
 
 - text buttons take the full standard: the landing CTA (`.cta-btn`), the editor sidebar tools (global `button`, `.control-group button`, `.file-input-label`), and the donate link (`.donate-matecito-link`); none of them carries a shadow, glow or gradient
 - icon-only buttons keep their compact size (44px back control, 40px object-menu tools) and take the black fill, white glyph and full rounding; the transparent text tools (`.om-texttool-btn`, `.om-color-btn`) draw their glyph in `--btn-bg` and get a light grey hover fill
+- the rotated portrait editor rail is only about 137px wide, so its three sidebar tools keep the 58px pill but drop to 12px type with 10px side padding so the labels fit without wrapping
 - three controls keep a non-black fill but take the pill shape: the font picker `#om-fontFamilyBtn` (a value control that must show the current font name, stays white) and the close buttons on the two dark glass overlays (rotate hint, donate modal, stay translucent white)
 - hover and active are background swaps, never opacity, so the old `button:hover { opacity }` idiom is gone
 - `--pantone-yellow` now only colours the slide-3 star bullets; `--volcanic-grass` only the slide-3 title and the font-popup check icon
