@@ -22,8 +22,14 @@ test("cz deployer is valid Bash and gates the merge revision", () => {
 
   assert.equal(syntax.status, 0, syntax.stderr);
   assert.match(script, /refs\/heads\/main/);
-  assert.match(script, /baseline-checks/);
-  assert.match(script, /osv-scan/);
+  assert.match(script, /actions\/runs/);
+  assert.match(script, /event=push/);
+  assert.match(script, /head_sha=\$revision/);
+  assert.match(script, /"CI": "\.github\/workflows\/ci\.yml"/);
+  assert.match(script, /"OSV Scan": "\.github\/workflows\/osv-scan\.yml"/);
+  assert.match(script, /run\.get\("event"\) == "push"/);
+  assert.match(script, /run\.get\("head_branch"\) == "main"/);
+  assert.match(script, /run\.get\("head_sha"\) == revision/);
   assert.match(script, /--network none/);
   assert.match(script, /find "\$stage_dir\/dist" -type l/);
   assert.match(script, /chmod 0755 "\$stage_dir"/);

@@ -11,8 +11,9 @@ This is the canonical PR loop for `dreamboard`.
 - Vercel provides preview deployments for PRs and does not deploy `main`.
 - Cloudflare Workers Builds provides an additional isolated staging URL for
   every PR; the stable Cloudflare Worker is staging, not production.
-- The `cz` production host publishes protected `main` after the post-merge
-  `baseline-checks` and `osv-scan` jobs pass.
+- The `cz` production host publishes protected `main` after exact-SHA `CI` and
+  `OSV Scan` workflow runs from a `main` push pass; manually dispatched runs
+  cannot satisfy the production gate.
 - A human remains the final merge authority.
 
 ## Standard Loop

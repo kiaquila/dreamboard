@@ -8,7 +8,7 @@ readonly releases_dir="/srv/dreamboard/releases"
 readonly current_link="/srv/dreamboard/current"
 readonly lock_file="/run/lock/dreamboard-deploy.lock"
 readonly node_image="node@sha256:cadbfafeb6baf87eaaffa40b3640209c4b7fd38cebde65059d15bc39cd636b85"
-readonly checks_url="https://api.github.com/repos/kiaquila/dreamboard/commits"
+readonly runs_url="https://api.github.com/repos/kiaquila/dreamboard/actions/runs"
 
 log() {
   printf '[dreamboard-deploy] %s\n' "$*"
@@ -50,13 +50,13 @@ if [[ "$revision" == "$current_revision" ]]; then
   log "revision $revision is live but unvalidated; retrying validation"
 fi
 
-checks_json="$(
+runs_json="$(
   curl --fail --silent --show-error \
     --retry 3 \
     --retry-delay 2 \
     --header "Accept: application/vnd.github+json" \
     --header "User-Agent: dreamboard-cz-deployer" \
-    "$checks_url/$revision/check-runs?per_page=100"
+    "$runs_url?branch=main&event=push&head_sha=$revision&per_page=100"
 )"
 
 checks_state="$(
@@ -64,16 +64,27 @@ checks_state="$(
 import json
 import sys
 
-required = {"baseline-checks", "osv-scan"}
+revision = sys.argv[1]
+required = {
+    "CI": ".github/workflows/ci.yml",
+    "OSV Scan": ".github/workflows/osv-scan.yml",
+}
 payload = json.load(sys.stdin)
 found = {}
 
-for run in payload.get("check_runs", []):
+for run in payload.get("workflow_runs", []):
     name = run.get("name")
-    if name in required and name not in found:
+    if (
+        name in required
+        and run.get("path") == required[name]
+        and run.get("event") == "push"
+        and run.get("head_branch") == "main"
+        and run.get("head_sha") == revision
+        and name not in found
+    ):
         found[name] = (run.get("status"), run.get("conclusion"))
 
-missing = sorted(required - found.keys())
+missing = sorted(required.keys() - found.keys())
 if missing:
     print("pending:" + ",".join(missing))
     raise SystemExit(0)
@@ -95,7 +106,7 @@ if failed:
     raise SystemExit(0)
 
 print("ready")
-' <<<"$checks_json"
+' "$revision" <<<"$runs_json"
 )"
 
 case "$checks_state" in

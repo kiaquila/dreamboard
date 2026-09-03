@@ -13,8 +13,9 @@ automatically.
 - Cloudflare proxies the public hostname to the `cz` origin.
 - The origin exposes only ports 80 and 443 through the existing Cloudflare-only
   firewall policy; SSH remains reachable only through Tailscale.
-- Production follows protected `main`. The deployer waits for the `baseline-checks`
-  and `osv-scan` checks on the merge commit before publishing it.
+- Production follows protected `main`. The deployer waits for successful `CI`
+  and `OSV Scan` workflow runs triggered by a `main` push with the exact merge
+  commit SHA before publishing it.
 - Releases switch atomically and retain recent revisions for operational
   rollback.
 - Vercel continues to create pull-request previews but does not deploy `main`.

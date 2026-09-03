@@ -13,8 +13,9 @@ release.
 - `vercel.json` sets `git.deploymentEnabled.main` to `false`, so merges no
   longer produce Vercel production deployments.
 - A systemd timer on `cz` checks protected `main` every minute and publishes a
-  new release only after the merge commit's `baseline-checks` and `osv-scan`
-  jobs succeed.
+  new release only after exact-SHA `CI` and `OSV Scan` workflow runs triggered
+  by a `main` push succeed. Manually dispatched runs are never accepted by the
+  production gate.
 
 The deployer runs `scripts/build-static.mjs` inside a pinned Node container
 with networking disabled, validates `dist/index.html` and `dist/src`, then
@@ -32,8 +33,8 @@ instead.
 
 Branch protection is the trust boundary for PR-only checks. It requires
 `baseline-checks`, `guard`, `osv-scan`, and `AI Review` before a revision can
-enter `main`. The deployer additionally waits for the two checks that run again
-on the resulting `main` commit: `baseline-checks` and `osv-scan`.
+enter `main`. The deployer additionally waits for the `CI` and `OSV Scan`
+workflows that run again on a push of the resulting `main` commit.
 
 ## Repository-owned server configuration
 
