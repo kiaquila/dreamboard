@@ -25,8 +25,11 @@ test("cz deployer is valid Bash and gates the merge revision", () => {
   assert.match(script, /baseline-checks/);
   assert.match(script, /osv-scan/);
   assert.match(script, /--network none/);
+  assert.match(script, /find "\$stage_dir\/dist" -type l/);
   assert.match(script, /chmod 0755 "\$stage_dir"/);
   assert.match(script, /mv -Tf \"\$next_link\" \"\$current_link\"/);
+  assert.match(script, /rm -rf --one-file-system "\$release_dir"/);
+  assert.match(script, /touch "\$release_dir\/\.deployed"/);
 });
 
 test("cz Nginx host serves the canonical domain with the security baseline", () => {

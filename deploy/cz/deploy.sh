@@ -131,6 +131,13 @@ if [[ ! -d "$release_dir" ]]; then
 
   test -s "$stage_dir/dist/index.html"
   test -d "$stage_dir/dist/src"
+
+  symlink_path="$(find "$stage_dir/dist" -type l -print -quit)"
+  if [[ -n "$symlink_path" ]]; then
+    log "refusing to publish symlink: $symlink_path"
+    exit 1
+  fi
+
   printf '%s\n' "$revision" >"$stage_dir/dist/.revision"
   chmod 0755 "$stage_dir"
   find "$stage_dir/dist" -type d -exec chmod 0755 {} +
@@ -160,14 +167,17 @@ if ! curl --fail --silent --show-error \
     rm -f "$current_link"
     log "initial live smoke failed; removed the current link"
   fi
+  rm -rf --one-file-system "$release_dir"
   exit 1
 fi
 
+touch "$release_dir/.deployed"
 log "deployed $revision"
 
 mapfile -t stale_releases < <(
   find "$releases_dir" -mindepth 1 -maxdepth 1 -type d \
-    -name '[0-9a-f][0-9a-f]*' -printf '%T@ %p\n' \
+    -name '[0-9a-f][0-9a-f]*' -exec test -f '{}/.deployed' \; \
+    -printf '%T@ %p\n' \
     | sort -nr \
     | tail -n +11 \
     | cut -d' ' -f2-
