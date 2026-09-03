@@ -855,6 +855,10 @@ body.is-editor-restoring .object-menu {
   background: var(--btn-bg-hover);
 }
 
+.file-input-label:active {
+  background: var(--btn-bg-active);
+}
+
 /* Контекстное меню объекта (Material Design 3 styling) */
 .object-menu {
   position: absolute;
@@ -1019,6 +1023,10 @@ body.is-editor-restoring .object-menu {
 
 .om-texttool-btn:hover {
   background: rgba(120, 120, 120, 0.12) !important;
+}
+
+.om-texttool-btn:active {
+  background: rgba(120, 120, 120, 0.2) !important;
 }
 
 .om-texttool-btn.is-selected {
