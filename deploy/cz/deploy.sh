@@ -132,6 +132,9 @@ if [[ ! -d "$release_dir" ]]; then
   test -s "$stage_dir/dist/index.html"
   test -d "$stage_dir/dist/src"
   printf '%s\n' "$revision" >"$stage_dir/dist/.revision"
+  chmod 0755 "$stage_dir"
+  find "$stage_dir/dist" -type d -exec chmod 0755 {} +
+  find "$stage_dir/dist" -type f -exec chmod 0644 {} +
 
   mv "$stage_dir" "$release_dir"
   stage_dir=""

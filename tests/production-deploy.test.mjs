@@ -25,6 +25,7 @@ test("cz deployer is valid Bash and gates the merge revision", () => {
   assert.match(script, /baseline-checks/);
   assert.match(script, /osv-scan/);
   assert.match(script, /--network none/);
+  assert.match(script, /chmod 0755 "\$stage_dir"/);
   assert.match(script, /mv -Tf \"\$next_link\" \"\$current_link\"/);
 });
 
