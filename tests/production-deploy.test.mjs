@@ -34,6 +34,7 @@ test("cz Nginx host serves the canonical domain with the security baseline", () 
   assert.match(nginx, /server_name dreamboard\.ks-design\.art;/);
   assert.match(nginx, /root \/srv\/dreamboard\/current;/);
   assert.match(nginx, /Content-Security-Policy/);
+  assert.match(nginx, /Cache-Control "public, max-age=0, must-revalidate"/);
   assert.match(nginx, /Strict-Transport-Security/);
   assert.match(nginx, /X-Content-Type-Options/);
   assert.match(nginx, /try_files \$uri \$uri\/ \/index\.html;/);
