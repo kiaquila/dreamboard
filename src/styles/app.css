@@ -24,8 +24,12 @@
   --btn-font-size: 14px;
   --btn-font-weight: 800;
 
-  --landing-bg: #ececec;
-  --landing-bg-2: #f3f3f3;
+  /* Editor rail buttons keep the pill style but the pre-022 height (40px, the
+     old 12px padding around a 12px label), 48px as a touch target on phones.
+     Three 58px slabs stacked in the rail read as a wall (2026-09-02). */
+  --editor-btn-height: 40px;
+  --editor-btn-height-touch: 48px;
+
   --landing-text-dark: #2b2b2b;
   --landing-text-mid: #6b6b6b;
 
@@ -77,7 +81,7 @@ html[data-initial-view="editor"] .sticky-footer {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  background: var(--landing-bg);
+  background: var(--landing-paper);
   box-sizing: border-box;
 
   /* Slides handle header/footer spacing to keep each screen at 100% height */
@@ -179,6 +183,10 @@ html[data-initial-view="editor"] .sticky-footer {
   padding-top: var(--landing-header-h, 0px);
   padding-bottom: var(--footer-height);
 
+  /* One paper tone for every slide, the same as the dotted-mountain heroes,
+     so scrolling never flips the background (2026-09-02). */
+  background: var(--landing-paper);
+
   /* Layout */
   display: flex;
   align-items: center;
@@ -190,14 +198,6 @@ html[data-initial-view="editor"] .sticky-footer {
   /* Default horizontal padding (like editor) */
   padding-left: 25px;
   padding-right: 25px;
-}
-
-.landing-section.bg-1 {
-  background: var(--landing-bg);
-}
-
-.landing-section.bg-2 {
-  background: var(--landing-bg-2);
 }
 
 .landing-wrap {
@@ -288,13 +288,12 @@ html[data-initial-view="editor"] .sticky-footer {
   margin-top: 22px;
 }
 
-/* Hero slides (1 and 4): paper background with a dotted-mountain canvas behind the content.
+/* Hero slides (1 and 4): a dotted-mountain canvas behind the content.
    The fixed header is always reserved here, including the <= 900px layout that
    otherwise flattens the section padding to 46px. */
 .landing-section.bg-hero {
   position: relative;
   overflow: hidden;
-  background: var(--landing-paper);
   padding-top: var(--landing-header-h, 0px);
 }
 
@@ -793,7 +792,23 @@ button:active {
 }
 
 .control-group button {
-  min-height: var(--btn-height);
+  min-height: var(--editor-btn-height);
+}
+
+/* Canvas column: the stage on top, the footer line under it. The footer takes
+   its 45px slot from the column, so the stage (and the Fabric canvas, which
+   follows the stage size) ends where the slot begins and the line sits centred
+   between the canvas edge and the screen bottom, the same geometry as a
+   landing slide. The column, not the stage, is the scroll container: a clip
+   on the stage would cut the canvas shadow at the footer line and draw a seam
+   on the otherwise continuous backdrop. */
+.canvas-stage {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
 }
 
 .canvas-area {
@@ -803,9 +818,8 @@ button:active {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: var(--top-gap) var(--editor-shell-gap) var(--editor-shell-gap);
+  padding: var(--top-gap) var(--editor-shell-gap) 0;
   position: relative;
-  overflow: auto;
   box-sizing: border-box;
 }
 
@@ -838,7 +852,7 @@ body.is-editor-restoring .object-menu {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-height: var(--btn-height);
+  min-height: var(--editor-btn-height);
   padding: 0 var(--btn-padding-x);
   background: var(--btn-bg);
   color: var(--btn-fg);
@@ -1181,12 +1195,10 @@ body.is-editor-restoring .object-menu {
   fill: var(--volcanic-grass);
 }
 
-/* Footer: one quiet centred line, same idiom as ember.ks-design.art */
-.sticky-footer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* Footer: one quiet centred line, same idiom as ember.ks-design.art.
+   .site-footer is the line itself; .sticky-footer pins it to the viewport on
+   the landing, .editor-footer sits under the canvas inside the editor column. */
+.site-footer {
   height: var(--footer-height);
   display: flex;
   align-items: center;
@@ -1199,19 +1211,14 @@ body.is-editor-restoring .object-menu {
   letter-spacing: 0.06em;
   color: var(--footer-muted);
   text-align: center;
-  z-index: 100;
   pointer-events: none;
 }
 
-.sticky-footer p {
+.site-footer p {
   margin: 0;
 }
 
-body.is-editor-active .sticky-footer {
-  display: none;
-}
-
-.sticky-footer a {
+.site-footer a {
   pointer-events: auto;
   color: var(--landing-ink);
   text-decoration: none;
@@ -1221,14 +1228,30 @@ body.is-editor-active .sticky-footer {
     color 0.2s ease;
 }
 
-.sticky-footer a:hover {
+.site-footer a:hover {
   color: var(--footer-accent);
   border-color: var(--footer-accent);
 }
 
-.sticky-footer a:focus-visible {
+.site-footer a:focus-visible {
   outline: 2px solid var(--landing-ink);
   outline-offset: 2px;
+}
+
+.sticky-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+body.is-editor-active .sticky-footer {
+  display: none;
+}
+
+.editor-footer {
+  flex: 0 0 var(--footer-height);
 }
 
 /* ==========================
@@ -1453,7 +1476,12 @@ body.is-editor-active .app-container {
 
   .control-group button,
   .file-input-label {
-    border-radius: var(--btn-radius);
+    min-height: var(--editor-btn-height-touch);
+  }
+
+  /* The phone editor is a full-bleed shell; the brand line stays desktop-only */
+  .editor-footer {
+    display: none;
   }
 
   .canvas-wrapper {
@@ -1639,10 +1667,10 @@ body.is-editor-active .app-container {
   }
 
   /* The rail is only ~137px wide, so the labels get smaller type and side
-     padding, but the tools keep the standard 58px pill. */
+     padding; the tools keep the phone touch height of the editor rail. */
   body.is-editor-active .sidebar .control-group button,
   body.is-editor-active .sidebar .file-input-label {
-    min-height: var(--btn-height);
+    min-height: var(--editor-btn-height-touch);
     padding: 0 10px;
     font-size: 12px;
     line-height: 1.2;
