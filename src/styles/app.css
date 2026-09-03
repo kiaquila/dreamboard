@@ -837,6 +837,7 @@ body.is-editor-restoring .object-menu {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   min-height: var(--btn-height);
   padding: 0 var(--btn-padding-x);
   background: var(--btn-bg);
@@ -1789,6 +1790,7 @@ body.is-editor-active .app-container {
   align-items: center;
   justify-content: center;
   gap: 0;
+  box-sizing: border-box; /* an <a>, so the 160px minimum must include padding */
   min-height: var(--btn-height);
   min-width: var(--btn-min-width);
   padding: 0 var(--btn-padding-x);
