@@ -9,6 +9,21 @@
   --editor-shell-gap: 20px;
   --editor-mobile-sheet-gap: 16px;
 
+  /* Button standard (spec 022, 2026-09-02): every button on the site, landing
+     and editor alike, is one black pill. Picked from the plain-black matrix,
+     variant 01 "Pill · S". Icon-only buttons keep their compact size but take
+     the same fill and full rounding. */
+  --btn-bg: #1b1b1b; /* the same ink as the hero dots */
+  --btn-bg-hover: #2e2e2e;
+  --btn-bg-active: #111111;
+  --btn-fg: #ffffff;
+  --btn-radius: 999px;
+  --btn-height: 58px;
+  --btn-min-width: 160px;
+  --btn-padding-x: 28px;
+  --btn-font-size: 14px;
+  --btn-font-weight: 800;
+
   --landing-bg: #ececec;
   --landing-bg-2: #f3f3f3;
   --landing-text-dark: #2b2b2b;
@@ -247,11 +262,20 @@ html[data-initial-view="editor"] .sticky-footer {
   margin-top: 26px;
 }
 
-/* Hero slides: the text block sits in the free sky above the mountains */
+/* Hero slides: title + button read as one block centred on the slide, nudged
+   up a little so it sits in the sky rather than on the mountain band. Phones
+   get a larger bias because the band takes 62% of a portrait viewport. */
 .landing-section.bg-hero .hero-center {
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
-  padding-top: clamp(24px, 10vh, 140px);
+  padding-top: 0;
+  padding-bottom: clamp(24px, 8vh, 96px);
+}
+
+@media (max-width: 900px) {
+  .landing-section.bg-hero .hero-center {
+    padding-bottom: clamp(60px, 18vh, 160px);
+  }
 }
 
 .landing-section.bg-hero .hero-title {
@@ -424,24 +448,28 @@ html[data-initial-view="editor"] .sticky-footer {
 }
 
 .cta-btn {
-  height: 54px;
-  padding: 0 26px;
-  border-radius: 999px;
+  height: var(--btn-height);
+  min-width: var(--btn-min-width);
+  padding: 0 var(--btn-padding-x);
+  border-radius: var(--btn-radius);
   border: none;
-  background: var(--pantone-yellow);
-  color: #000;
-  font-weight: 800;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: var(--btn-font-weight);
   font-family: "DM Sans", sans-serif;
-  font-size: 14px;
+  font-size: var(--btn-font-size);
   cursor: pointer;
   text-transform: uppercase;
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.1),
-    0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
+  transition: background-color 0.2s ease;
 }
 
 .cta-btn:hover {
-  opacity: 0.95;
+  background: var(--btn-bg-hover);
+}
+
+.cta-btn:active {
+  background: var(--btn-bg-active);
 }
 
 .hero-visual {
@@ -673,13 +701,11 @@ html[data-initial-view="editor"] .sticky-footer {
   min-width: 44px;
   height: 44px;
   padding: 0;
-  border-radius: 22px;
-  border: 1px solid #ececec;
-  background: #fff;
-  color: var(--volcanic-grass);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: var(--btn-radius);
+  border: none;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  box-shadow: none;
 }
 
 .editor-home-btn svg {
@@ -743,28 +769,31 @@ html[data-initial-view="editor"] .sticky-footer {
   border-bottom: 1px solid #eee;
 }
 
-/* Стили кнопок */
+/* Buttons: the one black pill standard (see --btn-* tokens) */
 button {
-  padding: 12px;
-  border-radius: 20px;
+  padding: 0 var(--btn-padding-x);
+  border-radius: var(--btn-radius);
   border: none;
-  background: var(--volcanic-grass);
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   cursor: pointer;
-  transition: opacity 0.2s;
-  font-size: 12px;
-  font-weight: 700;
+  transition: background-color 0.2s ease;
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-font-weight);
   font-family: "DM Sans", sans-serif;
   text-transform: uppercase;
 }
 
 button:hover {
-  opacity: 0.9;
+  background: var(--btn-bg-hover);
 }
 
-#t-download {
-  background: var(--pantone-yellow);
-  color: #000;
+button:active {
+  background: var(--btn-bg-active);
+}
+
+.control-group button {
+  min-height: var(--btn-height);
 }
 
 .canvas-area {
@@ -805,16 +834,24 @@ body.is-editor-restoring .object-menu {
 }
 
 .file-input-label {
-  display: block;
-  padding: 12px;
-  background: var(--volcanic-grass);
-  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--btn-height);
+  padding: 0 var(--btn-padding-x);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   text-align: center;
-  border-radius: 20px;
+  border-radius: var(--btn-radius);
   cursor: pointer;
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: var(--btn-font-weight);
+  font-size: var(--btn-font-size);
   text-transform: uppercase;
+  transition: background-color 0.2s ease;
+}
+
+.file-input-label:hover {
+  background: var(--btn-bg-hover);
 }
 
 /* Контекстное меню объекта (Material Design 3 styling) */
@@ -852,12 +889,12 @@ body.is-editor-restoring .object-menu {
 .object-menu .om-btn {
   height: 40px;
   padding: 0 16px;
-  border-radius: 20px;
+  border-radius: var(--btn-radius);
   border: none;
-  background: var(--volcanic-grass);
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: background-color 0.2s ease;
   font-size: 12px;
   font-weight: 700;
   font-family: "DM Sans", sans-serif;
@@ -870,7 +907,7 @@ body.is-editor-restoring .object-menu {
 }
 
 .object-menu .om-btn:hover {
-  opacity: 0.9;
+  background: var(--btn-bg-hover);
 }
 
 .object-menu .om-icon-btn {
@@ -887,11 +924,13 @@ body.is-editor-restoring .object-menu {
 }
 
 /* (1) кнопка выбора шрифта */
+/* value control, not an action: pill shape, but keeps the white fill so the
+   current font name stays readable */
 #om-fontFamilyBtn {
   height: 40px;
   padding-left: 12px;
   padding-right: 12px;
-  border-radius: 20px;
+  border-radius: var(--btn-radius);
   border: 1px solid #ddd;
   font-size: 14px;
   font-family: "DM Sans", sans-serif;
@@ -909,7 +948,7 @@ body.is-editor-restoring .object-menu {
 }
 
 #om-fontFamilyBtn:hover {
-  opacity: 1;
+  background: #fff;
 }
 
 #om-fontFamilyBtn .om-font-label {
@@ -968,12 +1007,12 @@ body.is-editor-restoring .object-menu {
 
 .om-texttool-btn {
   background: transparent !important;
-  color: var(--volcanic-grass) !important;
+  color: var(--btn-bg) !important;
   opacity: 1 !important;
 }
 
 .om-texttool-btn:hover {
-  opacity: 1 !important;
+  background: rgba(120, 120, 120, 0.12) !important;
 }
 
 .om-texttool-btn.is-selected {
@@ -985,10 +1024,10 @@ body.is-editor-restoring .object-menu {
   min-width: 40px;
   height: 40px;
   padding: 0;
-  border-radius: 20px;
+  border-radius: var(--btn-radius);
   border: none;
   background: transparent;
-  color: var(--volcanic-grass);
+  color: var(--btn-bg);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -998,6 +1037,10 @@ body.is-editor-restoring .object-menu {
   font-weight: 900;
   font-family: "DM Sans", sans-serif;
   text-transform: none;
+}
+
+.om-color-btn:hover {
+  background: rgba(120, 120, 120, 0.12);
 }
 
 .om-color-btn::before {
@@ -1225,7 +1268,7 @@ body.is-editor-active .sticky-footer {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--btn-radius);
   border: none;
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.94);
@@ -1388,9 +1431,7 @@ body.is-editor-active .app-container {
 
   .control-group button,
   .file-input-label {
-    min-height: 48px;
-    border-radius: 24px;
-    font-size: 13px;
+    border-radius: var(--btn-radius);
   }
 
   .canvas-wrapper {
@@ -1579,7 +1620,7 @@ body.is-editor-active .app-container {
   body.is-editor-active .sidebar .file-input-label {
     min-height: 0;
     height: auto;
-    border-radius: 14px;
+    border-radius: var(--btn-radius);
     font-size: 11px;
     padding: 6px 10px;
     line-height: 1.2;
@@ -1696,10 +1737,11 @@ body.is-editor-active .app-container {
   right: 14px;
   width: 44px;
   height: 44px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--btn-radius);
   appearance: none;
   border: none;
   background: rgba(255, 255, 255, 0.1);
@@ -1747,32 +1789,27 @@ body.is-editor-active .app-container {
   align-items: center;
   justify-content: center;
   gap: 0;
-  min-height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 16px; /* крупнее */
-  letter-spacing: 0.2px;
+  min-height: var(--btn-height);
+  min-width: var(--btn-min-width);
+  padding: 0 var(--btn-padding-x);
+  border-radius: var(--btn-radius);
+  font-weight: var(--btn-font-weight);
+  font-size: var(--btn-font-size);
+  text-transform: uppercase;
   border: none;
-  color: rgba(36, 36, 37, 1);
-  background: #fedd00; /* Pantone Yellow C (approx) */
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
-  transition:
-    transform 0.12s ease,
-    filter 0.12s ease,
-    box-shadow 0.12s ease;
+  color: var(--btn-fg);
+  background: var(--btn-bg);
+  box-shadow: none;
+  transition: background-color 0.2s ease;
   text-decoration: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 .donate-matecito-link:hover {
-  filter: brightness(0.98);
-  transform: translateY(-1px);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  background: var(--btn-bg-hover);
 }
 .donate-matecito-link:active {
-  transform: translateY(0px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+  background: var(--btn-bg-active);
 }
 
 /* hide legacy embed assets, keep only text */
