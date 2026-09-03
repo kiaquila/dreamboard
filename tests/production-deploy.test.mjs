@@ -46,9 +46,11 @@ test("cz Nginx host serves the canonical domain with the security baseline", () 
 });
 
 test("cz deploy timer polls continuously without a resident runner", () => {
+  const tmpfiles = read("deploy/cz/dreamboard.conf");
   const service = read("deploy/cz/dreamboard-deploy.service");
   const timer = read("deploy/cz/dreamboard-deploy.timer");
 
+  assert.match(tmpfiles, /^d \/srv\/dreamboard 0755 root root -$/m);
   assert.match(service, /ExecStart=\/usr\/local\/sbin\/dreamboard-deploy/);
   assert.match(service, /ProtectSystem=strict/);
   assert.match(timer, /OnUnitActiveSec=1min/);

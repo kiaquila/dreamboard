@@ -41,6 +41,8 @@ Files under [`deploy/cz/`](../../../deploy/cz/) define the production runtime:
 
 - `deploy.sh`: fetch, check, isolated build, atomic switch, live smoke, and
   release retention
+- `dreamboard.conf`: systemd-tmpfiles rule that creates the writable deployment
+  root before the hardened service starts
 - `dreamboard-deploy.service`: hardened one-shot systemd unit
 - `dreamboard-deploy.timer`: one-minute poll schedule
 - `nginx-http.conf`: ACME bootstrap virtual host
@@ -48,17 +50,22 @@ Files under [`deploy/cz/`](../../../deploy/cz/) define the production runtime:
 
 The installed paths on `cz` are:
 
-| Purpose            | Path                                                       |
-| ------------------ | ---------------------------------------------------------- |
-| Repository mirror  | `/srv/dreamboard/repository.git`                           |
-| Retained releases  | `/srv/dreamboard/releases/<commit-sha>`                    |
-| Live static root   | `/srv/dreamboard/current`                                  |
-| Deployer           | `/usr/local/sbin/dreamboard-deploy`                        |
-| Nginx virtual host | `/etc/nginx/sites-available/dreamboard.ks-design.art.conf` |
-| Systemd units      | `/etc/systemd/system/dreamboard-deploy.{service,timer}`    |
+| Purpose              | Path                                                       |
+| -------------------- | ---------------------------------------------------------- |
+| Deployment root rule | `/etc/tmpfiles.d/dreamboard.conf`                          |
+| Repository mirror    | `/srv/dreamboard/repository.git`                           |
+| Retained releases    | `/srv/dreamboard/releases/<commit-sha>`                    |
+| Live static root     | `/srv/dreamboard/current`                                  |
+| Deployer             | `/usr/local/sbin/dreamboard-deploy`                        |
+| Nginx virtual host   | `/etc/nginx/sites-available/dreamboard.ks-design.art.conf` |
+| Systemd units        | `/etc/systemd/system/dreamboard-deploy.{service,timer}`    |
 
 Operational server changes must be copied from a reviewed `main` revision.
 Product files are never edited on the host.
+Install the tmpfiles rule and run
+`systemd-tmpfiles --create /etc/tmpfiles.d/dreamboard.conf` before starting the
+service; this creates `/srv/dreamboard` with Nginx-traversable permissions while
+preserving the service's `ProtectSystem=strict` sandbox.
 
 ## TLS and edge
 

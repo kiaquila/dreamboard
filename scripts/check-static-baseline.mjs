@@ -26,6 +26,7 @@ const requiredFiles = [
   "docs_dreamboard/project/devops/review-contract.md",
   "docs_dreamboard/project/devops/vercel-cd.md",
   "deploy/cz/deploy.sh",
+  "deploy/cz/dreamboard.conf",
   "deploy/cz/dreamboard-deploy.service",
   "deploy/cz/dreamboard-deploy.timer",
   "deploy/cz/nginx-http.conf",
