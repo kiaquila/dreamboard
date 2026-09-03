@@ -73,6 +73,8 @@ three in one pull request when the policy changes.
 Because the static asset names are not content-hashed yet, Nginx sends
 `Cache-Control: public, max-age=0, must-revalidate` so Cloudflare cannot keep an
 old JavaScript or stylesheet revision after an atomic release switch.
+The virtual host uses the backward-compatible `listen ... http2` form so it
+can still be validated on Nginx releases older than 1.25.1.
 
 ## Rollback
 
