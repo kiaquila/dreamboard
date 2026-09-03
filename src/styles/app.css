@@ -948,7 +948,8 @@ body.is-editor-restoring .object-menu {
   cursor: pointer;
 }
 
-#om-fontFamilyBtn:hover {
+#om-fontFamilyBtn:hover,
+#om-fontFamilyBtn:active {
   background: #fff;
 }
 
@@ -1042,6 +1043,10 @@ body.is-editor-restoring .object-menu {
 
 .om-color-btn:hover {
   background: rgba(120, 120, 120, 0.12);
+}
+
+.om-color-btn:active {
+  background: rgba(120, 120, 120, 0.2);
 }
 
 .om-color-btn::before {
@@ -1279,6 +1284,10 @@ body.is-editor-active .sticky-footer {
 .editor-rotate-close:hover {
   opacity: 1;
   background: rgba(255, 255, 255, 0.18);
+}
+
+.editor-rotate-close:active {
+  background: rgba(255, 255, 255, 0.24);
 }
 
 .editor-rotate-close svg {
@@ -1756,6 +1765,7 @@ body.is-editor-active .app-container {
   transform: scale(1.03);
 }
 .donate-modal-close:active {
+  background: rgba(255, 255, 255, 0.22);
   transform: scale(0.98);
 }
 .donate-modal-close svg {
