@@ -76,6 +76,12 @@ the existing `/var/www/certbot` webroot. The server firewall accepts public web
 traffic only from Cloudflare address ranges after certificate bootstrap; SSH
 remains Tailscale-only.
 
+For the first certificate only, install `nginx-http.conf`, temporarily allow
+public port 80, and create the Cloudflare A record as DNS-only. Wait for the
+hostname to resolve to `cz` before running the HTTP-01 request. After Certbot
+succeeds, install `nginx.conf`, remove the temporary firewall rule, and enable
+the Cloudflare proxy. The zone must remain in Full (strict) mode.
+
 The Nginx security headers match `vercel.json` and `worker/index.js`. Update all
 three in one pull request when the policy changes.
 Because the static asset names are not content-hashed yet, Nginx sends
