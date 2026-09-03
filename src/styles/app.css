@@ -1547,9 +1547,14 @@ body.is-editor-active .app-container {
   }
 }
 
+/* The phone editor is sized from the viewport JS measured (`--editor-vw` /
+   `--editor-vh`, set from `innerWidth` / `innerHeight`) rather than from
+   `dvh`: in-app browsers and Safari with a collapsible toolbar report a `dvh`
+   that can exceed the visible height, and a canvas sized to it runs under the
+   toolbar with no way to scroll to it because the canvas owns every touch. */
 @media (max-width: 900px) {
   body.is-editor-active .app-container {
-    height: 100dvh;
+    height: var(--editor-vh, 100dvh);
     flex-direction: row;
   }
 
@@ -1560,7 +1565,7 @@ body.is-editor-active .app-container {
     bottom: auto;
     width: min(220px, 42vw);
     flex: 0 0 min(220px, 42vw);
-    max-height: 100dvh;
+    max-height: var(--editor-vh, 100dvh);
     transform: none;
     border-radius: 0;
     border: none;
@@ -1586,7 +1591,8 @@ body.is-editor-active .app-container {
     width: auto;
     max-width: 100%;
     max-height: calc(
-      100dvh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+      var(--editor-vh, 100dvh) - 28px - env(safe-area-inset-top) -
+        env(safe-area-inset-bottom)
     );
   }
 
@@ -1604,14 +1610,21 @@ body.is-editor-active .app-container {
     overflow: hidden;
   }
 
+  /* The shell is laid out landscape (viewport height wide, viewport width
+     tall) and turned a quarter clockwise, so its left edge is the screen top
+     and its right edge the screen bottom. `min-height: 0` matters: the base
+     `.editor-view` floor of `100dvh` would otherwise win over the `100dvw`
+     height and make the box square, pushing the far side of the canvas off
+     the left of the screen. */
   body.is-editor-active .editor-view {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100dvh;
-    height: 100dvw;
+    width: var(--editor-vh, 100dvh);
+    height: var(--editor-vw, 100dvw);
+    min-height: 0;
     transform-origin: top left;
-    transform: translateX(100dvw) rotate(90deg);
+    transform: translateX(var(--editor-vw, 100dvw)) rotate(90deg);
     z-index: 100;
   }
 
@@ -1627,13 +1640,26 @@ body.is-editor-active .app-container {
     top: max(14px, calc(env(safe-area-inset-top) + 14px));
   }
 
+  /* Safe-area insets follow the screen, not the rotated box: the screen top
+     inset lands on the rail's left edge and the screen bottom inset on the
+     canvas column's right edge. The rail widens by the inset so its tools
+     keep their room. */
   body.is-editor-active .sidebar {
-    width: min(158px, 42vw);
-    flex: 0 0 min(158px, 42vw);
-    padding: calc(10px + env(safe-area-inset-top)) 10px
-      calc(10px + env(safe-area-inset-bottom));
+    width: calc(min(158px, 42vw) + env(safe-area-inset-top));
+    flex: 0 0 calc(min(158px, 42vw) + env(safe-area-inset-top));
+    padding: 10px 10px 10px calc(10px + env(safe-area-inset-top));
     gap: 10px;
     overflow: hidden;
+  }
+
+  body.is-editor-active .canvas-area {
+    padding: 14px calc(14px + env(safe-area-inset-bottom)) 14px 14px;
+  }
+
+  /* The canvas is measured to the column by `resizeCanvasToViewport`; the
+     cap only guards a stale frame between a viewport change and the resize. */
+  body.is-editor-active .canvas-wrapper {
+    max-height: calc(var(--editor-vw, 100dvw) - 28px);
   }
 
   body.is-editor-active .sidebar .sidebar-header {
