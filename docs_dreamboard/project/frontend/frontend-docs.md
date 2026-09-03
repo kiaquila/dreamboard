@@ -40,7 +40,30 @@ Hero slides 1 and 4 no longer use a photo background. `hero-mountains.js` mounts
 
 To regenerate the tone source from a new artwork, downscale it with `sips -s format jpeg -s formatOptions 72 -Z 1200 <source> --out src/assets/images/landing/hero-mountains-halftone.jpg`; only luminance matters, so a small JPEG is enough.
 
-Hero copy is centred and starts `clamp(24px, 10vh, 140px)` below the fixed header; the hero sections always reserve `--landing-header-h` on top, including the phone layout where other slides flatten their padding, so a short landscape viewport does not push the headline under the brand controls.
+Hero copy (title + CTA) is one block centred vertically on the slide with a small upward bias, `padding-bottom: clamp(24px, 8vh, 96px)` on desktop and `clamp(60px, 18vh, 160px)` below 900px, so on a portrait phone the button stays above the mountain skyline (the band takes 62% of the height there). The hero sections always reserve `--landing-header-h` on top, including the phone layout where other slides flatten their padding, so a short landscape viewport does not push the headline under the brand controls.
+
+## Button standard
+
+Since spec `022-black-pill-button-standard` (2026-09-02) the site has one button: a plain black pill, larger and more elongated than the old yellow CTA. The client picked it from a local matrix of 5 radii x 4 sizes (variant 01, "Pill · S"). The standard lives in `:root` as `--btn-*` tokens in `app.css`:
+
+| Token                                                  | Value                                                |
+| ------------------------------------------------------ | ---------------------------------------------------- |
+| `--btn-bg` / `--btn-bg-hover` / `--btn-bg-active`      | `#1b1b1b` (the hero-dot ink) / `#2e2e2e` / `#111111` |
+| `--btn-fg`                                             | `#ffffff`                                            |
+| `--btn-radius`                                         | `999px`                                              |
+| `--btn-height` / `--btn-min-width` / `--btn-padding-x` | `58px` / `160px` / `28px`                            |
+| `--btn-font-size` / `--btn-font-weight`                | `14px` / `800`, DM Sans, uppercase                   |
+
+How it is applied:
+
+- text buttons take the full standard: the landing CTA (`.cta-btn`), the editor sidebar tools (global `button`, `.control-group button`, `.file-input-label`), and the donate link (`.donate-matecito-link`); none of them carries a shadow, glow or gradient
+- icon-only buttons keep their compact size (44px back control, 40px object-menu tools) and take the black fill, white glyph and full rounding; the transparent text tools (`.om-texttool-btn`, `.om-color-btn`) draw their glyph in `--btn-bg` and get a light grey hover fill
+- the rotated portrait editor rail is only about 137px wide, so its three sidebar tools keep the 58px pill but drop to 12px type with 10px side padding so the labels fit without wrapping
+- three controls keep a non-black fill but take the pill shape: the font picker `#om-fontFamilyBtn` (a value control that must show the current font name, stays white) and the close buttons on the two dark glass overlays (rotate hint, donate modal, stay translucent white)
+- hover and active are background swaps, never opacity, so the old `button:hover { opacity }` idiom is gone
+- `--pantone-yellow` now only colours the slide-3 star bullets; `--volcanic-grass` only the slide-3 title and the font-popup check icon
+
+Any new button starts from the tokens. A different size is a spec change, not a local override.
 
 ## Landing footer
 
@@ -82,9 +105,9 @@ The current static app now treats phone layouts as a separate editor mode:
 ## Brand Chrome
 
 The app has no wordmark of its own. Landing and editor both carry the studio
-chrome transplanted from `ember.ks-design.art`: a `ks·design · lab` tag and a
-`study 01 — dream board` tag, rendered as `.brand-mark` with `.brand-tag`
-children.
+chrome transplanted from `ember.ks-design.art`: a `ks·design · lab` tag and,
+on the landing only, a `study 02 — dream board` tag (renamed from `study 01`
+in spec 022), rendered as `.brand-mark` with `.brand-tag` children.
 
 The mark is a faithful copy of the Ember original, not a re-interpretation:
 
@@ -98,7 +121,8 @@ The mark is a faithful copy of the Ember original, not a re-interpretation:
 Layout differs by shell because the space does:
 
 - landing uses the Ember arrangement, both tags on one row, pushed apart
-- the editor sidebar stacks the tags and shrinks them, because the rail shares
+- the editor sidebar shows the `ks·design · lab` tag alone (spec 022 dropped
+  the study tag from the editor), stacked and shrunk, because the rail shares
   its width with the back control
 - below 360px the landing tags shrink so the row never wraps
 - the rotated portrait editor rail leaves roughly 104px for the mark, which no
