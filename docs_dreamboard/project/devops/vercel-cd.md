@@ -1,47 +1,112 @@
-# Vercel CD
+# Production and Vercel Preview CD
 
-## Deploy Model
+## Deploy model
 
-This repository uses **Vercel Git integration** as the canonical CD layer.
+The canonical production site is
+[`dreamboard.ks-design.art`](https://dreamboard.ks-design.art). Cloudflare
+proxies the hostname to the `cz` origin, where Nginx serves the current static
+release.
 
-- Pull requests create Vercel preview deployments
-- Merge to `main` creates a Vercel production deployment
-- GitHub Actions remain the canonical CI and AI-review layer
+- Pull requests create Vercel preview deployments.
+- Cloudflare Workers Builds creates a second pull-request stage and keeps its
+  stable Worker as a non-production stage.
+- `vercel.json` sets `git.deploymentEnabled.main` to `false`, so merges no
+  longer produce Vercel production deployments.
+- A systemd timer on `cz` checks protected `main` every minute and publishes a
+  new release only after exact-SHA `CI` and `OSV Scan` workflow runs triggered
+  by a `main` push succeed. Manually dispatched runs are never accepted by the
+  production gate.
 
-Cloudflare Workers is an additional PR staging layer, not the production host.
-Its independent Git integration and rollback contract are documented in
-[`cloudflare-stage.md`](./cloudflare-stage.md).
+The deployer runs `scripts/build-static.mjs` inside a pinned Node container
+with networking disabled, validates `dist/index.html` and `dist/src`, then
+atomically moves `/srv/dreamboard/current` to the new release. Ten releases are
+retained.
 
-This is intentionally different from `vb-influencer`, which deploys to EC2 through a GitHub Actions workflow. For `dreamboard`, Vercel-native Git deploys are the simpler and safer fit because the app is a static frontend.
+## Why the host pulls
 
-## Connected Project
+The repository is public and the production server is reachable over SSH only
+through Tailscale. A permanent repository self-hosted runner would expose the
+server to workflows from a public repository, while a GitHub-hosted runner
+cannot reach the Tailscale-only SSH service without another long-lived access
+credential. The production host therefore pulls the public protected branch
+instead.
 
-Current Vercel project:
+Branch protection is the trust boundary for PR-only checks. It requires
+`baseline-checks`, `guard`, `osv-scan`, and `AI Review` before a revision can
+enter `main`. The deployer additionally waits for the `CI` and `OSV Scan`
+workflows that run again on a push of the resulting `main` commit.
 
-- name: `dreamboard`
-- team: `ks_aquila's projects`
+## Repository-owned server configuration
 
-## Build Contract
+Files under [`deploy/cz/`](../../../deploy/cz/) define the production runtime:
 
-The repository declares:
+- `deploy.sh`: fetch, check, isolated build, atomic switch, live smoke, and
+  release retention
+- `dreamboard.conf`: systemd-tmpfiles rule that creates the writable deployment
+  root before the hardened service starts
+- `dreamboard-deploy.service`: hardened one-shot systemd unit
+- `dreamboard-deploy.timer`: one-minute poll schedule
+- `nginx-http.conf`: ACME bootstrap virtual host
+- `nginx.conf`: final HTTPS static virtual host and security headers
 
-- `buildCommand`: `pnpm run build`
-- `outputDirectory`: `dist`
+The installed paths on `cz` are:
 
-`pnpm run build` must always produce a deployable static artifact under `dist/`.
+| Purpose              | Path                                                       |
+| -------------------- | ---------------------------------------------------------- |
+| Deployment root rule | `/etc/tmpfiles.d/dreamboard.conf`                          |
+| Repository mirror    | `/srv/dreamboard/repository.git`                           |
+| Retained releases    | `/srv/dreamboard/releases/<commit-sha>`                    |
+| Live static root     | `/srv/dreamboard/current`                                  |
+| Deployer             | `/usr/local/sbin/dreamboard-deploy`                        |
+| Nginx virtual host   | `/etc/nginx/sites-available/dreamboard.ks-design.art.conf` |
+| Systemd units        | `/etc/systemd/system/dreamboard-deploy.{service,timer}`    |
 
-Vercel auto-detects pnpm from `pnpm-lock.yaml` and uses the version pinned in `packageManager` (see [`../../README.md`](../../README.md#supply-chain)). No Vercel dashboard overrides required.
+Operational server changes must be copied from a reviewed `main` revision.
+Product files are never edited on the host.
+Install the tmpfiles rule and run
+`systemd-tmpfiles --create /etc/tmpfiles.d/dreamboard.conf` before starting the
+service; this creates `/srv/dreamboard` with Nginx-traversable permissions while
+preserving the service's `ProtectSystem=strict` sandbox.
 
-The repository also keeps Gemini review configuration in `.gemini/` so review behavior stays versioned together with the app and workflow contract.
+## TLS and edge
 
-## Operational Rule
+Cloudflare owns public DNS and proxies `dreamboard.ks-design.art` to the public
+IPv4 address of `cz`. The origin uses a Let's Encrypt certificate obtained via
+the existing `/var/www/certbot` webroot. The server firewall accepts public web
+traffic only from Cloudflare address ranges after certificate bootstrap; SSH
+remains Tailscale-only.
 
-Do not treat manual dashboard edits as the delivery path. Product behavior should change through:
+For the first certificate only, install `nginx-http.conf`, temporarily allow
+public port 80, and create the Cloudflare A record as DNS-only. Wait for the
+hostname to resolve to `cz` before running the HTTP-01 request. After Certbot
+succeeds, install `nginx.conf`, remove the temporary firewall rule, and enable
+the Cloudflare proxy. The zone must remain in Full (strict) mode.
 
-1. repository change
-2. PR checks
-3. merge to `main`
-4. Vercel production deploy from the merged commit
+The Nginx security headers match `vercel.json` and `worker/index.js`. Update all
+three in one pull request when the policy changes.
+Because the static asset names are not content-hashed yet, Nginx sends
+`Cache-Control: public, max-age=0, must-revalidate` so Cloudflare cannot keep an
+old JavaScript or stylesheet revision after an atomic release switch.
+The virtual host uses the backward-compatible `listen ... http2` form so it
+can still be validated on Nginx releases older than 1.25.1.
+
+## Rollback
+
+For an incident:
+
+1. Stop `dreamboard-deploy.timer` so it cannot immediately reapply the newest
+   revision.
+2. Repoint `/srv/dreamboard/current` to the last healthy retained release.
+3. Run the HTTPS smoke check.
+4. Fix the source through a new pull request.
+5. Restart the timer after the repaired `main` revision is ready.
 
 Preview validation and post-merge smoke are documented in
-`docs_dreamboard/project/devops/delivery-playbook.md`.
+[`delivery-playbook.md`](./delivery-playbook.md).
+
+## Vercel preview project
+
+The connected Vercel project remains `dreamboard` in the `ks_aquila's projects`
+team. Its build contract stays `pnpm run build` with `dist` as the output
+directory. Vercel auto-detects pnpm from `pnpm-lock.yaml` and the pinned
+`packageManager` version.

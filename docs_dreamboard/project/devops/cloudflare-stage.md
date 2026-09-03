@@ -2,8 +2,8 @@
 
 ## Role
 
-Cloudflare Workers is the repository's staging layer. Vercel remains the
-canonical production host and continues to create its own pull-request
+Cloudflare Workers is the repository's staging layer. Nginx on `cz` is the
+canonical production host, while Vercel continues to create pull-request
 previews. The Cloudflare integration adds a second, isolated URL for validating
 each pull request against Workers Static Assets before merge.
 
@@ -64,7 +64,8 @@ for the current head commit and open its versioned URL. Verify:
 - the preview URL is versioned and does not replace the stable stage
 
 After a `main` deployment, repeat the smoke check against the stable
-`dreamboard` Worker URL. This does not replace the Vercel production smoke.
+`dreamboard` Worker URL. This does not replace the production smoke on
+`dreamboard.ks-design.art`.
 
 ## Rollback
 

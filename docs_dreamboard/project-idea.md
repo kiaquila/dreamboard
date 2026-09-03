@@ -12,7 +12,8 @@
 
 The current app is a strong prototype, and the repository is now on a safer refactor path:
 
-- the static app is deployed through Vercel-backed CI/CD
+- the static app is deployed to `dreamboard.ks-design.art` on `cz` behind
+  Cloudflare
 - AI orchestration and review policy now follow the standard repository flow
 - the frontend has been split into HTML shell + external CSS/JS modules
 - the editor has entered a dedicated mobile adaptation phase with its own phone-first interaction model
@@ -32,7 +33,7 @@ Before deeper refactoring, the repository must follow the standard delivery path
 3. AI review routing through repository policy with Gemini as the default reviewer
 4. Vercel preview deploys on PR
 5. Cloudflare Workers publishes an isolated staging URL for every PR
-6. Vercel production deploys on merge to `main`
+6. `cz` deploys reviewed `main` revisions after post-merge checks pass
 7. repository memory through `.specify/`, `docs_dreamboard/`, and `specs/`
 8. local macOS worktree orchestration for implementation tasks
 

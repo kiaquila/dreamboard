@@ -1,0 +1,12 @@
+[Unit]
+Description=Check GitHub for a reviewed dreamboard production revision
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+RandomizedDelaySec=15s
+Persistent=true
+Unit=dreamboard-deploy.service
+
+[Install]
+WantedBy=timers.target

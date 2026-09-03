@@ -86,7 +86,7 @@ jobs:
           tracked_change=false
           while IFS= read -r f; do
             case "$f" in
-              index.html|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|vercel.json|scripts/*.mjs|scripts/**/*.mjs|src/*|src/**/*|public/*|public/**/*|assets/*|assets/**/*)
+              index.html|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|vercel.json|scripts/*.mjs|scripts/**/*.mjs|deploy/*|deploy/**/*|src/*|src/**/*|public/*|public/**/*|assets/*|assets/**/*)
                 tracked_change=true
                 break
                 ;;

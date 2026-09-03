@@ -6,14 +6,15 @@
 
 - Статический HTML/CSS/JS
 - Fabric.js через CDN
-- Vercel Git integration для preview и production deploy
+- Nginx на `cz` за Cloudflare для production
+- Vercel и Cloudflare Workers для PR preview/stage
 - GitHub Actions для CI, guard и AI review orchestration
 - `.specify/`, `docs_dreamboard/` и `specs/` как repository memory
 - Gemini Code Assist как default review backend
 
 ## Важные правила
 
-- Источник истины — репозиторий, а не ручные правки в Vercel
+- Источник истины — репозиторий, а не ручные правки на `cz`, в Vercel или Cloudflare
 - Все изменения проходят через PR
 - Продуктовые изменения начинаются с активной папки `specs/<feature-id>/`
 - Один implementation loop = один worktree, одна ветка и один PR
@@ -61,4 +62,4 @@
 - Local runners: `docs_dreamboard/project/devops/macos-local-runners.md`
 - AI runner: `docs_dreamboard/project/devops/ai-runner.md`
 - Review contract: `docs_dreamboard/project/devops/review-contract.md`
-- Vercel CD: `docs_dreamboard/project/devops/vercel-cd.md`
+- Production и Vercel preview CD: `docs_dreamboard/project/devops/vercel-cd.md`
