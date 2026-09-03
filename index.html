@@ -55,7 +55,7 @@
       </header>
 
       <!-- Slide 1 -->
-      <section class="landing-section bg-1 bg-hero" id="slide1">
+      <section class="landing-section bg-hero" id="slide1">
         <canvas class="hero-dots" aria-hidden="true"></canvas>
         <div class="landing-wrap landing-wrap-full">
           <div class="hero-center">
@@ -70,7 +70,7 @@
       </section>
 
       <!-- Slide 2 -->
-      <section class="landing-section bg-2" id="slide2">
+      <section class="landing-section" id="slide2">
         <div class="landing-wrap">
           <div class="landing-two-col landing-two-col-what">
             <div class="slide-visual slide-visual-photo" aria-hidden="true">
@@ -97,7 +97,7 @@
       </section>
 
       <!-- Slide 3 -->
-      <section class="landing-section bg-1" id="slide3">
+      <section class="landing-section" id="slide3">
         <div class="landing-wrap">
           <h3
             class="rules-title rules-title-landing landing-title-unified"
@@ -145,7 +145,7 @@
       </section>
 
       <!-- Slide 4 -->
-      <section class="landing-section bg-2 bg-hero" id="slide4">
+      <section class="landing-section bg-hero" id="slide4">
         <canvas class="hero-dots" aria-hidden="true"></canvas>
         <div class="landing-wrap landing-wrap-full">
           <div class="hero-center">
@@ -217,141 +217,155 @@
           </div>
         </aside>
 
-        <main class="canvas-area">
-          <div class="canvas-wrapper">
-            <canvas id="visionBoard"></canvas>
+        <main class="canvas-stage">
+          <div class="canvas-area">
+            <div class="canvas-wrapper">
+              <canvas id="visionBoard"></canvas>
 
-            <div class="object-menu" id="objectMenu">
-              <!-- Image controls -->
-              <button
-                type="button"
-                class="om-btn om-icon-btn"
-                id="om-forward"
-                aria-label="Forward"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.59 5.58L20 12 12 4 4 12z"
-                  ></path>
-                </svg>
-              </button>
-              <button
-                type="button"
-                class="om-btn om-icon-btn"
-                id="om-backward"
-                aria-label="Backward"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.59-5.58L4 12l8 8 8-8z"
-                  ></path>
-                </svg>
-              </button>
-
-              <!-- Text controls -->
-              <button id="om-fontFamilyBtn" type="button" style="display: none">
-                <span class="om-font-label" id="om-fontFamilyLabel"
-                  >DM Sans</span
+              <div class="object-menu" id="objectMenu">
+                <!-- Image controls -->
+                <button
+                  type="button"
+                  class="om-btn om-icon-btn"
+                  id="om-forward"
+                  aria-label="Forward"
                 >
-                <svg
-                  class="om-font-caret"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.59 5.58L20 12 12 4 4 12z"
+                    ></path>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="om-btn om-icon-btn"
+                  id="om-backward"
+                  aria-label="Backward"
                 >
-                  <path
-                    d="M7 10l5 5 5-5"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  ></path>
-                </svg>
-              </button>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.59-5.58L4 12l8 8 8-8z"
+                    ></path>
+                  </svg>
+                </button>
 
-              <button
-                class="om-color-btn"
-                id="om-colorBtn"
-                type="button"
-                style="display: none"
-                aria-label="Text color"
-              >
-                A
-              </button>
+                <!-- Text controls -->
+                <button
+                  id="om-fontFamilyBtn"
+                  type="button"
+                  style="display: none"
+                >
+                  <span class="om-font-label" id="om-fontFamilyLabel"
+                    >DM Sans</span
+                  >
+                  <svg
+                    class="om-font-caret"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M7 10l5 5 5-5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    ></path>
+                  </svg>
+                </button>
 
-              <button
-                type="button"
-                class="om-btn om-icon-btn om-texttool-btn"
-                id="om-bold"
-                style="display: none"
-                aria-label="Bold"
-              >
-                <span class="om-letter">B</span>
-              </button>
+                <button
+                  class="om-color-btn"
+                  id="om-colorBtn"
+                  type="button"
+                  style="display: none"
+                  aria-label="Text color"
+                >
+                  A
+                </button>
 
-              <button
-                type="button"
-                class="om-btn om-icon-btn om-texttool-btn"
-                id="om-italic"
-                style="display: none"
-                aria-label="Italic"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M10 4v3h2.21l-3.42 10H6v3h8v-3h-2.21l3.42-10H18V4z"
-                  ></path>
-                </svg>
-              </button>
+                <button
+                  type="button"
+                  class="om-btn om-icon-btn om-texttool-btn"
+                  id="om-bold"
+                  style="display: none"
+                  aria-label="Bold"
+                >
+                  <span class="om-letter">B</span>
+                </button>
 
-              <button
-                type="button"
-                class="om-btn om-icon-btn om-texttool-btn"
-                id="om-underline"
-                style="display: none"
-                aria-label="Underline"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M12 17c3.31 0 6-2.69 6-6V3h-2.5v8c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11V3H6v8c0 3.31 2.69 6 6 6zM5 21v-2h14v2H5z"
-                  ></path>
-                </svg>
-              </button>
+                <button
+                  type="button"
+                  class="om-btn om-icon-btn om-texttool-btn"
+                  id="om-italic"
+                  style="display: none"
+                  aria-label="Italic"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M10 4v3h2.21l-3.42 10H6v3h8v-3h-2.21l3.42-10H18V4z"
+                    ></path>
+                  </svg>
+                </button>
 
-              <!-- Copy button before delete -->
-              <button
-                type="button"
-                class="om-btn om-icon-btn"
-                id="om-copy"
-                aria-label="Copy"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M16 1H6c-1.1 0-2 .9-2 2v12h2V3h10V1zm3 4H10c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H10V7h9v14z"
-                  ></path>
-                </svg>
-              </button>
+                <button
+                  type="button"
+                  class="om-btn om-icon-btn om-texttool-btn"
+                  id="om-underline"
+                  style="display: none"
+                  aria-label="Underline"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12 17c3.31 0 6-2.69 6-6V3h-2.5v8c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11V3H6v8c0 3.31 2.69 6 6 6zM5 21v-2h14v2H5z"
+                    ></path>
+                  </svg>
+                </button>
 
-              <button
-                type="button"
-                class="om-btn om-icon-btn"
-                id="om-delete"
-                aria-label="Delete"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12Zm14-15h-3.5l-1-1h-5l-1 1H4v2h16V4Z"
-                  ></path>
-                </svg>
-              </button>
-            </div>
+                <!-- Copy button before delete -->
+                <button
+                  type="button"
+                  class="om-btn om-icon-btn"
+                  id="om-copy"
+                  aria-label="Copy"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M16 1H6c-1.1 0-2 .9-2 2v12h2V3h10V1zm3 4H10c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H10V7h9v14z"
+                    ></path>
+                  </svg>
+                </button>
 
-            <div class="font-popup" id="fontPopup"></div>
+                <button
+                  type="button"
+                  class="om-btn om-icon-btn"
+                  id="om-delete"
+                  aria-label="Delete"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12Zm14-15h-3.5l-1-1h-5l-1 1H4v2h16V4Z"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
 
-            <!-- anchor for native color picker -->
-            <div class="color-popup" id="colorPopup">
-              <input type="color" id="om-textColor" value="#000000" />
+              <div class="font-popup" id="fontPopup"></div>
+
+              <!-- anchor for native color picker -->
+              <div class="color-popup" id="colorPopup">
+                <input type="color" id="om-textColor" value="#000000" />
+              </div>
             </div>
           </div>
+
+          <footer class="site-footer editor-footer">
+            <p>
+              Designed by
+              <a href="https://ks-design.art" rel="author">ks-design</a> · Built
+              with AI workflows
+            </p>
+          </footer>
         </main>
       </div>
     </div>
@@ -411,7 +425,7 @@
     </div>
 
     <!-- FOOTER: one quiet line, Ember style -->
-    <footer class="sticky-footer" id="appFooter">
+    <footer class="site-footer sticky-footer" id="appFooter">
       <p>
         Designed by <a href="https://ks-design.art" rel="author">ks-design</a>
         · Built with AI workflows

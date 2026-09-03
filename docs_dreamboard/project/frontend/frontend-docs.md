@@ -42,6 +42,10 @@ To regenerate the tone source from a new artwork, downscale it with `sips -s for
 
 Hero copy (title + CTA) is one block centred vertically on the slide with a small upward bias, `padding-bottom: clamp(24px, 8vh, 96px)` on desktop and `clamp(60px, 18vh, 160px)` below 900px, so on a portrait phone the button stays above the mountain skyline (the band takes 62% of the height there). The hero sections always reserve `--landing-header-h` on top, including the phone layout where other slides flatten their padding, so a short landscape viewport does not push the headline under the brand controls.
 
+## Landing slide tone
+
+Since spec `023-paper-slides-rail-buttons-editor-footer` (2026-09-02) all four slides and `.landing-view` paint `--landing-paper` (`#f4f2ee`), the tone the dotted-mountain heroes already used. The old `bg-1` / `bg-2` slide classes and the `--landing-bg` / `--landing-bg-2` tokens are gone, so scrolling never flips between greys; `.bg-hero` now only marks the two slides that carry the dot canvas.
+
 ## Button standard
 
 Since spec `022-black-pill-button-standard` (2026-09-02) the site has one button: a plain black pill, larger and more elongated than the old yellow CTA. The client picked it from a local matrix of 5 radii x 4 sizes (variant 01, "Pill · S"). The standard lives in `:root` as `--btn-*` tokens in `app.css`:
@@ -52,22 +56,28 @@ Since spec `022-black-pill-button-standard` (2026-09-02) the site has one button
 | `--btn-fg`                                             | `#ffffff`                                            |
 | `--btn-radius`                                         | `999px`                                              |
 | `--btn-height` / `--btn-min-width` / `--btn-padding-x` | `58px` / `160px` / `28px`                            |
+| `--editor-btn-height` / `--editor-btn-height-touch`    | `40px` / `48px`, editor rail only (spec 023)         |
 | `--btn-font-size` / `--btn-font-weight`                | `14px` / `800`, DM Sans, uppercase                   |
 
 How it is applied:
 
-- text buttons take the full standard: the landing CTA (`.cta-btn`), the editor sidebar tools (global `button`, `.control-group button`, `.file-input-label`), and the donate link (`.donate-matecito-link`); none of them carries a shadow, glow or gradient
+- text buttons take the full standard: the landing CTA (`.cta-btn`) and the donate link (`.donate-matecito-link`); none of them carries a shadow, glow or gradient
+- the editor rail tools (global `button`, `.control-group button`, `.file-input-label`) take the same fill, radius and type but a rail-specific height: `--editor-btn-height` (40px, the pre-022 height measured on `main`) on desktop and `--editor-btn-height-touch` (48px) below 900px, because three 58px slabs stacked in a 320px rail read as a wall (spec 023); the rotated-portrait rail uses the same 48px touch height with 12px type and `0 10px` padding
 - icon-only buttons keep their compact size (44px back control, 40px object-menu tools) and take the black fill, white glyph and full rounding; the transparent text tools (`.om-texttool-btn`, `.om-color-btn`) draw their glyph in `--btn-bg` and get a light grey hover fill
-- the rotated portrait editor rail is only about 137px wide, so its three sidebar tools keep the 58px pill but drop to 12px type with 10px side padding so the labels fit without wrapping
+- the rotated portrait editor rail is only about 137px wide, so its three sidebar tools drop to 12px type with 10px side padding so the labels fit without wrapping; since spec 023 they sit at the 48px touch height rather than the 58px pill
 - three controls keep a non-black fill but take the pill shape: the font picker `#om-fontFamilyBtn` (a value control that must show the current font name, stays white) and the close buttons on the two dark glass overlays (rotate hint, donate modal, stay translucent white)
 - hover and active are background swaps, never opacity, so the old `button:hover { opacity }` idiom is gone
 - `--pantone-yellow` now only colours the slide-3 star bullets; `--volcanic-grass` only the slide-3 title and the font-popup check icon
 
 Any new button starts from the tokens. A different size is a spec change, not a local override.
 
-## Landing footer
+## Footer
 
-The sticky footer keeps its fixed 45px slot (slides reserve that height) but is now a single quiet line in the Ember style: transparent background, DM Sans 12px with 0.06em tracking, muted colour, and the `ks-design` link underlined with a hairline that turns gold on hover. The footer text is a brand line and is intentionally not localised.
+The footer is a single quiet line in the Ember style: transparent background, DM Sans 12px with 0.06em tracking, muted colour, and the `ks-design` link underlined with a hairline that turns gold on hover. The footer text is a brand line and is intentionally not localised. Since spec 023 the line exists in two places and shares its typography through `.site-footer`:
+
+- on the landing, `#appFooter` (`.site-footer.sticky-footer`) is pinned to the viewport bottom in its fixed 45px slot, which every slide reserves as `padding-bottom`; it is hidden as soon as the editor is active
+- in the desktop editor, a second `<footer class="site-footer editor-footer">` sits at the bottom of the `.canvas-stage` column, under `.canvas-area`, so it centres on the canvas rather than on the whole shell and the sidebar rail keeps its full height; the footer takes its 45px from the column, so the `.canvas-area` box shrinks by that height and the `ResizeObserver` resizes the Fabric canvas, with no JavaScript change; the stage has no bottom padding on desktop, so the canvas ends where the slot begins and the line sits centred between the canvas edge and the screen bottom, the same geometry as a landing slide; the column, not the stage, is the scroll container, because a clip on `.canvas-area` would cut the canvas shadow at the footer line and draw a seam on the backdrop; on desktop `.canvas-area` keeps a floor of `--editor-canvas-min-height` (520px, the same minimum `getCanvasTargetSize()` clamps to) plus `--top-gap`, so a window shorter than that scrolls stage and footer together instead of painting the footer over the canvas
+- below 900px the editor footer is `display: none`; the phone editor stays a full-bleed shell
 
 ## Repository Memory and Feature Loop
 
@@ -84,7 +94,7 @@ touching product code.
 
 The editor now uses container-based canvas sizing instead of raw viewport math:
 
-- the editor shell owns the available space
+- the editor shell owns the available space; on desktop the `.canvas-stage` column holds `.canvas-area` above the editor footer
 - the Fabric canvas resizes from the `.canvas-area` container
 - a `ResizeObserver` keeps the canvas in sync with footer height and viewport changes
 - the mobile editor now uses a dedicated interaction shell instead of a desktop left rail squeezed into phone width
@@ -96,7 +106,7 @@ The current static app now treats phone layouts as a separate editor mode:
 - the mobile editor chrome lives in the permanently visible sidebar rail; there is no separate mobile top bar
 - tool controls sit in that always-on rail, so there is no burger button, bottom sheet or off-canvas drawer to open
 - back to the landing page is reachable from the sidebar header
-- the canvas reserves safe space for the sticky footer and the device safe-area insets
+- the phone editor has no footer line; the canvas reserves the device safe-area insets
 - the object menu docks near the bottom of the canvas on mobile instead of chasing the selected object into cramped positions
 - portrait phone editor remains usable; landscape is now a recommendation surfaced through a non-blocking floating hint card instead of a hard gate, because mobile web orientation locks are not reliable enough to block entry
 - phone landscape switches into a true side-by-side shell so the tools and canvas use the wider viewport instead of reusing the portrait bottom-sheet layout
