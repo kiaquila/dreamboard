@@ -97,6 +97,8 @@ The editor now uses container-based canvas sizing instead of raw viewport math:
 - the editor shell owns the available space; on desktop the `.canvas-stage` column holds `.canvas-area` above the editor footer
 - the Fabric canvas resizes from the `.canvas-area` container
 - a `ResizeObserver` keeps the canvas in sync with footer height and viewport changes
+- on a phone the canvas takes the measured `.canvas-area` box with no minimum above it (a 120px floor only guards a degenerate measurement); the canvas owns every touch through `touch-action: none`, so anything laid out past the visible column could never be scrolled into view, which is why the phone canvas fits rather than scrolls (spec 024); desktop keeps its 420 x 520 working minimum and the `.canvas-stage` scroll
+- the phone editor shell is sized from `--editor-vw` / `--editor-vh`, set by `updateEditorViewportVars()` from `innerWidth` / `innerHeight` at boot and on every `syncEditorViewport` call, with `100dvw` / `100dvh` as CSS fallbacks: in-app browsers and Safari with a collapsible toolbar can report a `100dvh` taller than the visible area, which put the far end of the canvas under the toolbar on an iPhone 15 Pro Max; `innerHeight` is the visible layout viewport everywhere and, unlike `visualViewport`, does not shrink for the iOS keyboard
 - the mobile editor now uses a dedicated interaction shell instead of a desktop left rail squeezed into phone width
 
 ## Mobile Editor Model
@@ -106,8 +108,9 @@ The current static app now treats phone layouts as a separate editor mode:
 - the mobile editor chrome lives in the permanently visible sidebar rail; there is no separate mobile top bar
 - tool controls sit in that always-on rail, so there is no burger button, bottom sheet or off-canvas drawer to open
 - back to the landing page is reachable from the sidebar header
-- the phone editor has no footer line; the canvas reserves the device safe-area insets
-- the object menu docks near the bottom of the canvas on mobile instead of chasing the selected object into cramped positions
+- the phone editor has no footer line; the canvas reserves the device safe-area insets, and in the rotated portrait shell the insets follow the screen rather than the box: the screen-top inset pads the rail's left edge (the rail grows by it) and the screen-bottom inset pads the canvas column's right edge
+- the rotated portrait shell is laid out `--editor-vh` wide and `--editor-vw` tall with `min-height: 0`, then turned a quarter clockwise; the base `.editor-view` floor of `100dvh` used to win over that height, made the box square and pushed `100dvh - 100dvw` of the canvas off the left of the screen (spec 024)
+- the object menu docks near the bottom of the canvas on mobile instead of chasing the selected object into cramped positions; the dock and the font / colour popups are placed from local wrapper geometry (`canvas.getWidth()` / `getHeight()` and `offsetLeft` / `offsetTop` / `offsetWidth` / `offsetHeight`, shared through `positionAnchoredPopup()`), because client rects swap width and height inside the rotated shell; the dock drag already converted its deltas the same way
 - portrait phone editor remains usable; landscape is now a recommendation surfaced through a non-blocking floating hint card instead of a hard gate, because mobile web orientation locks are not reliable enough to block entry
 - phone landscape switches into a true side-by-side shell so the tools and canvas use the wider viewport instead of reusing the portrait bottom-sheet layout
 - editor return controls are icon-only, with tooltips instead of visible labels to keep the shell visually lighter

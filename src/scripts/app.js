@@ -8,6 +8,7 @@ import {
 } from "./draft-store.js";
 
 const MOBILE_BREAKPOINT = 900;
+const MOBILE_CANVAS_MIN_SIZE = 120;
 const DRAFT_SCHEMA_VERSION = 1;
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
 const EDITOR_ROUTE_HASH = "#editor";
@@ -149,7 +150,25 @@ function dismissRotateHint() {
   syncRotateHintVisibility();
 }
 
+// The phone editor shell is sized in CSS from these two custom properties
+// instead of `dvh` / `dvw`. `innerWidth` / `innerHeight` are the visible
+// layout viewport in every mobile browser, while `100dvh` can exceed the
+// visible height in in-app browsers, which put the far edge of the canvas
+// under the toolbar with no way to scroll to it. The rotated portrait shell
+// also reads them to size and translate its box.
+function updateEditorViewportVars() {
+  document.documentElement.style.setProperty(
+    "--editor-vw",
+    `${window.innerWidth}px`,
+  );
+  document.documentElement.style.setProperty(
+    "--editor-vh",
+    `${window.innerHeight}px`,
+  );
+}
+
 function syncEditorViewport({ dismissForLandscape = false } = {}) {
+  updateEditorViewportVars();
   syncRotateHintVisibility({ dismissForLandscape });
 
   if (editorView.style.display !== "block") {
@@ -518,76 +537,64 @@ function hideFontPopup() {
   fontPopup.style.display = "none";
 }
 
-function positionColorPopup() {
-  if (colorPopup.style.display !== "block") return;
+// Layout geometry inside `.canvas-wrapper`. The wrapper is the offset parent
+// of the object menu and both popups, and the Fabric canvas sits at its
+// origin, so offset values and the canvas size describe the same plane the
+// menu is positioned in. Client rects would not: the rotated portrait shell
+// turns the whole wrapper a quarter, and its screen-space width and height
+// swap places.
+function getLocalCanvasSize() {
+  return { width: canvas.getWidth(), height: canvas.getHeight() };
+}
 
-  const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
-  const menuRect = objectMenu.getBoundingClientRect();
-  const popupRect = colorPopup.getBoundingClientRect();
+function getLocalRect(element) {
+  return {
+    left: element.offsetLeft,
+    top: element.offsetTop,
+    width: element.offsetWidth,
+    height: element.offsetHeight,
+  };
+}
 
-  const menuTop = menuRect.top - canvasRect.top;
+function positionAnchoredPopup(popup, anchorButton) {
+  if (popup.style.display !== "block") return;
 
-  const spaceAbove = menuRect.top - canvasRect.top;
-  const spaceBelow =
-    canvasRect.top + canvasRect.height - (menuRect.top + menuRect.height);
+  const canvasSize = getLocalCanvasSize();
+  const menuRect = getLocalRect(objectMenu);
+  const popupRect = getLocalRect(popup);
+  const buttonRect = getLocalRect(anchorButton);
+
+  const spaceAbove = menuRect.top;
+  const spaceBelow = canvasSize.height - (menuRect.top + menuRect.height);
 
   let top;
   if (spaceBelow >= popupRect.height + 10 || spaceBelow >= spaceAbove) {
-    top = menuTop + menuRect.height + 10;
+    top = menuRect.top + menuRect.height + 10;
   } else {
-    top = menuTop - popupRect.height - 10;
+    top = menuRect.top - popupRect.height - 10;
   }
 
-  const btnRect = omColorBtn.getBoundingClientRect();
-  const btnCenterX = (btnRect.left + btnRect.right) / 2;
-  let left = btnCenterX - canvasRect.left - popupRect.width / 2;
+  const buttonCenterX = menuRect.left + buttonRect.left + buttonRect.width / 2;
+  let left = buttonCenterX - popupRect.width / 2;
 
   const minLeft = 10;
-  const maxLeft = canvasRect.width - popupRect.width - 10;
+  const maxLeft = canvasSize.width - popupRect.width - 10;
   left = Math.max(minLeft, Math.min(maxLeft, left));
 
   const minTop = 10;
-  const maxTop = canvasRect.height - popupRect.height - 10;
+  const maxTop = canvasSize.height - popupRect.height - 10;
   top = Math.max(minTop, Math.min(maxTop, top));
 
-  colorPopup.style.left = left + "px";
-  colorPopup.style.top = top + "px";
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
+}
+
+function positionColorPopup() {
+  positionAnchoredPopup(colorPopup, omColorBtn);
 }
 
 function positionFontPopup() {
-  if (fontPopup.style.display !== "block") return;
-
-  const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
-  const menuRect = objectMenu.getBoundingClientRect();
-  const popupRect = fontPopup.getBoundingClientRect();
-
-  const menuTop = menuRect.top - canvasRect.top;
-
-  const spaceAbove = menuRect.top - canvasRect.top;
-  const spaceBelow =
-    canvasRect.top + canvasRect.height - (menuRect.top + menuRect.height);
-
-  let top;
-  if (spaceBelow >= popupRect.height + 10 || spaceBelow >= spaceAbove) {
-    top = menuTop + menuRect.height + 10;
-  } else {
-    top = menuTop - popupRect.height - 10;
-  }
-
-  const btnRect = omFontFamilyBtn.getBoundingClientRect();
-  const btnCenterX = (btnRect.left + btnRect.right) / 2;
-  let left = btnCenterX - canvasRect.left - popupRect.width / 2;
-
-  const minLeft = 10;
-  const maxLeft = canvasRect.width - popupRect.width - 10;
-  left = Math.max(minLeft, Math.min(maxLeft, left));
-
-  const minTop = 10;
-  const maxTop = canvasRect.height - popupRect.height - 10;
-  top = Math.max(minTop, Math.min(maxTop, top));
-
-  fontPopup.style.left = left + "px";
-  fontPopup.style.top = top + "px";
+  positionAnchoredPopup(fontPopup, omFontFamilyBtn);
 }
 
 function toggleColorPopup() {
@@ -1169,20 +1176,18 @@ function positionObjectMenu() {
     return;
   }
 
-  const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
-
   objectMenu.style.left = "0px";
   objectMenu.style.top = "0px";
   objectMenu.style.maxWidth = "";
-  const menuRect = objectMenu.getBoundingClientRect();
 
   if (isMobileLayout()) {
-    const maxDockWidth = Math.max(220, Math.min(canvasRect.width - 20, 360));
+    const canvasSize = getLocalCanvasSize();
+    const maxDockWidth = Math.max(220, Math.min(canvasSize.width - 20, 360));
     objectMenu.style.maxWidth = `${maxDockWidth}px`;
 
-    const dockRect = objectMenu.getBoundingClientRect();
-    const dockLeft = Math.max(10, (canvasRect.width - dockRect.width) / 2);
-    const dockTop = Math.max(10, canvasRect.height - dockRect.height - 12);
+    const dockRect = getLocalRect(objectMenu);
+    const dockLeft = Math.max(10, (canvasSize.width - dockRect.width) / 2);
+    const dockTop = Math.max(10, canvasSize.height - dockRect.height - 12);
 
     objectMenu.style.left = `${dockLeft}px`;
     objectMenu.style.top = `${dockTop}px`;
@@ -1192,6 +1197,8 @@ function positionObjectMenu() {
     return;
   }
 
+  const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
+  const menuRect = objectMenu.getBoundingClientRect();
   const rect = obj.getBoundingRect(true, true);
   const left = canvasRect.left + rect.left;
   const top = canvasRect.top + rect.top;
@@ -1499,15 +1506,24 @@ function getCanvasTargetSize() {
     };
   }
 
+  const availableWidth = Math.floor(areaWidth - horizontal);
+  const availableHeight = Math.floor(areaHeight - vertical);
+
+  // The phone canvas owns every touch (`touch-action: none`), so nothing that
+  // does not fit the column can be scrolled into view: it always takes the
+  // measured column and only a degenerate measurement is floored.
+  if (isMobileLayout()) {
+    return {
+      width: Math.max(MOBILE_CANVAS_MIN_SIZE, availableWidth),
+      height: Math.max(MOBILE_CANVAS_MIN_SIZE, availableHeight),
+    };
+  }
+
+  // Desktop keeps a working minimum; `.canvas-stage` scrolls when the window
+  // is shorter than it.
   return {
-    width: Math.max(
-      isMobileLayout() ? 280 : 420,
-      Math.floor(areaWidth - horizontal),
-    ),
-    height: Math.max(
-      isMobileLayout() ? 360 : 520,
-      Math.floor(areaHeight - vertical),
-    ),
+    width: Math.max(420, availableWidth),
+    height: Math.max(520, availableHeight),
   };
 }
 
@@ -1573,6 +1589,7 @@ window.addEventListener("pagehide", () => {
 
 // init
 updateLandingViewportVars();
+updateEditorViewportVars();
 syncRotateHintVisibility();
 setLandingPhotos();
 initHeroMountains(document.querySelectorAll(".landing-section.bg-hero"));
