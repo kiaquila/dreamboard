@@ -12,4 +12,6 @@
       popup at 430 x 714
 - [x] Update `docs_dreamboard/project/frontend/frontend-docs.md`
 - [x] Run `pnpm run preflight`
+- [x] Codex round 1 (two P2): cap `.font-popup` at the fitted canvas height;
+      stop reserving the screen-top inset twice on the content-box rail
 - [ ] Open the PR and check the stage preview on the iPhone 15 Pro Max

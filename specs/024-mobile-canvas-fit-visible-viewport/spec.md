@@ -49,9 +49,11 @@ height: 100dvw` but inherits `min-height: 100dvh` from the base
   - rotated portrait shell: `.editor-view` takes `width: var(--editor-vh,
 100dvh); height: var(--editor-vw, 100dvw); min-height: 0` and translates by
     `var(--editor-vw, 100dvw)`; the sidebar carries the screen-top safe-area
-    inset on its left edge and grows by it; `.canvas-area` carries the
-    screen-bottom inset on its right edge; `.canvas-wrapper` is capped at
-    `var(--editor-vw, 100dvw) - 28px`
+    inset in its left padding (content-box, so the rail grows by the inset
+    once); `.canvas-area` carries the screen-bottom inset on its right edge;
+    `.canvas-wrapper` is capped at `var(--editor-vw, 100dvw) - 28px`
+  - `.font-popup` is `border-box` with `max-height: min(320px, calc(100% -
+20px))`, so the picker never outgrows the fitted canvas it is positioned in
 - `docs_dreamboard/project/frontend/frontend-docs.md`
 
 ## Decisions
@@ -94,7 +96,8 @@ height: 100dvw` but inherits `min-height: 100dvh` from the base
    canvas is unchanged from `main` (1029 x 835, bottom at the footer top).
 4. At 430 x 714 with a text selected, the mobile dock lies along the far
    (screen-left) edge of the canvas, centred on it, fully inside the canvas
-   rect; the font popup opens fully inside the canvas rect.
+   rect; the font popup opens fully inside the canvas rect, and at 360 x 640
+   (canvas 332px tall) the popup is at most 312px tall and scrolls inside.
 5. `--editor-vw` / `--editor-vh` equal `innerWidth` / `innerHeight` after
    boot and after a `resize` event.
 6. `pnpm run preflight` is green and the frontend docs describe the measured
