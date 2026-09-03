@@ -3,8 +3,8 @@
 ## Purpose
 
 This repository uses a lightweight spec-driven and AI-assisted delivery model.
-The goal is to make frontend work resumable, reviewable, and safe to ship
-through Vercel without relying on hidden session memory.
+The goal is to make frontend work resumable, reviewable, and safe to ship to
+the self-hosted production origin without relying on hidden session memory.
 
 ## Non-Negotiable Rules
 
@@ -25,8 +25,9 @@ through Vercel without relying on hidden session memory.
    `baseline-checks`, `guard`, and `AI Review`, no unresolved blocking review
    findings, and healthy Vercel and Cloudflare previews for the changed scope.
 6. Production changes come from Git only.
-   No direct edits in Vercel or the browser; production updates happen only
-   through merge to `main` and Vercel Git integration.
+   No direct product edits on the server, in Vercel, or in the browser;
+   production updates happen only from the protected `main` branch after its
+   post-merge checks pass.
 7. Documentation moves with behavior.
    Changes to app behavior, orchestration, CI/CD, or architecture must update
    durable docs in the same PR.
@@ -59,8 +60,11 @@ through Vercel without relying on hidden session memory.
 - Gemini
   Fallback review backend on GitHub pull requests.
 - GitHub Actions + Vercel + Cloudflare
-  Execute required checks, review normalization, previews, staging, and
-  production deployment.
+  Execute required checks, review normalization, previews, edge proxying, and
+  staging.
+- `cz` production host
+  Pulls reviewed `main` revisions, builds them in isolation, and atomically
+  publishes `dreamboard.ks-design.art`.
 
 ## Standard Feature Loop
 

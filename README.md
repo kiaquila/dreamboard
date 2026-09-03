@@ -4,14 +4,16 @@ Personal visual goal-board creator: a canvas-based editor where you place
 images and text, style objects, and export the result as a composed dream
 board.
 
-**Live:** deployed to Vercel via Git integration on every push to `main`.
+**Live:** [dreamboard.ks-design.art](https://dreamboard.ks-design.art), served by
+the `cz` host behind Cloudflare from reviewed `main` revisions.
 
 ## Stack
 
 - Static single-file web app (`index.html`) with assets under `src/`
 - Canvas editor built on [Fabric.js](https://fabricjs.com/) (v5.3.1, via CDN)
 - Build: `scripts/build-static.mjs` → `dist/index.html`
-- Hosting: Vercel production plus Cloudflare Workers PR stage (Git integrations)
+- Hosting: Nginx on `cz` for production, with Vercel and Cloudflare Workers
+  previews for pull requests
 - CI: GitHub Actions (`baseline-checks`, `guard`, `AI Review`)
 
 ## Getting started
@@ -63,6 +65,7 @@ dreamboard/
 ├── index.html                  # App shell (landing + editor)
 ├── src/                        # Styles, scripts, assets
 ├── scripts/                    # Build and orchestration helpers
+├── deploy/cz/                  # Production deployer, Nginx, and systemd config
 ├── specs/<feature-id>/         # Per-feature spec.md / plan.md / tasks.md
 ├── docs_dreamboard/            # Durable docs, ADRs, devops contracts
 ├── .specify/memory/            # Constitution and process rules
@@ -75,8 +78,8 @@ dreamboard/
 
 ## Workflow
 
-- All changes land through pull requests — no direct edits to `main` or in
-  Vercel.
+- All changes land through pull requests. Production is published from the
+  protected `main` branch, never from ad hoc server edits.
 - Product-code work starts from an active `specs/<feature-id>/` folder and
   runs in its own worktree / branch / PR.
 - Required checks: `baseline-checks`, `guard`, `AI Review`.

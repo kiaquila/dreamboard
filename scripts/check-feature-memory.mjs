@@ -194,6 +194,7 @@ const isProductPath = (file) =>
   file.startsWith(".github/workflows/") ||
   file.startsWith("scripts/") ||
   file.startsWith("src/") ||
+  file.startsWith("deploy/") ||
   file.startsWith("app/") ||
   file.startsWith("public/") ||
   file.startsWith("assets/");

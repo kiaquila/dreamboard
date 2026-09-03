@@ -36,7 +36,7 @@ The npm configuration may retain SemVer-specific cooldown periods.
 ## Production Smoke
 
 After merge to `main`, verify the production URL documented in
-`VERCEL_PRODUCTION_DOMAIN`.
+`PRODUCTION_DOMAIN`.
 
 Minimum smoke:
 
@@ -44,5 +44,7 @@ Minimum smoke:
 - editor can be opened
 - critical changed feature still behaves on desktop and mobile
 
-If production smoke fails, treat it as an active incident and recover through a
-new PR rather than a direct Vercel dashboard edit.
+If production smoke fails, stop the `dreamboard-deploy.timer`, repoint the
+`/srv/dreamboard/current` symlink to the last healthy retained release, and
+recover through a new PR. Restart the timer only after the fixed `main`
+revision is ready to deploy.

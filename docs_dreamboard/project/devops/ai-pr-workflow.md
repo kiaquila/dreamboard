@@ -8,10 +8,11 @@ This is the canonical PR loop for `dreamboard`.
   orchestration, and is the default implementation agent.
 - The selected implementation agent writes scoped code on a feature branch.
 - GitHub Actions runs `baseline-checks`, `guard`, and `AI Review`.
-- Vercel provides preview deployments for PRs and production deploy on merge to
-  `main`.
+- Vercel provides preview deployments for PRs and does not deploy `main`.
 - Cloudflare Workers Builds provides an additional isolated staging URL for
   every PR; the stable Cloudflare Worker is staging, not production.
+- The `cz` production host publishes protected `main` after the post-merge
+  `baseline-checks` and `osv-scan` jobs pass.
 - A human remains the final merge authority.
 
 ## Standard Loop
