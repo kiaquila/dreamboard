@@ -32,14 +32,22 @@ git --git-dir="$repository_dir" fetch --quiet --prune origin \
 
 revision="$(git --git-dir="$repository_dir" rev-parse refs/remotes/origin/main)"
 current_revision=""
+current_target=""
+current_release_dir=""
 
 if [[ -L "$current_link" ]]; then
-  current_revision="$(basename "$(dirname "$(readlink -f "$current_link")")")"
+  current_target="$(readlink -f "$current_link")"
+  current_release_dir="$(dirname "$current_target")"
+  current_revision="$(basename "$current_release_dir")"
+fi
+
+if [[ "$revision" == "$current_revision" && -f "$current_release_dir/.deployed" ]]; then
+  log "revision $revision is already live"
+  exit 0
 fi
 
 if [[ "$revision" == "$current_revision" ]]; then
-  log "revision $revision is already live"
-  exit 0
+  log "revision $revision is live but unvalidated; retrying validation"
 fi
 
 checks_json="$(
@@ -109,14 +117,46 @@ esac
 
 release_dir="$releases_dir/$revision"
 stage_dir=""
+previous_target=""
+next_link="/srv/dreamboard/.current-next"
+switch_armed=false
 
-cleanup_stage() {
+cleanup() {
+  exit_status=$?
+  trap - EXIT
+
   if [[ -n "$stage_dir" && -d "$stage_dir" ]]; then
     rm -rf --one-file-system "$stage_dir"
   fi
+
+  rm -f "$next_link"
+
+  if [[ "$switch_armed" == true && ! -f "$release_dir/.deployed" ]]; then
+    active_target=""
+    if [[ -L "$current_link" ]]; then
+      active_target="$(readlink -f "$current_link")"
+    fi
+
+    if [[ "$active_target" == "$release_dir/dist" ]]; then
+      if [[ -n "$previous_target" ]]; then
+        ln -sfn "$previous_target" "$next_link"
+        mv -Tf "$next_link" "$current_link"
+        log "deployment interrupted; restored $previous_target"
+      else
+        rm -f "$current_link"
+        log "initial deployment interrupted; removed the current link"
+      fi
+    fi
+
+    if [[ -d "$release_dir" ]]; then
+      rm -rf --one-file-system "$release_dir"
+    fi
+  fi
+
+  exit "$exit_status"
 }
 
-trap cleanup_stage EXIT
+trap cleanup EXIT
 
 if [[ ! -d "$release_dir" ]]; then
   stage_dir="$(mktemp -d "$releases_dir/.staging-${revision}.XXXXXX")"
@@ -147,31 +187,23 @@ if [[ ! -d "$release_dir" ]]; then
   stage_dir=""
 fi
 
-previous_target=""
-if [[ -L "$current_link" ]]; then
-  previous_target="$(readlink -f "$current_link")"
+if [[ -n "$current_release_dir" && -f "$current_release_dir/.deployed" ]]; then
+  previous_target="$current_target"
 fi
 
-next_link="/srv/dreamboard/.current-next"
+switch_armed=true
 ln -sfn "$release_dir/dist" "$next_link"
 mv -Tf "$next_link" "$current_link"
 
 if ! curl --fail --silent --show-error \
   --resolve "dreamboard.ks-design.art:443:127.0.0.1" \
   "https://dreamboard.ks-design.art/" >/dev/null; then
-  if [[ -n "$previous_target" ]]; then
-    ln -sfn "$previous_target" "$next_link"
-    mv -Tf "$next_link" "$current_link"
-    log "live smoke failed; restored $previous_target"
-  else
-    rm -f "$current_link"
-    log "initial live smoke failed; removed the current link"
-  fi
-  rm -rf --one-file-system "$release_dir"
+  log "live smoke failed"
   exit 1
 fi
 
 touch "$release_dir/.deployed"
+switch_armed=false
 log "deployed $revision"
 
 mapfile -t stale_releases < <(

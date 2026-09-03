@@ -27,6 +27,10 @@ test("cz deployer is valid Bash and gates the merge revision", () => {
   assert.match(script, /--network none/);
   assert.match(script, /find "\$stage_dir\/dist" -type l/);
   assert.match(script, /chmod 0755 "\$stage_dir"/);
+  assert.match(script, /trap cleanup EXIT/);
+  assert.match(script, /-f "\$current_release_dir\/\.deployed"/);
+  assert.match(script, /switch_armed=true/);
+  assert.match(script, /deployment interrupted; restored/);
   assert.match(script, /mv -Tf \"\$next_link\" \"\$current_link\"/);
   assert.match(script, /rm -rf --one-file-system "\$release_dir"/);
   assert.match(script, /touch "\$release_dir\/\.deployed"/);
