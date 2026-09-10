@@ -55,6 +55,12 @@ minutes). Any newly published version of a dependency — direct or transitive
 This reduces exposure to supply-chain attacks that rely on freshly published
 compromised versions being pulled in immediately.
 
+Version-specific entries under `minimumReleaseAgeExclude` are reserved for
+reviewed security remediations when waiting seven days would keep a known
+vulnerability in the lockfile. The current `sharp@0.35.4` exception replaces
+the vulnerable transitive `sharp@0.35.2` required by the pinned Miniflare
+release.
+
 See [pnpm docs on `minimumReleaseAge`](https://pnpm.io/settings#minimumreleaseage)
 for details.
 

@@ -128,6 +128,15 @@ For `dreamboard`, product-code paths are:
 - future `app/`, `public/`, and `assets/` folders
 - `vercel.json`
 
+## Dependency Security Exceptions
+
+The repository normally holds every direct and transitive release for seven
+days through `minimumReleaseAge`. A known vulnerability may be remediated
+sooner only with a version-specific `minimumReleaseAgeExclude` entry, a
+targeted override when the vulnerable package is transitive, complete feature
+memory, and successful local plus GitHub security checks. Broad package-name
+or scope-wide exceptions are not part of the normal dependency workflow.
+
 ## Gemini Operational Note
 
 Manual Gemini comments such as `/gemini review` or `@gemini-code-assist review`

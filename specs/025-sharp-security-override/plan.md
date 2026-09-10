@@ -1,0 +1,23 @@
+# Plan 025: sharp Security Override
+
+## Approach
+
+Retain `html-validate@11.11.0` and `wrangler@4.127.1` from the Dependabot PR.
+Override only the vulnerable Miniflare-to-sharp dependency edge, and exempt
+only the fixed `sharp@0.35.4` version from the seven-day release-age rule.
+
+## Changes
+
+1. Add the targeted `miniflare@5.20260828.0-alpha>sharp` pnpm override.
+2. Add `sharp@0.35.4` to `minimumReleaseAgeExclude`.
+3. Regenerate `pnpm-lock.yaml` with pnpm.
+4. Explain the narrow security-exception policy in `README.md` and the durable
+   devops documentation.
+5. Record the remediation in feature memory for PR Guard.
+
+## Verification
+
+- `rg -n "sharp@0.35.2|sharp: 0.35.2" pnpm-lock.yaml`
+- `pnpm install --frozen-lockfile`
+- `pnpm run preflight`
+- GitHub PR checks after push

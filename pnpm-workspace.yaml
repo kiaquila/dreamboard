@@ -1,3 +1,5 @@
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - sharp@0.35.4
 packages:
   - .
