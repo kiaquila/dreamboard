@@ -311,18 +311,21 @@ class HeroDots {
   /**
    * Dots that have settled are baked once into an offscreen layer, so a frame
    * only blits that layer and redraws the dots still in flight. The field is
-   * ordered by end time, which keeps both groups contiguous.
+   * ordered by end time, which keeps both groups contiguous. The layer canvas
+   * exists only while the assembly runs and something has settled: a hero that
+   * is waiting at progress 0 or showing its final frame keeps no copy.
    */
   render(progress) {
     const { ctx, field, dpr } = this;
     if (!field) return;
-    const layer = this.settledLayer(progress);
+    const layer = progress < 1 ? this.settledLayer(progress) : null;
+    if (!layer) this.layer = null;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.drawImage(layer.canvas, 0, 0);
+    if (layer?.canvas) ctx.drawImage(layer.canvas, 0, 0);
 
     const buckets = alphaBuckets();
-    for (let n = layer.count; n < field.dots.length; n++) {
+    for (let n = layer ? layer.count : 0; n < field.dots.length; n++) {
       const dot = field.dots[n];
       const local = clamp((progress - dot.delay) / dot.duration, 0, 1);
       if (local <= 0) continue;
@@ -334,21 +337,14 @@ class HeroDots {
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.drawBuckets(ctx, buckets);
-
-    // The finished picture lives on the visible canvas; free the copy.
-    if (progress >= 1) this.layer = null;
   }
 
   settledLayer(progress) {
     const { field, dpr } = this;
-    let layer = this.layer;
-    if (!layer || progress < layer.progress) {
-      const canvas = document.createElement("canvas");
-      canvas.width = this.canvas.width;
-      canvas.height = this.canvas.height;
-      layer = { canvas, ctx: canvas.getContext("2d"), count: 0, progress };
-      this.layer = layer;
+    if (!this.layer || progress < this.layer.progress) {
+      this.layer = { canvas: null, ctx: null, count: 0, progress };
     }
+    const layer = this.layer;
     const buckets = alphaBuckets();
     let count = layer.count;
     while (count < field.dots.length) {
@@ -358,6 +354,12 @@ class HeroDots {
       count++;
     }
     if (count > layer.count) {
+      if (!layer.canvas) {
+        layer.canvas = document.createElement("canvas");
+        layer.canvas.width = this.canvas.width;
+        layer.canvas.height = this.canvas.height;
+        layer.ctx = layer.canvas.getContext("2d");
+      }
       layer.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       this.drawBuckets(layer.ctx, buckets);
       layer.count = count;
