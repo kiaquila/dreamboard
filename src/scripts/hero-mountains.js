@@ -1,24 +1,44 @@
 // Hero dotted mountains.
 //
-// The landing hero no longer ships a photo. It samples the halftone artwork
-// (`hero-mountains-halftone.jpg`) into a square dot grid: every grid cell gets
-// one dot whose radius follows the darkness of the pixels under it. When a hero
-// slide becomes visible the dots settle in from the summits downward, like snow
-// covering the slopes ("snowcap" assembly). Reduced-motion users get the final
-// frame immediately.
+// The landing hero draws the halftone artwork as data. Every dot of the source
+// picture was extracted once (`scripts/extract-hero-dots.mjs`) into
+// `hero-dots.json` with its centre, radius and ink, and the dots are only
+// scaled to the section, never re-sampled, so the artwork's lattice cannot beat
+// into moire. When a hero slide becomes visible the dots settle in from the
+// summits downward, like snow covering the slopes ("snowcap" assembly).
+// Reduced-motion users get the final frame immediately.
 
-const ARTWORK_URL = new URL(
-  "../assets/images/landing/hero-mountains-halftone.jpg",
+const DOTS_URL = new URL(
+  "../assets/images/landing/hero-dots.json",
   import.meta.url,
 ).href;
 
 export const HERO_PAPER = "#f4f2ee";
 export const HERO_INK = "#1b1b1b";
 
-const PAPER_LUMA = 0.952;
-const INK_LUMA = 0.09;
-const TONE_THRESHOLD = 0.035;
+const XY_STEPS = 8;
+const R_STEPS = 16;
+const INK_LEVELS = 16;
 const MIN_BAND_HEIGHT = 0.62;
+const MIN_PITCH = 4;
+// The artwork's dense foreground dots read too heavy at full size. Dots up to
+// the median radius keep their size, the largest ones are drawn at
+// LARGE_DOT_SCALE, and the factor ramps linearly in between, so a larger dot
+// always stays larger and the near/far gradation survives.
+export const LARGE_DOT_SCALE = 0.75;
+const SMALL_DOT_RATIO = 0.16; // radius / pitch, about the median dot
+const LARGE_DOT_RATIO = 0.35; // radius / pitch, about the 98th percentile
+
+/** Drawn-radius factor for a dot whose extracted radius is `ratio` * pitch. */
+export function dotRadiusScale(ratio) {
+  const t = clamp(
+    (ratio - SMALL_DOT_RATIO) / (LARGE_DOT_RATIO - SMALL_DOT_RATIO),
+    0,
+    1,
+  );
+  return 1 - (1 - LARGE_DOT_SCALE) * t;
+}
+const SKYLINE_TONE = 0.077;
 const ASSEMBLE_DURATION_MS = 2600;
 const ALPHA_BUCKETS = 12;
 const REGENERATE_DELAY_MS = 200;
@@ -27,22 +47,9 @@ const PLAY_VISIBILITY = 0.5;
 const clamp = (value, min, max) =>
   value < min ? min : value > max ? max : value;
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-
-/** Grid pitch in CSS px. Scales with width so desktop and phone keep a similar dot count. */
-export function gridSpacing(width) {
-  return clamp(width / 176, 4, 16);
-}
-
-/** Dot radius for a cell darkness in [0, 1]. Dots touch at full ink. */
-export function toneToRadius(tone, spacing) {
-  return (spacing / 2) * Math.pow(clamp(tone, 0, 1), 0.55);
-}
-
-/** Faint far ridges get softer dots instead of only smaller ones. */
-export function toneToAlpha(tone) {
-  const t = clamp(tone, 0, 1);
-  return t > 0.3 ? 1 : 0.55 + 0.45 * (t / 0.3);
-}
+const alphaBuckets = () => Array.from({ length: ALPHA_BUCKETS + 1 }, () => []);
+const bucketOf = (alpha) =>
+  Math.min(ALPHA_BUCKETS, Math.max(1, Math.round(alpha * ALPHA_BUCKETS)));
 
 /**
  * Snowcap timing for one dot, in fractions of the whole timeline.
@@ -67,115 +74,182 @@ function hash(i, j) {
 }
 
 /**
- * Builds the dot field for a canvas of `width` x `height` CSS px.
+ * Turns the quantized JSON asset into source-pixel arrays:
+ * `x`, `y` are stored in 1/8 px, `r` in 1/16 px and ink `a` as 0..15
+ * (alpha `(a + 1) / 16`).
+ */
+export function decodeHeroDots(json) {
+  const { w, h, pitch, n } = json || {};
+  const valid =
+    Number.isInteger(w) &&
+    w > 0 &&
+    Number.isInteger(h) &&
+    h > 0 &&
+    Number.isFinite(pitch) &&
+    pitch > 0 &&
+    Number.isInteger(n) &&
+    n >= 0 &&
+    ["x", "y", "r", "a"].every(
+      (key) => Array.isArray(json[key]) && json[key].length === n,
+    );
+  if (!valid) throw new Error("Hero dots asset is malformed.");
+
+  const x = new Float32Array(n);
+  const y = new Float32Array(n);
+  const r = new Float32Array(n);
+  const alpha = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    x[i] = json.x[i] / XY_STEPS;
+    y[i] = json.y[i] / XY_STEPS;
+    r[i] = json.r[i] / R_STEPS;
+    alpha[i] = (clamp(json.a[i], 0, INK_LEVELS - 1) + 1) / INK_LEVELS;
+  }
+  return { width: w, height: h, pitch, count: n, x, y, r, alpha };
+}
+
+/**
  * The artwork covers the full width, anchored to the bottom, and never takes
  * less than MIN_BAND_HEIGHT of the height on tall (phone) viewports.
  */
-export function sampleField(image, width, height) {
-  const spacing = gridSpacing(width);
+export function coverTransform(asset, width, height) {
   const scale = Math.max(
-    width / image.naturalWidth,
-    (height * MIN_BAND_HEIGHT) / image.naturalHeight,
+    width / asset.width,
+    (height * MIN_BAND_HEIGHT) / asset.height,
   );
-  const drawWidth = image.naturalWidth * scale;
-  const drawHeight = image.naturalHeight * scale;
-  const drawX = (width - drawWidth) / 2;
-  const drawY = height - drawHeight;
+  return {
+    scale,
+    offsetX: (width - asset.width * scale) / 2,
+    offsetY: height - asset.height * scale,
+  };
+}
 
-  const scratch = document.createElement("canvas");
-  scratch.width = width;
-  scratch.height = height;
-  const sctx = scratch.getContext("2d", { willReadFrequently: true });
-  sctx.fillStyle = HERO_PAPER;
-  sctx.fillRect(0, 0, width, height);
-  sctx.imageSmoothingEnabled = true;
-  sctx.imageSmoothingQuality = "high";
-  sctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
-  const pixels = sctx.getImageData(0, 0, width, height).data;
+/**
+ * Builds the dot field for a canvas of `width` x `height` CSS px.
+ *
+ * The artwork's lattice has a dot at every cell corner and every cell centre,
+ * so one dot owns pitch^2 / 2 of paper. If the scaled pitch drops below
+ * MIN_PITCH, dots are merged 4 to 1 into square cells of pitch * sqrt(2):
+ * each merged dot sits at the tone-weighted centre and keeps the summed tone.
+ * Skyline and timing use the extracted radii; only the drawn radius goes
+ * through dotRadiusScale.
+ */
+export function buildField(asset, width, height) {
+  const { scale, offsetX, offsetY } = coverTransform(asset, width, height);
+  const pitch = asset.pitch * scale;
+  const thin = pitch < MIN_PITCH;
+  const spacing = thin ? pitch * Math.SQRT2 : pitch;
 
-  const cols = Math.ceil(width / spacing);
-  const rows = Math.ceil(height / spacing);
-  const tone = new Float32Array(cols * rows);
+  let xs = [];
+  let ys = [];
+  let rs = [];
+  let as = [];
+  for (let i = 0; i < asset.count; i++) {
+    const x = offsetX + asset.x[i] * scale;
+    const y = offsetY + asset.y[i] * scale;
+    const r = asset.r[i] * scale;
+    if (x + r < 0 || x - r > width || y + r < 0 || y - r > height) continue;
+    xs.push(x);
+    ys.push(y);
+    rs.push(r);
+    as.push(asset.alpha[i]);
+  }
 
-  for (let j = 0; j < rows; j++) {
-    const y0 = Math.floor(j * spacing);
-    const y1 = Math.min(
-      height,
-      Math.max(y0 + 1, Math.floor((j + 1) * spacing)),
-    );
-    for (let i = 0; i < cols; i++) {
-      const x0 = Math.floor(i * spacing);
-      const x1 = Math.min(
-        width,
-        Math.max(x0 + 1, Math.floor((i + 1) * spacing)),
-      );
-      let sum = 0;
-      let count = 0;
-      for (let y = y0; y < y1; y++) {
-        let k = (y * width + x0) * 4;
-        for (let x = x0; x < x1; x++, k += 4) {
-          sum +=
-            (pixels[k] * 0.299 +
-              pixels[k + 1] * 0.587 +
-              pixels[k + 2] * 0.114) /
-            255;
-          count++;
-        }
-      }
-      tone[j * cols + i] = clamp(
-        (PAPER_LUMA - sum / count) / (PAPER_LUMA - INK_LUMA),
-        0,
-        1,
-      );
+  if (thin) {
+    const cols = Math.ceil(width / spacing) + 1;
+    const rows = Math.ceil(height / spacing) + 1;
+    const tone = new Float64Array(cols * rows);
+    const sumX = new Float64Array(cols * rows);
+    const sumY = new Float64Array(cols * rows);
+    const peak = new Float32Array(cols * rows);
+    for (let i = 0; i < xs.length; i++) {
+      const cell =
+        clamp(Math.floor(ys[i] / spacing), 0, rows - 1) * cols +
+        clamp(Math.floor(xs[i] / spacing), 0, cols - 1);
+      const t = as[i] * rs[i] * rs[i];
+      tone[cell] += t;
+      sumX[cell] += t * xs[i];
+      sumY[cell] += t * ys[i];
+      peak[cell] = Math.max(peak[cell], as[i]);
+    }
+    xs = [];
+    ys = [];
+    rs = [];
+    as = [];
+    for (let cell = 0; cell < tone.length; cell++) {
+      if (tone[cell] <= 0) continue;
+      xs.push(sumX[cell] / tone[cell]);
+      ys.push(sumY[cell] / tone[cell]);
+      rs.push(Math.sqrt(tone[cell] / peak[cell]));
+      as.push(peak[cell]);
     }
   }
 
-  // Skyline: the first toned row of every column drives the snowcap order.
-  const columnTop = new Int32Array(cols).fill(-1);
-  let zoneTopRow = rows;
-  for (let i = 0; i < cols; i++) {
-    for (let j = 0; j < rows; j++) {
-      if (tone[j * cols + i] > TONE_THRESHOLD * 2.2) {
-        columnTop[i] = j;
-        if (j < zoneTopRow) zoneTopRow = j;
+  // Skyline: the first toned cell of every one-pitch column drives the
+  // snowcap order. Tone is summed per cell so faint haze does not count, and
+  // each column takes the highest skyline of its neighbours, so a column whose
+  // far ridge falls just under the threshold does not start early as a streak.
+  const cols = Math.max(1, Math.ceil(width / spacing));
+  const rows = Math.max(1, Math.ceil(height / spacing));
+  const columnOf = (x) => clamp(Math.floor(x / spacing), 0, cols - 1);
+  const cellTone = new Float32Array(cols * rows);
+  for (let i = 0; i < xs.length; i++) {
+    const row = clamp(Math.floor(ys[i] / spacing), 0, rows - 1);
+    cellTone[row * cols + columnOf(xs[i])] +=
+      (as[i] * Math.PI * rs[i] * rs[i]) / (spacing * spacing);
+  }
+  const firstToned = new Float32Array(cols).fill(Infinity);
+  for (let col = 0; col < cols; col++) {
+    for (let row = 0; row < rows; row++) {
+      if (cellTone[row * cols + col] > SKYLINE_TONE) {
+        firstToned[col] = (row + 0.5) * spacing;
         break;
       }
     }
   }
-  const zoneTop = Math.max(0, zoneTopRow * spacing);
-  const zoneHeight = Math.max(1, height - zoneTop);
+  const columnTop = firstToned.map((_, col) =>
+    Math.min(
+      firstToned[Math.max(0, col - 1)],
+      firstToned[col],
+      firstToned[Math.min(cols - 1, col + 1)],
+    ),
+  );
+  const zoneTop = Math.min(height, ...firstToned);
+  const zoneHeight = Math.max(1, height - Math.max(0, zoneTop));
 
   const dots = [];
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < cols; i++) {
-      const cellTone = tone[j * cols + i];
-      if (cellTone <= TONE_THRESHOLD) continue;
-      const topRow = columnTop[i] < 0 ? j : columnTop[i];
-      const y = (j + 0.5) * spacing;
-      const depth = Math.max(0, (y - (topRow + 0.5) * spacing) / zoneHeight);
-      const timing = snowcapTiming(depth, hash(i, j));
-      dots.push({
-        x: (i + 0.5) * spacing,
-        y,
-        radius: toneToRadius(cellTone, spacing),
-        alpha: toneToAlpha(cellTone),
-        delay: timing.delay,
-        duration: timing.duration,
-      });
-    }
+  for (let i = 0; i < xs.length; i++) {
+    const top = columnTop[columnOf(xs[i])];
+    const depth =
+      top === Infinity ? 0 : Math.max(0, (ys[i] - top) / zoneHeight);
+    const timing = snowcapTiming(
+      depth,
+      hash(Math.round(xs[i] * 4), Math.round(ys[i] * 4)),
+    );
+    dots.push({
+      x: xs[i],
+      y: ys[i],
+      radius: rs[i] * dotRadiusScale(rs[i] / pitch),
+      alpha: as[i],
+      delay: timing.delay,
+      duration: timing.duration,
+    });
   }
 
-  return { dots, spacing, width, height };
+  // Ordered by the moment each dot settles; the renderer relies on it.
+  dots.sort((p, q) => p.delay + p.duration - (q.delay + q.duration));
+
+  return { dots, spacing, thinned: thin, width, height };
 }
 
 class HeroDots {
-  constructor(canvas, image) {
+  constructor(canvas, asset) {
     this.canvas = canvas;
-    this.image = image;
+    this.asset = asset;
     this.ctx = canvas.getContext("2d");
     this.sprites = new Map();
     this.dpr = 1;
     this.field = null;
+    this.layer = null;
     this.frame = 0;
     this.progress = 1;
     this.reducedMotion =
@@ -210,7 +284,8 @@ class HeroDots {
     this.dpr = dpr;
     this.canvas.width = Math.round(width * dpr);
     this.canvas.height = Math.round(height * dpr);
-    this.field = sampleField(this.image, width, height);
+    this.field = buildField(this.asset, width, height);
+    this.layer = null;
     this.render(this.progress);
     return true;
   }
@@ -252,28 +327,68 @@ class HeroDots {
     return sprite;
   }
 
+  /**
+   * Dots that have settled are baked once into an offscreen layer, so a frame
+   * only blits that layer and redraws the dots still in flight. The field is
+   * ordered by end time, which keeps both groups contiguous. The layer canvas
+   * exists only while the assembly runs and something has settled: a hero that
+   * is waiting at progress 0 or showing its final frame keeps no copy.
+   */
   render(progress) {
     const { ctx, field, dpr } = this;
     if (!field) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, field.width, field.height);
+    const layer = progress < 1 ? this.settledLayer(progress) : null;
+    if (!layer) this.layer = null;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (layer?.canvas) ctx.drawImage(layer.canvas, 0, 0);
 
-    // Group dots by alpha so globalAlpha changes a dozen times per frame, not per dot.
-    const buckets = [];
-    for (let k = 0; k <= ALPHA_BUCKETS; k++) buckets.push([]);
-    for (const dot of field.dots) {
+    const buckets = alphaBuckets();
+    for (let n = layer ? layer.count : 0; n < field.dots.length; n++) {
+      const dot = field.dots[n];
       const local = clamp((progress - dot.delay) / dot.duration, 0, 1);
       if (local <= 0) continue;
       const eased = easeOutCubic(local);
       const alpha = dot.alpha * eased;
       const radius = dot.radius * eased;
       if (alpha <= 0.004 || radius <= 0.05) continue;
-      const bucket = Math.min(
-        ALPHA_BUCKETS,
-        Math.max(1, Math.round(alpha * ALPHA_BUCKETS)),
-      );
-      buckets[bucket].push(dot.x, dot.y - (1 - eased) * 6, radius);
+      buckets[bucketOf(alpha)].push(dot.x, dot.y - (1 - eased) * 6, radius);
     }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.drawBuckets(ctx, buckets);
+  }
+
+  settledLayer(progress) {
+    const { field, dpr } = this;
+    if (!this.layer || progress < this.layer.progress) {
+      this.layer = { canvas: null, ctx: null, count: 0, progress };
+    }
+    const layer = this.layer;
+    const buckets = alphaBuckets();
+    let count = layer.count;
+    while (count < field.dots.length) {
+      const dot = field.dots[count];
+      if (dot.delay + dot.duration > progress) break;
+      buckets[bucketOf(dot.alpha)].push(dot.x, dot.y, dot.radius);
+      count++;
+    }
+    if (count > layer.count) {
+      if (!layer.canvas) {
+        layer.canvas = document.createElement("canvas");
+        layer.canvas.width = this.canvas.width;
+        layer.canvas.height = this.canvas.height;
+        layer.ctx = layer.canvas.getContext("2d");
+      }
+      layer.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      this.drawBuckets(layer.ctx, buckets);
+      layer.count = count;
+    }
+    layer.progress = progress;
+    return layer;
+  }
+
+  // Grouped by alpha so globalAlpha changes a dozen times per frame, not per dot.
+  drawBuckets(ctx, buckets) {
     for (let k = 1; k <= ALPHA_BUCKETS; k++) {
       const list = buckets[k];
       if (list.length === 0) continue;
@@ -297,14 +412,12 @@ class HeroDots {
   }
 }
 
-function loadImage(url) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () =>
-      reject(new Error(`Hero artwork failed to load: ${url}`));
-    image.src = url;
-  });
+async function loadDots(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Hero dots failed to load: ${url} (${response.status})`);
+  }
+  return decodeHeroDots(await response.json());
 }
 
 /**
@@ -317,9 +430,9 @@ export async function initHeroMountains(sections) {
   const targets = Array.from(sections || []);
   if (targets.length === 0) return [];
 
-  let image;
+  let asset;
   try {
-    image = await loadImage(ARTWORK_URL);
+    asset = await loadDots(DOTS_URL);
   } catch (error) {
     console.warn(error.message);
     return [];
@@ -327,7 +440,7 @@ export async function initHeroMountains(sections) {
 
   const scenes = targets.map((section) => {
     const canvas = section.querySelector("canvas.hero-dots");
-    return canvas ? new HeroDots(canvas, image) : null;
+    return canvas ? new HeroDots(canvas, asset) : null;
   });
 
   // The initial observation reports any overlap, so check the ratio explicitly:

@@ -89,6 +89,11 @@ Because the static asset names are not content-hashed yet, Nginx sends
 old JavaScript or stylesheet revision after an atomic release switch.
 The virtual host uses the backward-compatible `listen ... http2` form so it
 can still be validated on Nginx releases older than 1.25.1.
+It also enables gzip for CSS, JavaScript, JSON and SVG. Nginx compresses only
+`text/html` by default, and the hero dots asset is a 233 KB JSON file.
+Cloudflare compresses responses at the edge as well; origin gzip keeps the
+origin-to-edge hop small. The virtual host is installed by hand, so copy the
+reviewed `nginx.conf`, run `nginx -t` and reload Nginx after this change lands.
 
 ## Rollback
 

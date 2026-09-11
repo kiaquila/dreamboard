@@ -53,6 +53,8 @@ test("cz Nginx host serves the canonical domain with the security baseline", () 
   assert.match(nginx, /Strict-Transport-Security/);
   assert.match(nginx, /X-Content-Type-Options/);
   assert.match(nginx, /try_files \$uri \$uri\/ \/index\.html;/);
+  assert.match(nginx, /gzip on;/);
+  assert.match(nginx, /gzip_types [^;]*application\/json/);
 });
 
 test("cz deploy timer polls continuously without a resident runner", () => {
