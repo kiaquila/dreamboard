@@ -12,7 +12,7 @@ The current application is still a static frontend, but it is no longer entirely
 - [strings.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/strings.js) for the single English copy source
 - [landing-photo.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/landing-photo.js) for the embedded landing media asset
 - [hero-mountains.js](/Users/kristina.kurashova/projects/dreamboard/src/scripts/hero-mountains.js) for the dotted-mountain hero canvas (see [Hero dotted mountains](#hero-dotted-mountains))
-- [`src/assets/images/landing/`](/Users/kristina.kurashova/projects/dreamboard/src/assets/images/landing) for repository-owned landing artwork (currently the halftone mountain tone source)
+- [`src/assets/images/landing/`](/Users/kristina.kurashova/projects/dreamboard/src/assets/images/landing) for repository-owned landing artwork (currently `hero-dots.json`, the extracted hero dots)
 - `src/assets/favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` for browser tab and iOS home-screen icons (see [Favicon assets](#favicon-assets))
 
 This keeps the repo deployable as a static site while making future extraction to components and a typed frontend stack much safer.
@@ -29,16 +29,18 @@ Dreamboard ships three icon artifacts under `src/assets/`:
 
 ## Hero dotted mountains
 
-Hero slides 1 and 4 no longer use a photo background. `hero-mountains.js` mounts a `<canvas class="hero-dots">` behind the hero content and builds the artwork from dots:
+Hero slides 1 and 4 no longer use a photo background. `hero-mountains.js` mounts a `<canvas class="hero-dots">` behind the hero content and draws the artwork as dots taken from the source picture:
 
-- the tone source is `src/assets/images/landing/hero-mountains-halftone.jpg` (1200x675, a compressed copy of the "Halftone Alpine Serenity" wallpaper); it is drawn to cover the section width, anchored to the bottom, and on tall phone viewports it keeps at least 62% of the height
-- the section is split into a square grid (`width / 176`, clamped to 4..16 px); every cell becomes one dot whose radius follows the averaged darkness of the pixels under it, so the far ridges stay faint and the shadow faces read almost solid
-- dots are drawn from cached circle sprites grouped by 12 alpha levels, which keeps a 1440x900 frame (about 7.6k dots) cheap enough for 60 fps
-- when a hero slide is at least half visible (IntersectionObserver with an explicit `intersectionRatio >= 0.5` check, so the initial observation of a sliver does not start it), the dots assemble over 2.6 s from the summits downward ("snowcap"): each dot's delay grows with its depth below the skyline of its column, then it fades in, grows from zero and lifts 6 px into place
+- the source artwork is `design/hero-mountains/halftone-alpine-serenity-1672x941.png` ("Halftone Alpine Serenity"). It lives outside `src/`, so the static build never ships it. The picture is already a halftone: a square lattice with a pitch of about 9.75 px plus a dot in the centre of every cell
+- `scripts/extract-hero-dots.mjs` finds every dot once (local maxima of the blurred darkness, Voronoi assignment of the inked pixels) and records its centre, radius and ink, so faint far ridges stay grey instead of turning into hard black specks. The result is `src/assets/images/landing/hero-dots.json`: `{"w","h","pitch","n","x":[],"y":[],"r":[],"a":[]}` with `x`, `y` in 1/8 px, `r` in 1/16 px and ink `a` as 0..15 (alpha `(a + 1) / 16`), sorted by lattice row. About 14.6k dots, 233 KB raw and 63 KB gzipped
+- the dots are never re-sampled. Re-sampling a halftone with a grid of a close but different pitch (the previous `width / 176` approach) beats against the lattice and produces moire. `buildField(asset, width, height)` scales the dots to cover the section width, anchors them to the bottom, keeps at least 62% of the height on tall phone viewports and culls dots beyond the edges
+- the scaled pitch is 8.4 px at 1440x900, 5.4 px at 390x844 and 4.9 px at 844x390. Only below 4 px (for example 667x375 or 320x568) dots are merged 4 to 1 into cells of `pitch * sqrt(2)`, keeping the summed tone at the tone-weighted centre
+- dots are drawn from cached circle sprites grouped by 12 alpha levels. Dots that have settled are baked once into an offscreen layer, so a frame blits that layer and redraws only the dots still in flight (at most about 5.9k of the 14.6k); the layer is freed when the assembly finishes
+- when a hero slide is at least half visible (IntersectionObserver with an explicit `intersectionRatio >= 0.5` check, so the initial observation of a sliver does not start it), the dots assemble over 2.6 s from the summits downward ("snowcap"): each dot's delay grows with its depth below the skyline of its one-pitch column, then it fades in, grows from zero and lifts 6 px into place. The skyline is the first cell whose summed tone passes 0.077, and every column takes the highest skyline of its two neighbours so a faint far ridge does not start early as a vertical streak
 - `prefers-reduced-motion: reduce` skips the animation and paints the final frame
 - the field is built lazily from the canvas' CSS size when a slide is about to play and rebuilt on resize (debounced 200 ms); a hidden landing (boot straight into `#editor`, or a resize while the editor is open) reports a zero-size canvas and is measured again when the slide is shown; the paper colour is `--landing-paper` (`#f4f2ee`), ink is `--landing-ink` (`#1b1b1b`)
 
-To regenerate the tone source from a new artwork, downscale it with `sips -s format jpeg -s formatOptions 72 -Z 1200 <source> --out src/assets/images/landing/hero-mountains-halftone.jpg`; only luminance matters, so a small JPEG is enough.
+To regenerate the dots from a new halftone artwork, put the PNG under `design/hero-mountains/` and run `pnpm run dots:extract --source <png> --pitch <lattice pitch px>` (defaults: the committed artwork and 9.75). The script prints the dot count, the JSON size and the tone error against the source (both blurred over one lattice cell), refuses to write when that error inside the inked area exceeds 0.03, and produces a byte-identical file on every run.
 
 Hero copy (title + CTA) is one block centred vertically on the slide with a small upward bias, `padding-bottom: clamp(24px, 8vh, 96px)` on desktop and `clamp(60px, 18vh, 160px)` below 900px, so on a portrait phone the button stays above the mountain skyline (the band takes 62% of the height there). The hero sections always reserve `--landing-header-h` on top, including the phone layout where other slides flatten their padding, so a short landscape viewport does not push the headline under the brand controls.
 
