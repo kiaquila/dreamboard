@@ -9,4 +9,5 @@
 - [x] `deploy/cz/nginx.conf`: gzip для JSON
 - [x] `docs_dreamboard/`: раздел "Hero dotted mountains", команда регенерации, gzip на origin
 - [x] Локально: `pnpm run preflight`, визуально 1440x900, 390x844, 844x390, время кадра
+- [x] Крупные точки мельче: `dotRadiusScale`, `LARGE_DOT_SCALE` = 0.75 (выбрано из 0.65 для всех, 0.8 и 0.75 для крупных)
 - [ ] Push, PR, `@codex review`, все гейты зелёные, треды закрыты

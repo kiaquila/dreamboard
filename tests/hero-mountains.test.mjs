@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
+  LARGE_DOT_SCALE,
   buildField,
   coverTransform,
   decodeHeroDots,
+  dotRadiusScale,
   snowcapTiming,
 } from "../src/scripts/hero-mountains.js";
 
@@ -115,6 +117,33 @@ test("buildField keeps the artwork pitch on common viewports and thins only belo
   assert.ok(small.dots.length < asset.count / 2);
 });
 
+test("dotRadiusScale keeps small dots, shrinks the largest and preserves size order", () => {
+  assert.ok(LARGE_DOT_SCALE > 0 && LARGE_DOT_SCALE <= 1);
+  assert.equal(dotRadiusScale(0.05), 1);
+  assert.equal(dotRadiusScale(0.16), 1);
+  close(dotRadiusScale(0.35), LARGE_DOT_SCALE);
+  close(dotRadiusScale(0.5), LARGE_DOT_SCALE);
+  let previous = 0;
+  for (let ratio = 0; ratio <= 0.6; ratio += 0.005) {
+    const drawn = ratio * dotRadiusScale(ratio);
+    assert.ok(drawn >= previous, `drawn radius shrinks at ratio ${ratio}`);
+    previous = drawn;
+  }
+});
+
+test("buildField draws dots through dotRadiusScale", () => {
+  // Pitch 10 at scale 1: radius 1 is 0.1 pitch, radius 4 is 0.4 pitch.
+  const asset = syntheticAsset([
+    [30, 50, 1, 15],
+    [60, 50, 4, 15],
+  ]);
+  const [small, large] = buildField(asset, 100, 100).dots.sort(
+    (p, q) => p.x - q.x,
+  );
+  close(small.radius, 1);
+  close(large.radius, 4 * LARGE_DOT_SCALE);
+});
+
 test("buildField culls dots beyond the canvas edges", () => {
   // The artwork is 100x100; a 100x50 canvas scales it by 1 and shows y >= 50.
   const asset = syntheticAsset([
@@ -142,7 +171,11 @@ test("buildField thinning keeps the summed tone of the merged dots", () => {
   assert.equal(field.dots.length, 1);
   const [dot] = field.dots;
   const tone = (a, r) => a * r * r;
-  close(tone(dot.alpha, dot.radius), tone(1, 0.6) + tone(0.5, 0.6), 1e-4);
+  close(
+    tone(dot.alpha, dot.radius / dotRadiusScale(Math.sqrt(0.54) / 3)),
+    tone(1, 0.6) + tone(0.5, 0.6),
+    1e-4,
+  );
   assert.equal(dot.alpha, 1);
 });
 

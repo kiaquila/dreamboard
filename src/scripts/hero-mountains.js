@@ -21,6 +21,23 @@ const R_STEPS = 16;
 const INK_LEVELS = 16;
 const MIN_BAND_HEIGHT = 0.62;
 const MIN_PITCH = 4;
+// The artwork's dense foreground dots read too heavy at full size. Dots up to
+// the median radius keep their size, the largest ones are drawn at
+// LARGE_DOT_SCALE, and the factor ramps linearly in between, so a larger dot
+// always stays larger and the near/far gradation survives.
+export const LARGE_DOT_SCALE = 0.75;
+const SMALL_DOT_RATIO = 0.16; // radius / pitch, about the median dot
+const LARGE_DOT_RATIO = 0.35; // radius / pitch, about the 98th percentile
+
+/** Drawn-radius factor for a dot whose extracted radius is `ratio` * pitch. */
+export function dotRadiusScale(ratio) {
+  const t = clamp(
+    (ratio - SMALL_DOT_RATIO) / (LARGE_DOT_RATIO - SMALL_DOT_RATIO),
+    0,
+    1,
+  );
+  return 1 - (1 - LARGE_DOT_SCALE) * t;
+}
 const SKYLINE_TONE = 0.077;
 const ASSEMBLE_DURATION_MS = 2600;
 const ALPHA_BUCKETS = 12;
@@ -113,6 +130,8 @@ export function coverTransform(asset, width, height) {
  * so one dot owns pitch^2 / 2 of paper. If the scaled pitch drops below
  * MIN_PITCH, dots are merged 4 to 1 into square cells of pitch * sqrt(2):
  * each merged dot sits at the tone-weighted centre and keeps the summed tone.
+ * Skyline and timing use the extracted radii; only the drawn radius goes
+ * through dotRadiusScale.
  */
 export function buildField(asset, width, height) {
   const { scale, offsetX, offsetY } = coverTransform(asset, width, height);
@@ -209,7 +228,7 @@ export function buildField(asset, width, height) {
     dots.push({
       x: xs[i],
       y: ys[i],
-      radius: rs[i],
+      radius: rs[i] * dotRadiusScale(rs[i] / pitch),
       alpha: as[i],
       delay: timing.delay,
       duration: timing.duration,
