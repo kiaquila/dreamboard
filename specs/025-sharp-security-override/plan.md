@@ -21,3 +21,9 @@ only the fixed `sharp@0.35.4` version from the seven-day release-age rule.
 - `pnpm install --frozen-lockfile`
 - `pnpm run preflight`
 - GitHub PR checks after push
+
+## PR #45 Refresh
+
+Update the exact Miniflare selector in the existing pnpm override to
+`miniflare@5.20260903.0-alpha>sharp`, regenerate the lockfile, and repeat the
+same security and repository verification without broadening the exception.

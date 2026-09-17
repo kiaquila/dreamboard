@@ -20,3 +20,10 @@
 - [ ] Confirm GitHub `guard`, `osv-scan`, and `AI Review` pass on the final PR
       head.
 - [ ] Confirm all review threads are resolved.
+
+## PR #45 Refresh
+
+- [x] Retarget the Miniflare-to-sharp override to `5.20260903.0-alpha`.
+- [x] Regenerate the lockfile without `sharp@0.35.2`.
+- [x] Re-run local preflight on the refreshed PR head.
+- [ ] Confirm GitHub gates pass on the refreshed PR head.
