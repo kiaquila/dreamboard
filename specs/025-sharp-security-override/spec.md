@@ -27,3 +27,10 @@ forcing the affected Miniflare edge to the fixed `sharp@0.35.4` release.
 - `pnpm run preflight` passes locally.
 - GitHub `guard`, `osv-scan`, and `AI Review` pass on the final PR head.
 - No blocking review threads remain unresolved.
+
+## Maintenance
+
+PR #45 advances Wrangler's exact Miniflare dependency from
+`5.20260828.0-alpha` to `5.20260903.0-alpha`. The targeted override must follow
+that dependency edge so the lockfile continues to resolve `sharp@0.35.4`
+instead of reintroducing the vulnerable `sharp@0.35.2` release.
