@@ -136,6 +136,9 @@ sooner only with a version-specific `minimumReleaseAgeExclude` entry, a
 targeted override when the vulnerable package is transitive, complete feature
 memory, and successful local plus GitHub security checks. Broad package-name
 or scope-wide exceptions are not part of the normal dependency workflow.
+When a direct dependency update changes the exact transitive parent selected by
+an existing targeted override, update that selector and regenerate the lockfile
+in the same pull request so the security remediation remains effective.
 
 ## Gemini Operational Note
 
