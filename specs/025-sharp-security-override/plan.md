@@ -27,3 +27,9 @@ only the fixed `sharp@0.35.4` version from the seven-day release-age rule.
 Update the exact Miniflare selector in the existing pnpm override to
 `miniflare@5.20260903.0-alpha>sharp`, regenerate the lockfile, and repeat the
 same security and repository verification without broadening the exception.
+
+## PR #48 Refresh
+
+Update the selector again to `miniflare@5.20260911.0-alpha>sharp`, regenerate
+the lockfile, and verify that the resolved graph contains only `sharp@0.35.4`.
+Keep the exception narrow and document the active protected dependency edge.

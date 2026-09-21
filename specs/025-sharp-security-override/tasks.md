@@ -27,3 +27,11 @@
 - [x] Regenerate the lockfile without `sharp@0.35.2`.
 - [x] Re-run local preflight on the refreshed PR head.
 - [ ] Confirm GitHub gates pass on the refreshed PR head.
+
+## PR #48 Refresh
+
+- [x] Retarget the Miniflare-to-sharp override to `5.20260911.0-alpha`.
+- [x] Regenerate the lockfile without `sharp@0.35.2`.
+- [x] Run the complete local CI pipeline on the refreshed PR head.
+- [ ] Confirm GitHub gates pass on the refreshed PR head.
+- [ ] Confirm all review threads are resolved.
