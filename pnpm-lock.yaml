@@ -7,7 +7,7 @@ settings:
 overrides:
   brace-expansion: 5.0.9
   fast-uri: 3.1.6
-  miniflare@5.20260903.0-alpha>sharp: 0.35.4
+  miniflare@5.20260911.0-alpha>sharp: 0.35.4
 
 importers:
 
