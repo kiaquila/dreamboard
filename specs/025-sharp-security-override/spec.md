@@ -34,3 +34,7 @@ PR #45 advances Wrangler's exact Miniflare dependency from
 `5.20260828.0-alpha` to `5.20260903.0-alpha`. The targeted override must follow
 that dependency edge so the lockfile continues to resolve `sharp@0.35.4`
 instead of reintroducing the vulnerable `sharp@0.35.2` release.
+
+PR #48 advances that dependency again to `5.20260911.0-alpha`. The override
+selector and lockfile must advance in the same PR so future dependency
+resolution cannot bypass the security remediation.

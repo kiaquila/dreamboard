@@ -139,6 +139,8 @@ or scope-wide exceptions are not part of the normal dependency workflow.
 When a direct dependency update changes the exact transitive parent selected by
 an existing targeted override, update that selector and regenerate the lockfile
 in the same pull request so the security remediation remains effective.
+The current protected edge is
+`miniflare@5.20260911.0-alpha>sharp`, pinned to `sharp@0.35.4`.
 
 ## Gemini Operational Note
 
