@@ -38,4 +38,6 @@ Keep the exception narrow and document the active protected dependency edge.
 
 Retarget the override to `miniflare@5.20260918.0-alpha>sharp` alongside the
 Wrangler update, regenerate the lockfile, and verify that the resolved graph
-still contains only `sharp@0.35.4`.
+still contains only `sharp@0.35.4`. The refreshed OSV scan also requires
+`fast-uri@3.1.7` and a targeted `miniflare@5.20260918.0-alpha>undici@7.29.1`
+override; exempt only those fixed versions from the release-age hold.
