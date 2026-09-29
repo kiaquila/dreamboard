@@ -33,3 +33,9 @@ same security and repository verification without broadening the exception.
 Update the selector again to `miniflare@5.20260911.0-alpha>sharp`, regenerate
 the lockfile, and verify that the resolved graph contains only `sharp@0.35.4`.
 Keep the exception narrow and document the active protected dependency edge.
+
+## PR #50 Refresh
+
+Retarget the override to `miniflare@5.20260918.0-alpha>sharp` alongside the
+Wrangler update, regenerate the lockfile, and verify that the resolved graph
+still contains only `sharp@0.35.4`.
