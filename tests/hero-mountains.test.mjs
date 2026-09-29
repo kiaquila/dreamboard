@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 import {
   LARGE_DOT_SCALE,
+  bottomFadeScale,
   buildField,
   coverTransform,
   decodeHeroDots,
@@ -142,6 +143,58 @@ test("buildField draws dots through dotRadiusScale", () => {
   );
   close(small.radius, 1);
   close(large.radius, 4 * LARGE_DOT_SCALE);
+});
+
+test("bottom fade smoothly reduces density and radius to zero", () => {
+  assert.deepEqual(bottomFadeScale(60, 100, 200), {
+    density: 1,
+    radius: 1,
+  });
+  const middle = bottomFadeScale(150, 100, 200);
+  close(middle.density, 0.5);
+  close(middle.radius, Math.pow(0.5, 0.6));
+  assert.deepEqual(bottomFadeScale(220, 100, 200), {
+    density: 0,
+    radius: 0,
+  });
+});
+
+test("buildField applies an opt-in deterministic bottom fade", () => {
+  const asset = decodeHeroDots(shipped);
+  const options = { bottomFade: { startY: 700, endY: 900 } };
+  const plain = buildField(asset, 430, 932);
+  const faded = buildField(asset, 430, 932, options);
+  const repeated = buildField(asset, 430, 932, options);
+
+  assert.deepEqual(
+    faded,
+    repeated,
+    "the same geometry must produce the same fade",
+  );
+  assert.equal(
+    faded.dots.filter((dot) => dot.y < 700).length,
+    plain.dots.filter((dot) => dot.y < 700).length,
+    "dots before the fade stay unchanged",
+  );
+  assert.ok(
+    faded.dots.filter((dot) => dot.y >= 800).length <
+      plain.dots.filter((dot) => dot.y >= 800).length / 2,
+    "the lower half keeps fewer dots",
+  );
+  assert.equal(
+    faded.dots.filter((dot) => dot.y >= 900).length,
+    0,
+    "no dots survive beyond the fade end",
+  );
+  const plainByPosition = new Map(
+    plain.dots.map((dot) => [`${dot.x}:${dot.y}`, dot.radius]),
+  );
+  assert.ok(
+    faded.dots
+      .filter((dot) => dot.y > 700)
+      .every((dot) => dot.radius < plainByPosition.get(`${dot.x}:${dot.y}`)),
+    "surviving dots shrink throughout the fade",
+  );
 });
 
 test("buildField culls dots beyond the canvas edges", () => {
