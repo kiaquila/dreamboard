@@ -140,8 +140,8 @@ When a direct dependency update changes the exact transitive parent selected by
 an existing targeted override, update that selector and regenerate the lockfile
 in the same pull request so the security remediation remains effective.
 The current protected Miniflare edges are
-`miniflare@5.20260918.0-alpha>sharp`, pinned to `sharp@0.35.5`, and
-`miniflare@5.20260918.0-alpha>undici`, pinned to `undici@7.29.1`.
+`miniflare@5.20260926.1-alpha>sharp`, pinned to `sharp@0.35.5`, and
+`miniflare@5.20260926.1-alpha>undici`, pinned to `undici@7.29.1`.
 The repository-wide `fast-uri` override is pinned to `3.1.8` to remediate
 GHSA-hrr3-gc8f-f4qj in the transitive dependency graph.
 
