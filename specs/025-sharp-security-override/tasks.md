@@ -57,3 +57,11 @@
 - [x] Run the complete local CI pipeline on the refreshed PR head.
 - [ ] Confirm GitHub gates pass on the refreshed PR head.
 - [ ] Confirm all review threads are resolved.
+
+## PR #53 Refresh
+
+- [x] Retarget both Miniflare security overrides to `5.20260926.1-alpha`.
+- [x] Regenerate the lockfile with `sharp@0.35.5` and `undici@7.29.1`.
+- [x] Run the complete local preflight on the refreshed PR head.
+- [ ] Confirm GitHub gates pass on the refreshed PR head.
+- [ ] Confirm all review threads are resolved.

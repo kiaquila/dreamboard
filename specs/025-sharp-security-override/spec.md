@@ -45,3 +45,7 @@ The lockfile must resolve only the fixed version without changing application
 runtime behavior. The refreshed scan also reports GHSA-wq5f-xc86-pv6w against
 `sharp@0.35.4`, so the existing Miniflare override and its version-specific
 release-age exception advance to the fixed `sharp@0.35.5` release.
+
+PR #53 advances Wrangler's exact Miniflare dependency to
+`5.20260926.1-alpha`. Both targeted Miniflare override selectors must advance
+with it so the lockfile continues to resolve `sharp@0.35.5` and `undici@7.29.1`.

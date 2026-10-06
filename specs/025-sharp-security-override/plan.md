@@ -50,3 +50,9 @@ and verify that the vulnerable version is absent before rerunning the
 repository and GitHub security checks. Advance the targeted Miniflare-to-sharp
 override and release-age exception from `sharp@0.35.4` to `sharp@0.35.5` after
 the refreshed scan reports GHSA-wq5f-xc86-pv6w.
+
+## PR #53 Refresh
+
+Retarget the sharp and undici overrides to
+`miniflare@5.20260926.1-alpha`, regenerate the lockfile, and verify that the
+fixed versions remain selected alongside the Dependabot toolchain updates.

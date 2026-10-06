@@ -22,10 +22,10 @@
     "worktree:new": "node scripts/new-worktree.mjs"
   },
   "devDependencies": {
-    "html-validate": "^11.16.0",
+    "html-validate": "^11.16.1",
     "pngjs": "7.0.0",
-    "prettier": "^3.9.6",
-    "wrangler": "4.135.0"
+    "prettier": "^3.9.9",
+    "wrangler": "4.143.1"
   },
   "packageManager": "pnpm@10.33.0",
   "engines": {
@@ -36,8 +36,8 @@
     "overrides": {
       "brace-expansion": "5.0.9",
       "fast-uri": "3.1.8",
-      "miniflare@5.20260918.0-alpha>sharp": "0.35.5",
-      "miniflare@5.20260918.0-alpha>undici": "7.29.1"
+      "miniflare@5.20260926.1-alpha>sharp": "0.35.5",
+      "miniflare@5.20260926.1-alpha>undici": "7.29.1"
     }
   }
 }
