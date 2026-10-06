@@ -1,6 +1,6 @@
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
-  - sharp@0.35.4
+  - sharp@0.35.5
   - undici@7.29.1
 packages:
   - .

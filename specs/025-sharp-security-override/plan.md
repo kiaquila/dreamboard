@@ -47,4 +47,6 @@ override; exempt only those fixed versions from the release-age hold.
 Advance the existing `fast-uri` override to the fixed `3.1.8` release,
 remove the stale release-age exception for `3.1.7`, regenerate the lockfile,
 and verify that the vulnerable version is absent before rerunning the
-repository and GitHub security checks.
+repository and GitHub security checks. Advance the targeted Miniflare-to-sharp
+override and release-age exception from `sharp@0.35.4` to `sharp@0.35.5` after
+the refreshed scan reports GHSA-wq5f-xc86-pv6w.

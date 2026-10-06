@@ -36,7 +36,7 @@
     "overrides": {
       "brace-expansion": "5.0.9",
       "fast-uri": "3.1.8",
-      "miniflare@5.20260918.0-alpha>sharp": "0.35.4",
+      "miniflare@5.20260918.0-alpha>sharp": "0.35.5",
       "miniflare@5.20260918.0-alpha>undici": "7.29.1"
     }
   }

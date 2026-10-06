@@ -52,6 +52,8 @@
 - [x] Update the `fast-uri` override to `3.1.8`.
 - [x] Remove the stale `fast-uri@3.1.7` release-age exception.
 - [x] Regenerate the lockfile without `fast-uri@3.1.7`.
+- [x] Advance the targeted sharp override and exception to `0.35.5`.
+- [x] Regenerate the lockfile without vulnerable `sharp@0.35.4`.
 - [x] Run the complete local CI pipeline on the refreshed PR head.
 - [ ] Confirm GitHub gates pass on the refreshed PR head.
 - [ ] Confirm all review threads are resolved.
