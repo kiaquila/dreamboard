@@ -41,3 +41,10 @@ Wrangler update, regenerate the lockfile, and verify that the resolved graph
 still contains only `sharp@0.35.4`. The refreshed OSV scan also requires
 `fast-uri@3.1.7` and a targeted `miniflare@5.20260918.0-alpha>undici@7.29.1`
 override; exempt only those fixed versions from the release-age hold.
+
+## PR #52 Refresh
+
+Advance the existing `fast-uri` override to the fixed `3.1.8` release,
+remove the stale release-age exception for `3.1.7`, regenerate the lockfile,
+and verify that the vulnerable version is absent before rerunning the
+repository and GitHub security checks.

@@ -38,3 +38,8 @@ instead of reintroducing the vulnerable `sharp@0.35.2` release.
 PR #48 advances that dependency again to `5.20260911.0-alpha`. The override
 selector and lockfile must advance in the same PR so future dependency
 resolution cannot bypass the security remediation.
+
+PR #52 refreshes the separate `fast-uri` security override from `3.1.7` to
+`3.1.8` after OSV reported GHSA-hrr3-gc8f-f4qj against the former version.
+The lockfile must resolve only the fixed version without changing application
+runtime behavior.
