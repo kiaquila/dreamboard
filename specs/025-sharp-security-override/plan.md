@@ -56,3 +56,9 @@ the refreshed scan reports GHSA-wq5f-xc86-pv6w.
 Retarget the sharp and undici overrides to
 `miniflare@5.20260926.1-alpha`, regenerate the lockfile, and verify that the
 fixed versions remain selected alongside the Dependabot toolchain updates.
+
+## PR #55 Refresh
+
+Retarget both overrides to `miniflare@5.20261001.0-alpha`, regenerate the
+lockfile, and verify that the resolved graph contains `sharp@0.35.5` and
+`undici@7.29.1` before rerunning the repository and GitHub security checks.

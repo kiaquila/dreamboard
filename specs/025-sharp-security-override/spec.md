@@ -49,3 +49,8 @@ release-age exception advance to the fixed `sharp@0.35.5` release.
 PR #53 advances Wrangler's exact Miniflare dependency to
 `5.20260926.1-alpha`. Both targeted Miniflare override selectors must advance
 with it so the lockfile continues to resolve `sharp@0.35.5` and `undici@7.29.1`.
+
+PR #55 advances Wrangler's exact Miniflare dependency to
+`5.20261001.0-alpha`. Both targeted selectors must advance again so the
+lockfile does not regress to vulnerable `sharp@0.35.4` and continues to retain
+`undici@7.29.1`.
