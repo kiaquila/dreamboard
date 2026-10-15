@@ -591,3 +591,23 @@ test("persisted formal edits order evidence independently of submission time", (
   });
   assert.equal(result.status, 0, result.stderr);
 });
+
+for (const [body, passes] of [
+  ["P3: Advisory finding", true],
+  ["P1: Escalated finding", false],
+  ["Finding without a severity badge", false],
+]) {
+  test(`actual reevaluated gate handles inline mutation: ${body}`, () => {
+    const result = runGate({
+      reviews: [formalReview()],
+      inline: [
+        {
+          pull_request_review_id: 7,
+          body,
+          html_url: "https://example.com/inline",
+        },
+      ],
+    });
+    assert.equal(result.status === 0, passes, result.stderr || result.stdout);
+  });
+}

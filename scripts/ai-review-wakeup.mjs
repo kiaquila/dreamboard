@@ -25,6 +25,13 @@ export const routesCodexWakeup = (eventName, event) => {
       codexReviewerLogins.has(event.review?.user?.login)
     );
   }
+  if (eventName === "pull_request_review_comment") {
+    return (
+      ["created", "edited", "deleted"].includes(event.action) &&
+      Boolean(event.pull_request?.number) &&
+      codexReviewerLogins.has(event.comment?.user?.login)
+    );
+  }
   return (
     eventName === "workflow_run" &&
     event.action === "completed" &&
@@ -78,6 +85,7 @@ export const wakeCodexGate = async ({
     ) && !isPositive(event.changes?.body?.from || "");
   const invalidatingEvidence =
     eventName === "pull_request_review" ||
+    eventName === "pull_request_review_comment" ||
     (eventName === "issue_comment" &&
       (event.action === "deleted" ||
         (["created", "edited"].includes(event.action) &&
@@ -137,6 +145,9 @@ export const wakeCodexGate = async ({
   const reviews = await api(`/pulls/${number}/reviews?per_page=100`, {
     paginate: true,
   });
+  const inlineComments = await api(`/pulls/${number}/comments?per_page=100`, {
+    paginate: true,
+  });
   const currentReviews = reviews.filter(
     (review) =>
       review.commit_id === head && codexReviewerLogins.has(review.user?.login),
@@ -146,7 +157,7 @@ export const wakeCodexGate = async ({
     0,
     // Keep edits that withdraw or replace recognized evidence visible even on
     // workflow completion, when the original edit webhook is no longer present.
-    ...comments
+    ...[...comments, ...inlineComments]
       .filter((comment) => codexReviewerLogins.has(comment.user?.login))
       .map(codexCommentTimestamp),
     ...reviewUpdates.values(),

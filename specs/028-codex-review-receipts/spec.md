@@ -39,3 +39,7 @@ is still active. Cancel and await that attempt before rerunning the latest
 PR-linked same-head gate; reject HEAD/attempt changes and cancellation timeouts.
 Resolve the target run by its pull-request association as well as HEAD, including
 paginated results, so another PR on the same commit cannot be cancelled or rerun.
+
+Native inline review-comment creation, edits, and deletion must invalidate the
+current gate, including findings on older commits. Completion scans must retain
+inline update timestamps so a mutation racing gate completion is reevaluated.

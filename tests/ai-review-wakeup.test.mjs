@@ -89,6 +89,7 @@ const harness = (overrides = {}) => {
       run_started_at: "2026-10-15T12:00:00Z",
     },
     comments: [nativeComment(receipt)],
+    inline: [],
     reviews: [],
     ...overrides,
   };
@@ -119,6 +120,7 @@ const harness = (overrides = {}) => {
     if (path === "/actions/runs/5") return state.run;
     if (path.includes("/issues/1/comments")) return state.comments;
     if (path.includes("/pulls/1/reviews")) return state.reviews;
+    if (path.includes("/pulls/1/comments")) return state.inline;
     if (path === "/graphql")
       return {
         data: {
@@ -324,6 +326,71 @@ test("new formal reviews cancel an active gate before publishing their outcome",
     "rerun:5",
   );
   assert.equal(state.cancels, 1);
+});
+
+for (const action of ["created", "edited", "deleted"]) {
+  for (const status of ["completed", "in_progress"]) {
+    test(`native inline comment ${action} invalidates a ${status} current-head gate, including older findings`, async () => {
+      const { state, wake } = harness();
+      state.run.status = status;
+      const payload = {
+        action,
+        pull_request: { number: 1 },
+        comment: {
+          ...nativeComment("P1: Blocking finding"),
+          commit_id: "a".repeat(40),
+        },
+      };
+      payload.comment.updated_at = state.run.run_started_at;
+      assert.match(
+        workflow,
+        /pull_request_review_comment:\s+types: \[created, edited, deleted\]/,
+      );
+      assert.ok(workflowAccepts(payload, "pull_request_review_comment"));
+      assert.ok(routesCodexWakeup("pull_request_review_comment", payload));
+      assert.equal(
+        await wake(payload, "pull_request_review_comment"),
+        "rerun:5",
+      );
+      assert.equal(state.cancels, status === "in_progress" ? 1 : 0);
+      assert.equal(state.reruns, 1);
+    });
+  }
+}
+
+test("untrusted inline mutations cannot cancel or rerun the gate", async () => {
+  const { state, wake } = harness();
+  const payload = {
+    action: "edited",
+    pull_request: { number: 1 },
+    comment: { user: { login: "attacker" }, body: "P1" },
+  };
+  assert.equal(
+    Boolean(workflowAccepts(payload, "pull_request_review_comment")),
+    false,
+  );
+  assert.equal(await wake(payload, "pull_request_review_comment"), "ignored");
+  assert.equal(state.reruns, 0);
+  assert.equal(state.cancels, 0);
+});
+
+test("completion notices a persisted inline edit and cannot loop after reevaluation", async () => {
+  const { state, wake } = harness({
+    comments: [],
+    inline: [nativeComment("P1: Changed from P3")],
+  });
+  const completed = () => ({
+    action: "completed",
+    workflow_run: { ...state.run, name: "AI Review" },
+  });
+  assert.equal(await wake(completed(), "workflow_run"), "rerun:5");
+  state.run = {
+    ...state.run,
+    status: "completed",
+    run_started_at: "2026-10-15T12:02:00Z",
+  };
+  assert.equal(await wake(completed(), "workflow_run"), "already-evaluated");
+  assert.equal(state.reruns, 1);
 });
 
 test("receipt deletion invalidates a completed gate without a persisted timestamp", async () => {

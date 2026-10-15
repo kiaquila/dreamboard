@@ -112,7 +112,13 @@ P3 remains advisory. The gate rejects stale event HEADs and rechecks live HEAD
 before success.
 
 `AI Review Wakeup` runs trusted default-branch scripts for native comment
-creation/edits, formal review updates, and completion of a PR-linked gate.
+creation/edits, formal review updates, native inline comment creation/edits/deletions,
+and completion of a PR-linked gate. Inline mutations invalidate completed or
+active results even for older commits, since unresolved older findings still
+block. Completion scans persist inline update times to close the finish/edit race.
+Thread resolution state is checked on every gate evaluation; after changing
+only that state, rerun the PR-linked gate or request a fresh native review.
+GitHub Actions does not document a direct review-thread status trigger.
 Comment deletion, nonpassing receipt/setup replies, receipt withdrawals, and formal review updates explicitly
 invalidate the old result. Deleted comments cannot be recovered from API scans,
 and a withdrawal timestamp may tie the gate's start. The trusted webhook itself
