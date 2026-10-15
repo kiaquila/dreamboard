@@ -1,0 +1,61 @@
+name: AI Review Wakeup
+
+on:
+  issue_comment:
+    types: [created, edited, deleted]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+  workflow_run:
+    workflows: [AI Review]
+    types: [completed]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  actions: write
+  contents: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: >-
+    ai-review-wakeup-${{ github.event.issue.number ||
+      github.event.pull_request.number ||
+      github.event.workflow_run.pull_requests[0].number ||
+      github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  wakeup:
+    if: >
+      (vars.AI_REVIEW_AGENT == '' || vars.AI_REVIEW_AGENT == 'codex') &&
+      (
+        (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
+          github.event.comment.user.login == 'chatgpt-codex-connector[bot]') ||
+        (github.event_name == 'pull_request_review' &&
+          github.event.review.user.login == 'chatgpt-codex-connector[bot]') ||
+        (github.event_name == 'pull_request_review_comment' &&
+          github.event.comment.user.login == 'chatgpt-codex-connector[bot]') ||
+        github.event_name == 'workflow_run'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Requeue current-head gate when native evidence changes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AI_REVIEW_AGENT: ${{ vars.AI_REVIEW_AGENT }}
+        run: |
+          if [ -f scripts/ai-review-wakeup.mjs ]; then
+            node scripts/ai-review-wakeup.mjs
+          else
+            echo "Wakeup router is not installed on trusted main yet; the existing required gate remains authoritative."
+          fi
