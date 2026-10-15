@@ -14,7 +14,8 @@ export const routesCodexWakeup = (eventName, event) => {
     return (
       ["created", "edited"].includes(event.action) &&
       Boolean(event.issue?.pull_request) &&
-      isCodexWakeupComment(event.comment)
+      codexReviewerLogins.has(event.comment?.user?.login) &&
+      (event.action === "edited" || isCodexWakeupComment(event.comment))
     );
   }
   if (eventName === "pull_request_review") {
@@ -79,7 +80,11 @@ export const wakeCodexGate = async ({
   const reviewUpdates = await readReviewUpdates(currentReviews, api);
   const newestSignal = Math.max(
     0,
-    ...comments.filter(isCodexWakeupComment).map(codexCommentTimestamp),
+    // Keep edits that withdraw or replace recognized evidence visible even on
+    // workflow completion, when the original edit webhook is no longer present.
+    ...comments
+      .filter((comment) => codexReviewerLogins.has(comment.user?.login))
+      .map(codexCommentTimestamp),
     ...reviewUpdates.values(),
   );
   // At most one follow-up attempt per new evidence timestamp, including when

@@ -91,6 +91,10 @@ before success.
 
 `AI Review Wakeup` runs trusted default-branch scripts for native comment
 creation/edits, formal review updates, and completion of a PR-linked gate.
+Every trusted connector comment edit is eligible, even when its new body no
+longer contains a recognized marker. Persisted comment update times also keep
+withdrawn receipts visible to the completion wakeup; only the gate parser can
+decide whether the current body still provides valid evidence.
 Active gates keep polling. A completed gate can be rerun once for evidence
 newer than its attempt's start, covering the finish/reply race; the next attempt
 starts after that evidence and cannot loop. Wakeups are serialized and recheck

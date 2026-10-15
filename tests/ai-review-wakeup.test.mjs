@@ -156,6 +156,51 @@ test("an edited old summary wakes a completed gate but cannot attest success", a
   assert.equal(state.reruns, 1);
 });
 
+for (const body of ["", "Review withdrawn."]) {
+  test(`withdrawing receipt evidence into ${JSON.stringify(body)} requeues once`, async () => {
+    const payload = event(body, "edited");
+    const { state, wake } = harness({ comments: [nativeComment(body)] });
+    assert.ok(workflowAccepts(payload));
+    assert.ok(routesCodexWakeup("issue_comment", payload));
+    assert.equal(routesCodexWakeup("issue_comment", event(body)), false);
+    assert.equal(await wake(payload), "rerun:5");
+    state.run = {
+      ...state.run,
+      status: "completed",
+      run_started_at: "2026-10-15T12:02:00Z",
+    };
+    assert.equal(await wake(payload), "already-evaluated");
+    assert.equal(state.reruns, 1);
+  });
+}
+
+test("receipt withdrawal during an active gate remains visible at completion", async () => {
+  const { state, wake } = harness({ comments: [nativeComment("")] });
+  state.run.status = "in_progress";
+  assert.equal(await wake(event("", "edited")), "active-or-missing");
+  state.run.status = "completed";
+  assert.equal(
+    await wake(
+      {
+        action: "completed",
+        workflow_run: { ...state.run, name: "AI Review" },
+      },
+      "workflow_run",
+    ),
+    "rerun:5",
+  );
+  assert.equal(state.reruns, 1);
+});
+
+test("untrusted edits cannot wake the gate even when evidence is withdrawn", async () => {
+  const payload = event("", "edited");
+  payload.comment.user.login = "attacker";
+  const { state, wake } = harness({ comments: [payload.comment] });
+  assert.equal(Boolean(workflowAccepts(payload)), false);
+  assert.equal(await wake(payload), "ignored");
+  assert.equal(state.reruns, 0);
+});
+
 test("changed HEAD is rechecked before rerun", async () => {
   const { state, wake } = harness({ nextHead: "a".repeat(40) });
   assert.equal(await wake(), "changed");
