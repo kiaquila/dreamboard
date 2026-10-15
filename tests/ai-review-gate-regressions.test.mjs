@@ -289,3 +289,36 @@ test("a fresh current-head receipt can supersede a dismissed formal review", () 
   });
   assert.equal(result.status, 0, result.stderr);
 });
+
+for (const after of [true, false]) {
+  test(`same-second receipt ${after ? "after" : "before"} dismissal follows timeline ordering`, () => {
+    const receiptComment = {
+      ...comment(receipt, { created_at: "2026-10-15T12:02:00Z" }),
+      event: "commented",
+    };
+    const dismissal = {
+      event: "review_dismissed",
+      dismissed_review: { review_id: 7 },
+    };
+    const timeline = after
+      ? [activation, dismissal, receiptComment]
+      : [activation, receiptComment, dismissal];
+    const result = runGate({
+      comments: [receiptComment],
+      timeline,
+      reviews: [
+        {
+          id: 7,
+          node_id: "review-node",
+          commit_id: head,
+          body: "Codex Review",
+          state: "DISMISSED",
+          user: { login: bot },
+          submitted_at: "2026-10-15T12:00:00Z",
+        },
+      ],
+    });
+    if (after) assert.equal(result.status, 0, result.stderr);
+    else assert.notEqual(result.status, 0, result.stdout);
+  });
+}

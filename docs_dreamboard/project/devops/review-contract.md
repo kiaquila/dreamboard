@@ -95,7 +95,8 @@ starts after that evidence and cannot loop. Wakeups are serialized and recheck
 HEAD and run attempt before rerunning. Persisted GraphQL review `updatedAt`
 handles edits and dismissals whose REST `submitted_at` never changes, including
 the active-gate completion race. Receipts older than a dismissal cannot restore
-its positive result. Summary presence and reactions do not
+its positive result; equal-second timestamps use the timeline dismissal/comment
+order to distinguish fresh replacements from stale receipts. Summary presence and reactions do not
 produce success.
 
 When introducing changes to the gate itself, the PR still executes the old

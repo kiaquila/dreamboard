@@ -234,3 +234,22 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       boundaryIndex === activationIndex ? "head-activation" : "human-trigger",
   };
 };
+
+export const isAfterCodexDismissal = (
+  entry,
+  { timelineEvents, dismissalTime, reviewId },
+) => {
+  const timestamp = codexCommentTimestamp(entry);
+  if (timestamp !== dismissalTime) return timestamp > dismissalTime;
+  // GitHub truncates these timestamps to seconds. For a fresh comment in the
+  // same second, timeline order distinguishes a replacement from old evidence.
+  const dismissalIndex = timelineEvents.findLastIndex(
+    (event) =>
+      event.event === "review_dismissed" &&
+      event.dismissed_review?.review_id === reviewId,
+  );
+  const commentIndex = timelineEvents.findLastIndex(
+    (event) => event.event === "commented" && event.id === entry.id,
+  );
+  return dismissalIndex >= 0 && commentIndex > dismissalIndex;
+};

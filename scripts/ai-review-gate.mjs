@@ -4,7 +4,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 import { readReviewUpdates } from "./codex-review-updates.mjs";
 import {
   codexReviewerLogins,
-  codexCommentTimestamp,
+  isAfterCodexDismissal,
   matchesCodexReview,
   pickAuthoritativeCodexSkipModeComment,
 } from "./ai-review-helpers.mjs";
@@ -717,20 +717,12 @@ while (Date.now() < deadline) {
             )
           ).get(matchedReview.node_id)
         : 0;
-    const afterDismissal = (entry) =>
-      !codexReviewerLogins.has(entry.user?.login) ||
-      codexCommentTimestamp(entry) > dismissalTime;
-
     // Read comments independently of timeline order: the connector edits old
     // comments in place. Timeline is still required for unbound legacy replies.
-    const issueComments = (
-      await listPaginated(buildIssueCommentsPath(0))
-    ).filter(afterDismissal);
+    const issueComments = await listPaginated(buildIssueCommentsPath(0));
     let timelineEvents = null;
     try {
-      timelineEvents = (await listPaginated(buildIssueTimelinePath())).filter(
-        afterDismissal,
-      );
+      timelineEvents = await listPaginated(buildIssueTimelinePath());
     } catch (error) {
       codexTimelineWarning =
         "Codex timeline unavailable; comment fallback is disabled.";
@@ -739,10 +731,18 @@ while (Date.now() < deadline) {
         codexTimelineWarningLogged = true;
       }
     }
+    const afterDismissal = (entry) =>
+      !codexReviewerLogins.has(entry.user?.login) ||
+      !dismissalTime ||
+      isAfterCodexDismissal(entry, {
+        timelineEvents: timelineEvents || [],
+        dismissalTime,
+        reviewId: matchedReview.id,
+      });
     const matchedComment = pickAuthoritativeCodexSkipModeComment({
-      timelineEvents,
+      timelineEvents: timelineEvents?.filter(afterDismissal),
       headSha,
-      issueComments,
+      issueComments: issueComments.filter(afterDismissal),
     });
     if (matchedComment) {
       const { comment, classification, reviewState } = matchedComment;
