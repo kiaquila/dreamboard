@@ -77,6 +77,10 @@ for (const [name, body] of [
   ["real receipt", receipt],
   ["legacy", positive],
   [
+    "observed keep-them-coming receipt with info footer",
+    `${receipt.replace(":rocket:", "Keep them coming!")}\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>Native review help.\n</details>`,
+  ],
+  [
     "observed keep-it-up receipt with info footer",
     `${receipt.replace(":rocket:", "Keep it up!")}\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>Native review help.\n</details>`,
   ],
