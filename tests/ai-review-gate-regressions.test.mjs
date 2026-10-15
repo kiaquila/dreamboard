@@ -323,6 +323,45 @@ for (const after of [true, false]) {
   });
 }
 
+for (const replacement of [false, true]) {
+  test(`ambiguous same-second edit ${replacement ? "recovers with later evidence" : "requires fresh review without guessing order"}`, () => {
+    const editedReceipt = comment(receipt, {
+      updated_at: "2026-10-15T12:02:00Z",
+    });
+    const result = runGate({
+      comments: [
+        editedReceipt,
+        ...(replacement
+          ? [comment(receipt, { id: 2, updated_at: "2026-10-15T12:03:00Z" })]
+          : []),
+      ],
+      timeline: [
+        activation,
+        { ...editedReceipt, event: "commented" },
+        { event: "review_dismissed", dismissed_review: { review_id: 7 } },
+      ],
+      reviews: [
+        {
+          id: 7,
+          node_id: "review-node",
+          commit_id: head,
+          body: "Codex Review",
+          state: "DISMISSED",
+          user: { login: bot },
+          submitted_at: "2026-10-15T12:00:00Z",
+        },
+      ],
+    });
+    if (replacement) assert.equal(result.status, 0, result.stderr);
+    else {
+      assert.notEqual(result.status, 0, result.stdout);
+      assert.match(result.stderr, /Cannot order a Codex receipt edit/);
+      assert.match(result.stderr, /Request a fresh native @codex review/);
+      assert.doesNotMatch(result.stderr, /timed out/);
+    }
+  });
+}
+
 for (const options of [
   { timeline: [] },
   { timeline: null, timelineUnavailable: true },

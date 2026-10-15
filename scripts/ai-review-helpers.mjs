@@ -227,6 +227,8 @@ export const isAfterCodexDismissal = (
   if (timestamp !== dismissalTime) return timestamp > dismissalTime;
   // GitHub truncates these timestamps to seconds. For a fresh comment in the
   // same second, timeline order distinguishes a replacement from old evidence.
+  // An older comment's creation position cannot order a later edit. If its
+  // update timestamp ties the dismissal, the gate requires fresh evidence.
   const dismissalIndex = timelineEvents.findLastIndex(
     (event) =>
       event.event === "review_dismissed" &&

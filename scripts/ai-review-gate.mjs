@@ -3,6 +3,8 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import { readReviewUpdates } from "./codex-review-updates.mjs";
 import {
+  classifyCodexSummaryComment,
+  codexCommentTimestamp,
   codexReviewerLogins,
   isAfterCodexDismissal,
   matchesCodexReview,
@@ -773,6 +775,21 @@ while (Date.now() < deadline) {
           );
       }
       await finishSuccessfully();
+    }
+    const ambiguousEdit =
+      dismissalTime &&
+      issueComments.find(
+        (entry) =>
+          codexReviewerLogins.has(entry.user?.login) &&
+          Date.parse(entry.created_at) < dismissalTime &&
+          codexCommentTimestamp(entry) === dismissalTime &&
+          classifyCodexSummaryComment(entry, headSha).outcome === "pass",
+      );
+    if (ambiguousEdit) {
+      throw new Error(
+        "Cannot order a Codex receipt edit within the review dismissal second. " +
+          `Request a fresh native @codex review ${headSha}; a later receipt can requeue this gate.`,
+      );
     }
   } else {
     const reviews = await listNewestPullReviews(

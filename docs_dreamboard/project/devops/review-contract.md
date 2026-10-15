@@ -105,6 +105,14 @@ its positive result; equal-second timestamps use the timeline dismissal/comment
 order to distinguish fresh replacements from stale receipts. Summary presence and reactions do not
 produce success.
 
+For an older comment edited within the exact dismissal second, its creation
+position does not establish edit order. GitHub's persisted edit timestamps do
+not provide an ordering proof for this tie. The gate fails explicitly with a
+fresh native review request instead of guessing or waiting for a timeout.
+A later receipt supersedes that ambiguity and wakes the gate normally. This
+recovery preserves the dismissal boundary; an edited receipt with a strictly
+later update time remains valid without timeline ordering.
+
 When introducing changes to the gate itself, the PR still executes the old
 trusted-main scripts. Obtain real native Codex review for the exact HEAD. If
 its format is unsupported by main, an existing fallback can provide
