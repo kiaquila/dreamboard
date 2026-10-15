@@ -2,7 +2,7 @@ name: AI Review Wakeup
 
 on:
   issue_comment:
-    types: [created, edited]
+    types: [created, edited, deleted]
   pull_request_review:
     types: [submitted, edited, dismissed]
   workflow_run:

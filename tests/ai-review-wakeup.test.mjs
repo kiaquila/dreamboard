@@ -47,7 +47,10 @@ for (const body of [
   }
 }
 test("workflow subscribes to edited events and uses trusted scripts", () => {
-  assert.match(workflow, /issue_comment:\s+types: \[created, edited\]/);
+  assert.match(
+    workflow,
+    /issue_comment:\s+types: \[created, edited, deleted\]/,
+  );
   assert.match(
     workflow,
     /ref: \$\{\{ github.event.repository.default_branch \}\}/,
@@ -72,6 +75,7 @@ const harness = (overrides = {}) => {
     head,
     reads: 0,
     reruns: 0,
+    cancels: 0,
     run: {
       id: 5,
       head_sha: head,
@@ -94,6 +98,17 @@ const harness = (overrides = {}) => {
       };
     if (path.startsWith("/actions/workflows/"))
       return { workflow_runs: [state.run] };
+    if (path === "/actions/runs/5/cancel" && options.method === "POST") {
+      state.cancels++;
+      if (!state.cancelStuck)
+        state.run = {
+          ...state.run,
+          status: "completed",
+          conclusion: "cancelled",
+        };
+      if (state.cancelRace) throw new Error("Run already completed");
+      return null;
+    }
     if (path === "/actions/runs/5/rerun" && options.method === "POST") {
       state.reruns++;
       state.run = { ...state.run, status: "queued", run_attempt: 2 };
@@ -116,7 +131,7 @@ const harness = (overrides = {}) => {
   return {
     state,
     wake: (payload = event(receipt), eventName = "issue_comment") =>
-      wakeCodexGate({ eventName, event: payload, api }),
+      wakeCodexGate({ eventName, event: payload, api, wait: async () => {} }),
   };
 };
 
@@ -198,6 +213,77 @@ test("untrusted edits cannot wake the gate even when evidence is withdrawn", asy
   const { state, wake } = harness({ comments: [payload.comment] });
   assert.equal(Boolean(workflowAccepts(payload)), false);
   assert.equal(await wake(payload), "ignored");
+  assert.equal(state.reruns, 0);
+});
+
+test("receipt deletion invalidates a completed gate without a persisted timestamp", async () => {
+  const { state, wake } = harness({ comments: [] });
+  const payload = event(receipt, "deleted");
+  payload.comment.updated_at = "2026-10-14T12:00:00Z";
+  assert.ok(workflowAccepts(payload));
+  assert.equal(await wake(payload), "rerun:5");
+  assert.equal(state.cancels, 0);
+  assert.equal(state.reruns, 1);
+});
+
+test("deletion cancels an active gate before rerun and cannot loop at completion", async () => {
+  const { state, wake } = harness({ comments: [] });
+  state.run.status = "in_progress";
+  assert.equal(await wake(event(receipt, "deleted")), "rerun:5");
+  assert.equal(state.cancels, 1);
+  assert.equal(state.reruns, 1);
+  state.run = {
+    ...state.run,
+    status: "completed",
+    run_started_at: "2026-10-15T12:02:00Z",
+  };
+  assert.equal(
+    await wake(
+      {
+        action: "completed",
+        workflow_run: { ...state.run, name: "AI Review" },
+      },
+      "workflow_run",
+    ),
+    "already-evaluated",
+  );
+  assert.equal(state.reruns, 1);
+});
+
+test("deletion still reruns if the active gate completes as cancellation starts", async () => {
+  const { state, wake } = harness({ comments: [], cancelRace: true });
+  state.run.status = "in_progress";
+  assert.equal(await wake(event(receipt, "deleted")), "rerun:5");
+  assert.equal(state.cancels, 1);
+  assert.equal(state.reruns, 1);
+});
+
+test("deletion rechecks HEAD before cancelling or rerunning", async () => {
+  const { state, wake } = harness({ nextHead: "a".repeat(40) });
+  state.run.status = "in_progress";
+  assert.equal(await wake(event(receipt, "deleted")), "changed");
+  assert.equal(state.cancels, 0);
+  assert.equal(state.reruns, 0);
+});
+
+test("untrusted deletion cannot cancel a gate", async () => {
+  const payload = event(receipt, "deleted");
+  payload.comment.user.login = "attacker";
+  const { state, wake } = harness();
+  assert.equal(Boolean(workflowAccepts(payload)), false);
+  assert.equal(await wake(payload), "ignored");
+  assert.equal(state.cancels, 0);
+  assert.equal(state.reruns, 0);
+});
+
+test("deletion does not rerun an attempt whose cancellation is still pending", async () => {
+  const { state, wake } = harness({ comments: [], cancelStuck: true });
+  state.run.status = "in_progress";
+  await assert.rejects(
+    wake(event(receipt, "deleted")),
+    /cancellation is still pending/,
+  );
+  assert.equal(state.cancels, 1);
   assert.equal(state.reruns, 0);
 });
 

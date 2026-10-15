@@ -12,10 +12,10 @@ import {
 export const routesCodexWakeup = (eventName, event) => {
   if (eventName === "issue_comment") {
     return (
-      ["created", "edited"].includes(event.action) &&
+      ["created", "edited", "deleted"].includes(event.action) &&
       Boolean(event.issue?.pull_request) &&
       codexReviewerLogins.has(event.comment?.user?.login) &&
-      (event.action === "edited" || isCodexWakeupComment(event.comment))
+      (event.action !== "created" || isCodexWakeupComment(event.comment))
     );
   }
   if (eventName === "pull_request_review") {
@@ -37,6 +37,7 @@ export const wakeCodexGate = async ({
   event,
   api,
   selectedAgent = "codex",
+  wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) => {
   if (selectedAgent !== "codex" || !routesCodexWakeup(eventName, event))
     return "ignored";
@@ -65,8 +66,53 @@ export const wakeCodexGate = async ({
         entry.pull_requests?.some((pr) => pr.number === number),
     )
     .sort((a, b) => b.id - a.id)[0];
+  if (!run) return "active-or-missing";
+  const deletingEvidence =
+    eventName === "issue_comment" && event.action === "deleted";
+  if (deletingEvidence) {
+    // Deleted evidence has no persisted comment timestamp. The authenticated
+    // deletion webhook itself invalidates the old result. Cancel an active
+    // attempt before rerunning so deletion cannot race its final evidence read.
+    const currentPull = await api(`/pulls/${number}`);
+    let currentRun = await api(`/actions/runs/${run.id}`);
+    if (
+      currentPull.head.sha !== head ||
+      currentPull.state !== "open" ||
+      currentRun.run_attempt !== run.run_attempt
+    )
+      return "changed";
+    if (currentRun.status !== "completed") {
+      try {
+        await api(`/actions/runs/${run.id}/cancel`, { method: "POST" });
+      } catch (error) {
+        currentRun = await api(`/actions/runs/${run.id}`);
+        if (currentRun.status !== "completed") throw error;
+      }
+      for (let poll = 0; poll < 60; poll++) {
+        currentRun = await api(`/actions/runs/${run.id}`);
+        if (currentRun.run_attempt !== run.run_attempt) return "changed";
+        if (currentRun.status === "completed") break;
+        await wait(1000);
+      }
+      if (currentRun.status !== "completed")
+        throw new Error(
+          "Gate cancellation is still pending after evidence deletion.",
+        );
+    }
+    const finalPull = await api(`/pulls/${number}`);
+    const finalRun = await api(`/actions/runs/${run.id}`);
+    if (
+      finalPull.head.sha !== head ||
+      finalPull.state !== "open" ||
+      finalRun.status !== "completed" ||
+      finalRun.run_attempt !== run.run_attempt
+    )
+      return "changed";
+    await api(`/actions/runs/${run.id}/rerun`, { method: "POST" });
+    return `rerun:${run.id}`;
+  }
   // The active gate polls. Its completion event closes the finish/reply race.
-  if (!run || run.status !== "completed") return "active-or-missing";
+  if (run.status !== "completed") return "active-or-missing";
   const comments = await api(`/issues/${number}/comments?per_page=100`, {
     paginate: true,
   });
@@ -131,7 +177,8 @@ if (
       });
       if (!response.ok)
         throw new Error(`${method} ${path}: ${response.status}`);
-      if (response.status === 204 || path.endsWith("/rerun")) return null;
+      if (response.status === 204 || /\/(rerun|cancel)$/.test(path))
+        return null;
       const data = await response.json();
       if (!paginate) return data;
       items.push(...data);

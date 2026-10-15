@@ -91,6 +91,12 @@ before success.
 
 `AI Review Wakeup` runs trusted default-branch scripts for native comment
 creation/edits, formal review updates, and completion of a PR-linked gate.
+Comment deletion is an explicit invalidation signal even though the deleted
+comment cannot be recovered from the comments API. The router rechecks HEAD
+and the run attempt, cancels an active gate, waits for cancellation, then
+requeues it once. This prevents deletion from racing the gate's final read.
+Cancellation waiting is bounded; if it remains pending, the wakeup fails and
+the cancelled check cannot permit merge. A later native receipt can recover.
 Every trusted connector comment edit is eligible, even when its new body no
 longer contains a recognized marker. Persisted comment update times also keep
 withdrawn receipts visible to the completion wakeup; only the gate parser can
