@@ -1,0 +1,11 @@
+# Tasks
+
+- [x] Reproduce the receipt prefix regression on current origin/main.
+- [x] Implement receipt parsing, edited-comment retrieval, and HEAD guards.
+- [x] Preserve unresolved finding and severity enforcement.
+- [x] Add trusted native-event wakeup and bounded requeue.
+- [x] Add actual gate, workflow-filter, and runtime-router regression coverage.
+- [x] Complete local preflight with locked dependencies (70 tests).
+- [ ] Obtain native reviews for the final HEAD.
+- [ ] Verify required gates, resolved threads, and the stable 120-second window.
+- [ ] Merge and confirm trusted-main deployment of the new gate.

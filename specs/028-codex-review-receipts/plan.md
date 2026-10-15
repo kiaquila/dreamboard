@@ -1,0 +1,21 @@
+# Implementation plan
+
+1. Parse the known receipt envelope and exact positive result, requiring a
+   matching 10-40 character SHA. Keep unbound legacy replies behind timeline
+   activation and request boundaries.
+2. Fetch edited issue comments separately, inspect unresolved Codex threads,
+   and recheck the live full HEAD before publishing success.
+3. Add a trusted default-branch wakeup workflow and runtime router for native
+   comments, formal reviews, and gate completion. Serialize wakeups and allow
+   at most one follow-up attempt for evidence newer than that attempt's start.
+4. Exercise the actual gate with mocked GitHub responses, plus workflow and
+   router behavior. Run the repository preflight.
+5. Request native Codex review as the authenticated owner for every new HEAD.
+   For initial rollout, first try the existing formal-review path. If Codex
+   emits only the new receipt, use the already-supported Gemini fallback with
+   a real native Gemini review and the unchanged trusted-main required gate,
+   while retaining native Codex review of the same exact HEAD. Restore the
+   Codex policy after merge. Never execute PR gate scripts with elevated
+   credentials, manufacture a check, or bypass branch protection.
+6. Verify all required checks and threads, wait a full stable 120 seconds,
+   merge with the expected HEAD, then verify the merged default-branch gate.

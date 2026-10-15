@@ -1,0 +1,140 @@
+#!/usr/bin/env node
+
+import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+import {
+  isCodexWakeupComment,
+  codexReviewerLogins,
+  codexCommentTimestamp,
+} from "./ai-review-helpers.mjs";
+
+export const routesCodexWakeup = (eventName, event) => {
+  if (eventName === "issue_comment") {
+    return (
+      ["created", "edited"].includes(event.action) &&
+      Boolean(event.issue?.pull_request) &&
+      isCodexWakeupComment(event.comment)
+    );
+  }
+  if (eventName === "pull_request_review") {
+    return (
+      ["submitted", "edited", "dismissed"].includes(event.action) &&
+      codexReviewerLogins.has(event.review?.user?.login)
+    );
+  }
+  return (
+    eventName === "workflow_run" &&
+    event.action === "completed" &&
+    event.workflow_run?.name === "AI Review" &&
+    event.workflow_run?.event === "pull_request"
+  );
+};
+
+export const wakeCodexGate = async ({
+  eventName,
+  event,
+  api,
+  selectedAgent = "codex",
+}) => {
+  if (selectedAgent !== "codex" || !routesCodexWakeup(eventName, event))
+    return "ignored";
+  const number =
+    event.issue?.number ||
+    event.pull_request?.number ||
+    event.workflow_run?.pull_requests?.[0]?.number;
+  if (!number) return "no-pr";
+  const pull = await api(`/pulls/${number}`);
+  if (pull.state !== "open" || pull.draft) return "closed-or-draft";
+  const head = pull.head.sha;
+  if (eventName === "pull_request_review" && event.review.commit_id !== head)
+    return "stale-review";
+  if (eventName === "workflow_run" && event.workflow_run.head_sha !== head)
+    return "stale-run";
+  const runs = (
+    await api(
+      `/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=${head}&per_page=100`,
+    )
+  ).workflow_runs;
+  const run = runs
+    .filter(
+      (entry) =>
+        entry.head_sha === head &&
+        entry.event === "pull_request" &&
+        entry.pull_requests?.some((pr) => pr.number === number),
+    )
+    .sort((a, b) => b.id - a.id)[0];
+  // The active gate polls. Its completion event closes the finish/reply race.
+  if (!run || run.status !== "completed") return "active-or-missing";
+  const comments = await api(`/issues/${number}/comments?per_page=100`, {
+    paginate: true,
+  });
+  const reviews = await api(`/pulls/${number}/reviews?per_page=100`, {
+    paginate: true,
+  });
+  const newestSignal = Math.max(
+    0,
+    ...comments.filter(isCodexWakeupComment).map(codexCommentTimestamp),
+    ...reviews
+      .filter(
+        (review) =>
+          review.commit_id === head &&
+          codexReviewerLogins.has(review.user?.login),
+      )
+      .map((review) => Date.parse(review.submitted_at) || 0),
+  );
+  // At most one follow-up attempt per new evidence timestamp, including when
+  // evidence arrives just as the old gate completes. Reruns start after it.
+  if (newestSignal <= Date.parse(run.run_started_at || run.created_at))
+    return "already-evaluated";
+  const currentPull = await api(`/pulls/${number}`);
+  const currentRun = await api(`/actions/runs/${run.id}`);
+  if (
+    currentPull.head.sha !== head ||
+    currentPull.state !== "open" ||
+    currentRun.status !== "completed" ||
+    currentRun.run_attempt !== run.run_attempt
+  )
+    return "changed";
+  await api(`/actions/runs/${run.id}/rerun`, { method: "POST" });
+  return `rerun:${run.id}`;
+};
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  const repository = process.env.GITHUB_REPOSITORY;
+  const token = process.env.GITHUB_TOKEN;
+  if (!repository || !token)
+    throw new Error("GitHub repository and token are required.");
+  const api = async (path, { method = "GET", paginate = false } = {}) => {
+    let url = `https://api.github.com/repos/${repository}${path}`;
+    const items = [];
+    do {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      if (!response.ok)
+        throw new Error(`${method} ${path}: ${response.status}`);
+      if (response.status === 204 || method === "POST") return null;
+      const data = await response.json();
+      if (!paginate) return data;
+      items.push(...data);
+      url = response.headers.get("link")?.match(/<([^>]+)>;\s*rel="next"/)?.[1];
+    } while (url);
+    return items;
+  };
+  console.log(
+    await wakeCodexGate({
+      eventName: process.env.GITHUB_EVENT_NAME,
+      event: JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8")),
+      selectedAgent: process.env.AI_REVIEW_AGENT || "codex",
+      api,
+    }),
+  );
+}

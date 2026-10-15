@@ -6,9 +6,9 @@ const reviewerBotLogins = new Set([
 
 export const codexReviewerLogins = new Set(["chatgpt-codex-connector[bot]"]);
 
+const receiptMarker = "<!-- codex-review-receipt:v1 -->";
+const summaryMarker = "<!-- codex-pull-request-review-summary -->";
 const codexSummaryPrefix = /^Codex Review:/i;
-const codexNoIssuesPattern =
-  /did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues/i;
 const codexEnvironmentPattern = /create an environment for this repo/i;
 const codexAccountPattern = /create a codex account and connect to github/i;
 const codexTriggerPattern = /@codex review\b/i;
@@ -37,8 +37,18 @@ export const matchesCodexReview = (review, headSha) =>
   codexReviewerLogins.has(review?.user?.login || "") &&
   (review?.body || "").includes("Codex Review");
 
+// Structured summaries are wakeup signals only, never positive evidence.
+export const isCodexWakeupComment = (comment) =>
+  isCodexBotComment(comment) &&
+  (getBody(comment).startsWith(receiptMarker) ||
+    getBody(comment).startsWith(summaryMarker) ||
+    codexSummaryPrefix.test(getBody(comment)) ||
+    Boolean(classifyCodexSetupReply(comment)));
+
 export const matchesCodexSummaryComment = (comment) =>
-  isCodexBotComment(comment) && codexSummaryPrefix.test(getBody(comment));
+  isCodexBotComment(comment) &&
+  (codexSummaryPrefix.test(getBody(comment)) ||
+    getBody(comment).startsWith(receiptMarker));
 
 export const classifyCodexSetupReply = (comment) => {
   const body = getBody(comment);
@@ -64,24 +74,67 @@ export const classifyCodexSetupReply = (comment) => {
   return null;
 };
 
-export const classifyCodexSummaryComment = (comment) => {
-  const body = getBody(comment);
-
-  if (codexNoIssuesPattern.test(body)) {
-    return {
-      outcome: "pass",
-      reason: "Codex completed review with no major issues.",
-      details: [comment.html_url],
-    };
-  }
-
-  return {
+export const classifyCodexSummaryComment = (
+  comment,
+  headSha,
+  { allowUnboundLegacy = false } = {},
+) => {
+  const pending = {
     outcome: "pending",
     reason:
-      "Codex summary comment did not match a recognized no-findings reply.",
+      "Codex comment lacks unambiguous current-head no-findings evidence.",
+    details: [comment?.html_url],
+  };
+  if (!matchesCodexSummaryComment(comment)) return pending;
+  let body = getBody(comment);
+  const receipt = body.startsWith(receiptMarker);
+  const receiptMentions = body.match(/codex-review-receipt/g) || [];
+  if (receiptMentions.length !== (receipt ? 1 : 0)) return pending;
+  if (receipt) body = body.slice(receiptMarker.length).trim();
+
+  // Only the known optional GitHub help footer may follow the result.
+  const footer = body.indexOf("<details>");
+  if (footer >= 0) {
+    const help = body.slice(footer);
+    if (
+      !/^<details>\s*<summary>(?:[ℹ💡]\ufe0f?\s*)?About Codex in GitHub<\/summary>[\s\S]*<\/details>$/.test(
+        help,
+      ) ||
+      (help.match(/<details>/g) || []).length !== 1
+    )
+      return pending;
+    body = body.slice(0, footer).trim();
+  }
+  const lines = body.split(/\r?\n/).filter((line) => line.trim());
+  if (
+    !/^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s*(?:Nice work!|Keep it up!|:[a-z_]+:|🚀|🎉))*$/i.test(
+      lines[0] || "",
+    )
+  )
+    return pending;
+
+  const shaLine = lines[1]?.match(
+    /^\*\*Reviewed commit:\*\* `([a-f0-9]{10,40})`$/,
+  );
+  if (lines.length > (shaLine ? 2 : 1)) return pending;
+  if (shaLine) {
+    if (
+      !/^[a-f0-9]{40}$/.test(headSha || "") ||
+      !headSha.startsWith(shaLine[1])
+    )
+      return pending;
+  } else if (receipt || !allowUnboundLegacy) {
+    return pending;
+  }
+  return {
+    outcome: "pass",
+    reason: "Codex completed review with no major issues.",
     details: [comment.html_url],
   };
 };
+
+export const codexCommentTimestamp = (comment) =>
+  Date.parse(comment.updated_at || comment.created_at || "") || 0;
 
 export const findLatestHeadActivationIndex = (timelineEvents, headSha) => {
   if (!Array.isArray(timelineEvents) || !headSha) {
@@ -100,6 +153,7 @@ export const findLatestHeadActivationIndex = (timelineEvents, headSha) => {
 export const pickAuthoritativeCodexSkipModeComment = ({
   timelineEvents,
   headSha,
+  issueComments = [],
 }) => {
   if (
     !Array.isArray(timelineEvents) ||
@@ -128,10 +182,20 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     }
   }
 
+  const boundComments = [...timelineEvents, ...issueComments]
+    .filter((entry) => matchesCodexSummaryComment(entry))
+    .filter((entry) => /\*\*Reviewed commit:\*\*/.test(getBody(entry)))
+    .filter((entry) => getBody(entry).includes(headSha.slice(0, 10)));
+  const timelineComments = timelineEvents
+    .slice(boundaryIndex + 1)
+    .filter(
+      (entry) =>
+        isCodexBotComment(entry) &&
+        (matchesCodexSummaryComment(entry) || classifyCodexSetupReply(entry)),
+    );
   const latestCodexComment =
-    timelineEvents
-      .slice(boundaryIndex + 1)
-      .filter((entry) => isCodexBotComment(entry))
+    [...timelineComments, ...boundComments]
+      .sort((a, b) => codexCommentTimestamp(a) - codexCommentTimestamp(b))
       .at(-1) || null;
 
   if (!latestCodexComment) {
@@ -153,7 +217,11 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     return null;
   }
 
-  const summaryClassification = classifyCodexSummaryComment(latestCodexComment);
+  const summaryClassification = classifyCodexSummaryComment(
+    latestCodexComment,
+    headSha,
+    { allowUnboundLegacy: true },
+  );
   if (summaryClassification.outcome === "pending") {
     return null;
   }

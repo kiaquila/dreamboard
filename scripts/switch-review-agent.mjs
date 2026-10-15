@@ -75,6 +75,12 @@ if (!options.pr) {
   options.pr = String(JSON.parse(json).number);
 }
 
+const prSnapshot = JSON.parse(
+  run("gh", ["pr", "view", options.pr, "--json", "headRefOid", ...repoArgs]),
+);
+const requestedHead = prSnapshot.headRefOid;
+if (options.to === "codex") triggerBodies.codex += ` ${requestedHead}`;
+
 // Step 1: flip the AI_REVIEW_AGENT repository variable.
 run("gh", [
   "variable",
@@ -112,6 +118,10 @@ if (options.rerun) {
     ...repoArgs,
   ]);
   const headSha = JSON.parse(prJson).headRefOid;
+  if (headSha !== requestedHead)
+    throw new Error(
+      "PR head changed after the review request; refusing stale requeue.",
+    );
 
   const runsJson = run("gh", [
     "run",
@@ -135,10 +145,15 @@ if (options.rerun) {
     "startup_failure",
     "action_required",
   ]);
-  const target = runs.find(
-    (entry) =>
-      entry.headSha === headSha && rerunableConclusions.has(entry.conclusion),
-  );
+  const target = runs.some(
+    (entry) => entry.headSha === headSha && !entry.conclusion,
+  )
+    ? null
+    : runs.find(
+        (entry) =>
+          entry.headSha === headSha &&
+          rerunableConclusions.has(entry.conclusion),
+      );
 
   if (target) {
     // `gh run rerun --failed` only reruns jobs whose conclusion is

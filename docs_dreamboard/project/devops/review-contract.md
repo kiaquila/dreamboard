@@ -67,3 +67,37 @@ For `dreamboard`, reviewers should prioritize:
 - English-only copy regressions
 - build/deploy safety
 - maintainability risks in the static app
+
+## Native Codex receipts and wakeups
+
+The trusted gate accepts legacy `Codex Review:` replies and the native
+`<!-- codex-review-receipt:v1 -->` envelope from
+`chatgpt-codex-connector[bot]`. Receipts require an explicit no-major-issues
+result and a reviewed commit of 10-40 hex characters matching the current full
+HEAD; abbreviated commits must also resolve through GitHub to that full SHA.
+Unbound legacy replies require current-head timeline activation and
+request ordering. Duplicate markers, conflicting content, malformed commits,
+and unfinished replies cannot pass.
+
+The connector's `codex-pull-request-review-summary` / `codex-review-state:v1`
+comments are wakeup signals only, regardless of their JSON verdict or labels.
+They never replace a receipt or formal review. Updated issue comments are read
+independently of timeline position. All unresolved Codex threads are checked
+before success; P0-P2 and untagged findings still block, including older commits.
+P3 remains advisory. The gate rejects stale event HEADs and rechecks live HEAD
+before success.
+
+`AI Review Wakeup` runs trusted default-branch scripts for native comment
+creation/edits, formal review updates, and completion of a PR-linked gate.
+Active gates keep polling. A completed gate can be rerun once for evidence
+newer than its attempt's start, covering the finish/reply race; the next attempt
+starts after that evidence and cannot loop. Wakeups are serialized and recheck
+HEAD and run attempt before rerunning. Summary presence and reactions do not
+produce success.
+
+When introducing changes to the gate itself, the PR still executes the old
+trusted-main scripts. Obtain real native Codex review for the exact HEAD. If
+its format is unsupported by main, the existing Gemini fallback can provide
+the required `AI Review` through an independent native review of the same HEAD.
+Restore Codex selection after merge and validate the new trusted-main parser.
+Do not switch checkout to PR code, fabricate a status, or bypass protection.
