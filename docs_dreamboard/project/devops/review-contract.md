@@ -83,8 +83,11 @@ and unfinished replies cannot pass.
 Receipt-like responses with unknown versions still wake and invalidate the
 gate. Their envelope is never accepted as positive proof, and a newer unknown
 receipt cannot leave older positive evidence authoritative, even without
-timeline access or a parseable binding. Equal-second new comments use proven
-timeline creation order. When edits make that order unprovable, nonpassing
+timeline access or a parseable binding.
+Supported receipts for another commit also supersede older positive receipts;
+binding controls eligibility to pass, not eligibility to invalidate old proof.
+Equal-second new comments use proven timeline creation order. When edits make
+that order unprovable, nonpassing
 evidence takes precedence until a later valid receipt arrives.
 
 The connector's `codex-pull-request-review-summary` / `codex-review-state:v1`

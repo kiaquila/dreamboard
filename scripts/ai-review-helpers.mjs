@@ -170,17 +170,13 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     .filter((entry) => matchesCodexSummaryComment(entry))
     .filter((entry) => /\*\*Reviewed commit:\*\*/.test(getBody(entry)))
     .filter((entry) => getBody(entry).includes(headSha.slice(0, 10)));
-  // Unknown envelopes and receipts without a parseable binding must not let
-  // older positive evidence survive. They are candidates, never proof.
-  const unknownReceipts = [...events, ...issueComments].filter((entry) => {
-    const body = getBody(entry);
-    return (
+  // Binding is required to pass, never to supersede old evidence. Include all
+  // receipt-like responses, including supported receipts for another commit.
+  const receiptComments = [...events, ...issueComments].filter(
+    (entry) =>
       isCodexBotComment(entry) &&
-      body.includes("codex-review-receipt") &&
-      (!body.startsWith(receiptMarker) ||
-        !/^\*\*Reviewed commit:\*\* `[a-f0-9]{10,40}`$/m.test(body))
-    );
-  });
+      getBody(entry).includes("codex-review-receipt"),
+  );
   const timelineComments = events
     .slice(activationIndex >= 0 ? boundaryIndex + 1 : events.length)
     .filter(
@@ -191,7 +187,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   const candidates = [
     ...timelineComments,
     ...boundComments,
-    ...unknownReceipts,
+    ...receiptComments,
   ];
   const latestTimestamp = Math.max(0, ...candidates.map(codexCommentTimestamp));
   const tied = candidates.filter(

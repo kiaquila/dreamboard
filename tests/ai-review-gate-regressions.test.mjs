@@ -457,3 +457,22 @@ test("mixed same-second edits and new comments cannot depend on API ordering", (
     assert.notEqual(result.status, 0, result.stdout);
   }
 });
+
+for (const unavailable of [false, true]) {
+  for (const length of [10, 40]) {
+    test(`a newer wrong-head ${length}-character receipt supersedes old success with ${unavailable ? "failed" : "empty"} timeline`, () => {
+      const result = runGate({
+        timeline: [],
+        timelineUnavailable: unavailable,
+        comments: [
+          comment(receipt),
+          comment(receipt.replace(head.slice(0, 10), "a".repeat(length)), {
+            id: 2,
+            created_at: "2026-10-15T12:02:00Z",
+          }),
+        ],
+      });
+      assert.notEqual(result.status, 0, result.stdout);
+    });
+  }
+}
