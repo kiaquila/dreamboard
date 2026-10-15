@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { readReviewUpdates } from "./codex-review-updates.mjs";
 import {
+  classifyCodexSummaryComment,
   isCodexWakeupComment,
   codexReviewerLogins,
   codexCommentTimestamp,
@@ -67,12 +68,25 @@ export const wakeCodexGate = async ({
     )
     .sort((a, b) => b.id - a.id)[0];
   if (!run) return "active-or-missing";
-  const deletingEvidence =
-    eventName === "issue_comment" && event.action === "deleted";
-  if (deletingEvidence) {
-    // Deleted evidence has no persisted comment timestamp. The authenticated
-    // deletion webhook itself invalidates the old result. Cancel an active
-    // attempt before rerunning so deletion cannot race its final evidence read.
+  const isPositive = (body) =>
+    classifyCodexSummaryComment({ ...event.comment, body }, head, {
+      allowUnboundLegacy: true,
+    }).outcome === "pass";
+  const summaryOnlyEdit =
+    event.comment?.body?.includes(
+      "<!-- codex-pull-request-review-summary -->",
+    ) && !isPositive(event.changes?.body?.from || "");
+  const invalidatingEvidence =
+    eventName === "pull_request_review" ||
+    (eventName === "issue_comment" &&
+      (event.action === "deleted" ||
+        (event.action === "edited" &&
+          !summaryOnlyEdit &&
+          !isPositive(event.comment.body))));
+  if (invalidatingEvidence) {
+    // A trusted invalidation webhook is evidence even if persisted timestamps
+    // tie the gate start or the comment has disappeared. Cancel an active
+    // attempt so a withdrawal cannot race its final evidence read and exit.
     const currentPull = await api(`/pulls/${number}`);
     let currentRun = await api(`/actions/runs/${run.id}`);
     if (
@@ -96,7 +110,7 @@ export const wakeCodexGate = async ({
       }
       if (currentRun.status !== "completed")
         throw new Error(
-          "Gate cancellation is still pending after evidence deletion.",
+          "Gate cancellation is still pending after evidence invalidation.",
         );
     }
     const finalPull = await api(`/pulls/${number}`);

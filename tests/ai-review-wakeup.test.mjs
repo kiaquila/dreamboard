@@ -184,16 +184,30 @@ for (const body of ["", "Review withdrawn."]) {
       status: "completed",
       run_started_at: "2026-10-15T12:02:00Z",
     };
-    assert.equal(await wake(payload), "already-evaluated");
+    assert.equal(
+      await wake(
+        {
+          action: "completed",
+          workflow_run: { ...state.run, name: "AI Review" },
+        },
+        "workflow_run",
+      ),
+      "already-evaluated",
+    );
     assert.equal(state.reruns, 1);
   });
 }
 
-test("receipt withdrawal during an active gate remains visible at completion", async () => {
+test("receipt withdrawal cancels an active gate before it can publish stale success", async () => {
   const { state, wake } = harness({ comments: [nativeComment("")] });
   state.run.status = "in_progress";
-  assert.equal(await wake(event("", "edited")), "active-or-missing");
-  state.run.status = "completed";
+  assert.equal(await wake(event("", "edited")), "rerun:5");
+  assert.equal(state.cancels, 1);
+  state.run = {
+    ...state.run,
+    status: "completed",
+    run_started_at: "2026-10-15T12:02:00Z",
+  };
   assert.equal(
     await wake(
       {
@@ -202,7 +216,7 @@ test("receipt withdrawal during an active gate remains visible at completion", a
       },
       "workflow_run",
     ),
-    "rerun:5",
+    "already-evaluated",
   );
   assert.equal(state.reruns, 1);
 });
@@ -214,6 +228,55 @@ test("untrusted edits cannot wake the gate even when evidence is withdrawn", asy
   assert.equal(Boolean(workflowAccepts(payload)), false);
   assert.equal(await wake(payload), "ignored");
   assert.equal(state.reruns, 0);
+});
+
+for (const body of [
+  "",
+  receipt.replace("Didn't find any major issues.", "Found major issues."),
+]) {
+  test(`same-second withdrawal ${JSON.stringify(body.slice(0, 35))} invalidates a completed gate`, async () => {
+    const { state, wake } = harness();
+    const payload = event(body, "edited");
+    payload.comment.updated_at = state.run.run_started_at;
+    assert.equal(await wake(payload), "rerun:5");
+    assert.equal(state.reruns, 1);
+  });
+}
+
+test("positive receipt edits keep active polling", async () => {
+  const { state, wake } = harness();
+  state.run.status = "in_progress";
+  assert.equal(await wake(event(receipt, "edited")), "active-or-missing");
+  assert.equal(state.cancels, 0);
+});
+
+test("replacing a receipt with a summary still withdraws its evidence", async () => {
+  const { state, wake } = harness();
+  state.run.status = "in_progress";
+  const payload = event(summary, "edited");
+  payload.changes = { body: { from: receipt } };
+  assert.equal(await wake(payload), "rerun:5");
+  assert.equal(state.cancels, 1);
+});
+
+test("new formal reviews cancel an active gate before publishing their outcome", async () => {
+  const { state, wake } = harness();
+  state.run.status = "in_progress";
+  assert.equal(
+    await wake(
+      {
+        action: "submitted",
+        pull_request: { number: 1 },
+        review: {
+          commit_id: head,
+          user: { login: "chatgpt-codex-connector[bot]" },
+        },
+      },
+      "pull_request_review",
+    ),
+    "rerun:5",
+  );
+  assert.equal(state.cancels, 1);
 });
 
 test("receipt deletion invalidates a completed gate without a persisted timestamp", async () => {
@@ -363,7 +426,7 @@ for (const action of ["edited", "dismissed"]) {
   });
 }
 
-test("dismissal during an active gate is still visible at gate completion", async () => {
+test("dismissal cancels an active gate before it can publish stale success", async () => {
   const review = {
     id: 7,
     node_id: "review-node",
@@ -378,9 +441,14 @@ test("dismissal during an active gate is still visible at gate completion", asyn
       { action: "dismissed", pull_request: { number: 1 }, review },
       "pull_request_review",
     ),
-    "active-or-missing",
+    "rerun:5",
   );
-  state.run.status = "completed";
+  assert.equal(state.cancels, 1);
+  state.run = {
+    ...state.run,
+    status: "completed",
+    run_started_at: "2026-10-15T12:02:00Z",
+  };
   assert.equal(
     await wake(
       {
@@ -389,6 +457,6 @@ test("dismissal during an active gate is still visible at gate completion", asyn
       },
       "workflow_run",
     ),
-    "rerun:5",
+    "already-evaluated",
   );
 });

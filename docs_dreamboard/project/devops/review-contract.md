@@ -91,17 +91,21 @@ before success.
 
 `AI Review Wakeup` runs trusted default-branch scripts for native comment
 creation/edits, formal review updates, and completion of a PR-linked gate.
-Comment deletion is an explicit invalidation signal even though the deleted
-comment cannot be recovered from the comments API. The router rechecks HEAD
-and the run attempt, cancels an active gate, waits for cancellation, then
-requeues it once. This prevents deletion from racing the gate's final read.
+Comment deletion, receipt withdrawals, and formal review updates explicitly
+invalidate the old result. Deleted comments cannot be recovered from API scans,
+and a withdrawal timestamp may tie the gate's start. The trusted webhook itself
+therefore forces one reevaluation per delivery. The router rechecks HEAD and
+the run attempt, cancels an active gate, waits for cancellation, then requeues
+it once. This prevents invalidations from racing the gate's final read and exit.
+Completion events do not replay these invalidations.
 Cancellation waiting is bounded; if it remains pending, the wakeup fails and
 the cancelled check cannot permit merge. A later native receipt can recover.
 Every trusted connector comment edit is eligible, even when its new body no
 longer contains a recognized marker. Persisted comment update times also keep
 withdrawn receipts visible to the completion wakeup; only the gate parser can
 decide whether the current body still provides valid evidence.
-Active gates keep polling. A completed gate can be rerun once for evidence
+For new positive receipts and summary-only updates, active gates keep polling.
+A completed gate can be rerun once for evidence
 newer than its attempt's start, covering the finish/reply race; the next attempt
 starts after that evidence and cannot loop. Wakeups are serialized and recheck
 HEAD and run attempt before rerunning. Persisted GraphQL review `updatedAt`
