@@ -36,6 +36,7 @@ const workflowAccepts = (payload, eventName = "issue_comment") =>
 
 for (const body of [
   receipt,
+  receipt.replace(":v1", ":v2"),
   summary,
   "Codex Review: Didn't find any major issues.",
 ]) {
@@ -261,6 +262,7 @@ test("positive receipt edits keep active polling", async () => {
 for (const body of [
   "Create a Codex account and connect to GitHub.",
   receipt.replace(head.slice(0, 10), "bad-sha"),
+  receipt.replace(":v1", ":v2"),
 ]) {
   for (const status of ["completed", "in_progress"]) {
     test(`new nonpassing comment ${body.slice(0, 25)} invalidates a ${status} gate at the same second`, async () => {

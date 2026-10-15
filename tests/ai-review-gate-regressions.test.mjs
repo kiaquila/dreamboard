@@ -375,3 +375,85 @@ for (const options of [
     assert.notEqual(result.status, 0, result.stdout);
   });
 }
+
+for (const binding of [true, false]) {
+  test(`unknown receipt ${binding ? "with" : "without"} binding supersedes an older positive during timeline outage`, () => {
+    const unknown = receipt.replace(":v1", ":v2");
+    const result = runGate({
+      timelineUnavailable: true,
+      comments: [
+        comment(receipt),
+        comment(binding ? unknown : unknown.split("\n\n**Reviewed")[0], {
+          id: 2,
+          created_at: "2026-10-15T12:02:00Z",
+        }),
+      ],
+    });
+    assert.notEqual(result.status, 0, result.stdout);
+  });
+}
+
+test("an unknown old edit tied with a positive receipt cannot reuse stale success", () => {
+  const unknown = comment(receipt.replace(":v1", ":v2"), {
+    updated_at: "2026-10-15T12:02:00Z",
+    event: "commented",
+  });
+  const fresh = comment(receipt, {
+    id: 2,
+    created_at: "2026-10-15T12:02:00Z",
+    event: "commented",
+  });
+  const result = runGate({
+    comments: [unknown, fresh],
+    timeline: [activation, unknown, fresh],
+  });
+  assert.notEqual(result.status, 0, result.stdout);
+});
+
+test("a new positive receipt after an unknown reply in the same second follows proven creation order", () => {
+  const unknown = comment(receipt.replace(":v1", ":v2"), {
+    created_at: "2026-10-15T12:02:00Z",
+    event: "commented",
+  });
+  const fresh = comment(receipt, {
+    id: 2,
+    created_at: "2026-10-15T12:02:00Z",
+    event: "commented",
+  });
+  const result = runGate({
+    comments: [unknown, fresh],
+    timeline: [activation, unknown, fresh],
+  });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("mixed same-second edits and new comments cannot depend on API ordering", () => {
+  const edited = comment(receipt.replace(":v1", ":v2"), {
+    id: 3,
+    updated_at: "2026-10-15T12:02:00Z",
+    event: "commented",
+  });
+  const unknown = comment(receipt.replace(":v1", ":v2"), {
+    created_at: "2026-10-15T12:02:00Z",
+    event: "commented",
+  });
+  const positive = comment(receipt, {
+    id: 2,
+    created_at: "2026-10-15T12:02:00Z",
+    event: "commented",
+  });
+  for (const comments of [
+    [edited, unknown, positive],
+    [edited, positive, unknown],
+    [unknown, edited, positive],
+    [unknown, positive, edited],
+    [positive, edited, unknown],
+    [positive, unknown, edited],
+  ]) {
+    const result = runGate({
+      comments,
+      timeline: [activation, edited, unknown, positive],
+    });
+    assert.notEqual(result.status, 0, result.stdout);
+  }
+});

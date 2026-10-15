@@ -40,7 +40,7 @@ export const matchesCodexReview = (review, headSha) =>
 // Structured summaries are wakeup signals only, never positive evidence.
 export const isCodexWakeupComment = (comment) =>
   isCodexBotComment(comment) &&
-  (getBody(comment).startsWith(receiptMarker) ||
+  (getBody(comment).includes("codex-review-receipt") ||
     getBody(comment).startsWith(summaryMarker) ||
     codexSummaryPrefix.test(getBody(comment)) ||
     Boolean(classifyCodexSetupReply(comment)));
@@ -48,7 +48,7 @@ export const isCodexWakeupComment = (comment) =>
 export const matchesCodexSummaryComment = (comment) =>
   isCodexBotComment(comment) &&
   (codexSummaryPrefix.test(getBody(comment)) ||
-    getBody(comment).startsWith(receiptMarker));
+    getBody(comment).includes("codex-review-receipt"));
 
 export const classifyCodexSetupReply = (comment) => {
   const body = getBody(comment);
@@ -170,6 +170,17 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     .filter((entry) => matchesCodexSummaryComment(entry))
     .filter((entry) => /\*\*Reviewed commit:\*\*/.test(getBody(entry)))
     .filter((entry) => getBody(entry).includes(headSha.slice(0, 10)));
+  // Unknown envelopes and receipts without a parseable binding must not let
+  // older positive evidence survive. They are candidates, never proof.
+  const unknownReceipts = [...events, ...issueComments].filter((entry) => {
+    const body = getBody(entry);
+    return (
+      isCodexBotComment(entry) &&
+      body.includes("codex-review-receipt") &&
+      (!body.startsWith(receiptMarker) ||
+        !/^\*\*Reviewed commit:\*\* `[a-f0-9]{10,40}`$/m.test(body))
+    );
+  });
   const timelineComments = events
     .slice(activationIndex >= 0 ? boundaryIndex + 1 : events.length)
     .filter(
@@ -177,10 +188,35 @@ export const pickAuthoritativeCodexSkipModeComment = ({
         isCodexBotComment(entry) &&
         (matchesCodexSummaryComment(entry) || classifyCodexSetupReply(entry)),
     );
+  const candidates = [
+    ...timelineComments,
+    ...boundComments,
+    ...unknownReceipts,
+  ];
+  const latestTimestamp = Math.max(0, ...candidates.map(codexCommentTimestamp));
+  const tied = candidates.filter(
+    (entry) => codexCommentTimestamp(entry) === latestTimestamp,
+  );
+  const position = (entry) =>
+    events.findLastIndex(
+      (event) => event.event === "commented" && event.id === entry.id,
+    );
+  const canOrder = tied.every(
+    (entry) =>
+      codexCommentTimestamp(entry) === Date.parse(entry.created_at) &&
+      position(entry) >= 0,
+  );
+  // Creation order cannot prove edit order. Resolve the whole timestamp group
+  // conservatively, so the result is independent of API order and duplicates.
   const latestCodexComment =
-    [...timelineComments, ...boundComments]
-      .sort((a, b) => codexCommentTimestamp(a) - codexCommentTimestamp(b))
-      .at(-1) || null;
+    (canOrder
+      ? tied.sort((a, b) => position(a) - position(b)).at(-1)
+      : tied.find(
+          (entry) =>
+            classifyCodexSummaryComment(entry, headSha, {
+              allowUnboundLegacy: true,
+            }).outcome !== "pass",
+        ) || tied.at(-1)) || null;
 
   if (!latestCodexComment) {
     return null;

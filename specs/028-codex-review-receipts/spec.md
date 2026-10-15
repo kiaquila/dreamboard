@@ -9,6 +9,8 @@ support. Reject malformed, contradictory, unfinished, spoofed, and stale
 receipts. Structured summaries, reactions, and completion labels are wakeup
 signals only. Preserve P0-P2 blocking and P3 advisory policy, including
 unresolved findings from earlier commits. A request marker cannot clear findings.
+Unknown receipt-like responses must still wake reevaluation and supersede older
+positive evidence. An unprovable timestamp tie must not prefer positive proof.
 
 Comment creation and edits must wake completed gates without interrupting
 active polling, looping reruns, or evaluating a new push under an old check.

@@ -80,6 +80,12 @@ request ordering. SHA-bound receipts remain usable during timeline outages;
 only legacy binding and equal-second dismissal ordering require the timeline.
 Duplicate markers, conflicting content, malformed commits,
 and unfinished replies cannot pass.
+Receipt-like responses with unknown versions still wake and invalidate the
+gate. Their envelope is never accepted as positive proof, and a newer unknown
+receipt cannot leave older positive evidence authoritative, even without
+timeline access or a parseable binding. Equal-second new comments use proven
+timeline creation order. When edits make that order unprovable, nonpassing
+evidence takes precedence until a later valid receipt arrives.
 
 The connector's `codex-pull-request-review-summary` / `codex-review-state:v1`
 comments are wakeup signals only, regardless of their JSON verdict or labels.
