@@ -89,6 +89,13 @@ binding controls eligibility to pass, not eligibility to invalidate old proof.
 Equal-second new comments use proven timeline creation order. When edits make
 that order unprovable, nonpassing
 evidence takes precedence until a later valid receipt arrives.
+Persisted setup failures and withdrawn connector replies also invalidate older
+proof during timeline outages. Both issue comments and formal reviews are read
+before success. Formal reviews use persisted update times, including edits that
+remove their recognized body. A newer nonpassing comment supersedes an older
+formal pass; an ambiguous timestamp tie cannot prefer success. A later valid
+formal review or receipt can recover, while blocking formal findings remain
+blocking and unresolved threads are still checked.
 
 The connector's `codex-pull-request-review-summary` / `codex-review-state:v1`
 comments are wakeup signals only, regardless of their JSON verdict or labels.

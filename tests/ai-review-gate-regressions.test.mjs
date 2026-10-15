@@ -28,6 +28,11 @@ const runGate = (overrides = {}) => {
       head,
       comments: [comment(receipt)],
       timeline: [activation],
+      reviewUpdatedAt: overrides.reviews?.some(
+        (review) => review.state === "DISMISSED",
+      )
+        ? "2026-10-15T12:02:00Z"
+        : undefined,
       ...overrides,
     };
     writeFileSync(`${directory}/fixture.json`, JSON.stringify(fixture));
@@ -476,3 +481,109 @@ for (const unavailable of [false, true]) {
     });
   }
 }
+
+const formalReview = (extra = {}) => ({
+  id: 7,
+  node_id: "review-node",
+  commit_id: head,
+  body: "Codex Review",
+  state: "COMMENTED",
+  user: { login: bot },
+  submitted_at: "2026-10-15T12:00:00Z",
+  ...extra,
+});
+
+const setupFailures = [
+  "To use Codex here, create an environment for this repo.",
+  "Please create a Codex account and connect to GitHub to continue.",
+];
+for (const unavailable of [false, true]) {
+  for (const [index, body] of setupFailures.entries()) {
+    test(`persisted setup failure ${index + 1} supersedes receipt with ${unavailable ? "unavailable" : "empty"} timeline`, () => {
+      const result = runGate({
+        timeline: [],
+        timelineUnavailable: unavailable,
+        comments: [
+          comment(receipt),
+          comment(body, { id: 2, created_at: "2026-10-15T12:02:00Z" }),
+        ],
+      });
+      assert.notEqual(result.status, 0, result.stdout);
+      assert.match(result.stderr, /Codex could not start/);
+    });
+  }
+}
+
+for (const state of ["APPROVED", "COMMENTED"]) {
+  for (const [name, body] of [
+    ["unknown marker", receipt.replace(":v1", ":v2")],
+    ["wrong head", receipt.replace(head.slice(0, 10), "a".repeat(10))],
+    ["setup failure", setupFailures[0]],
+    ["withdrawal", ""],
+    ["unbound legacy without timeline", positive],
+  ]) {
+    test(`newer ${name} supersedes formal ${state}`, () => {
+      const result = runGate({
+        timelineUnavailable: true,
+        reviews: [formalReview({ state })],
+        comments: [comment(body, { updated_at: "2026-10-15T12:02:00Z" })],
+      });
+      assert.notEqual(result.status, 0, result.stdout);
+    });
+  }
+}
+
+test("a nonpassing comment tied with formal success cannot reuse that success", () => {
+  const result = runGate({
+    reviews: [formalReview()],
+    reviewUpdatedAt: "2026-10-15T12:02:00Z",
+    comments: [
+      comment(receipt.replace(":v1", ":v2"), {
+        updated_at: "2026-10-15T12:02:00Z",
+      }),
+    ],
+  });
+  assert.notEqual(result.status, 0, result.stdout);
+});
+
+test("a newer formal success recovers after an older nonpassing comment", () => {
+  const result = runGate({
+    reviews: [formalReview({ submitted_at: "2026-10-15T12:03:00Z" })],
+    comments: [comment(setupFailures[0])],
+  });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("a later positive receipt recovers after formal success and a failed reply", () => {
+  const result = runGate({
+    reviews: [formalReview()],
+    comments: [
+      comment(setupFailures[0]),
+      comment(receipt, { id: 2, created_at: "2026-10-15T12:03:00Z" }),
+    ],
+  });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("a newer formal withdrawal does not expose an older formal success or receipt", () => {
+  const result = runGate({
+    reviews: [
+      formalReview(),
+      formalReview({ id: 8, node_id: "withdrawn", body: "" }),
+    ],
+    reviewUpdates: {
+      "review-node": "2026-10-15T12:00:00Z",
+      withdrawn: "2026-10-15T12:03:00Z",
+    },
+  });
+  assert.notEqual(result.status, 0, result.stdout);
+});
+
+test("persisted formal edits order evidence independently of submission time", () => {
+  const result = runGate({
+    reviews: [formalReview()],
+    reviewUpdatedAt: "2026-10-15T12:03:00Z",
+    comments: [comment(setupFailures[0])],
+  });
+  assert.equal(result.status, 0, result.stderr);
+});

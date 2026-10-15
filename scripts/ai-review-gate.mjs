@@ -363,13 +363,6 @@ const reviewTimestamp = (r) => new Date(r.submitted_at || 0).getTime();
 const commentTimestamp = (c) =>
   new Date(c.updated_at || c.created_at || 0).getTime();
 
-const pickLatestCodexReview = (reviews) =>
-  pickLatest(
-    reviews,
-    (r) => r.submitted_at && matchesCodexReview(r, headSha),
-    reviewTimestamp,
-  );
-
 const pickLatestGeminiReview = (reviews) =>
   pickLatest(
     reviews,
@@ -381,7 +374,6 @@ const pickLatestClaudeComment = (comments) =>
   pickLatest(comments, matchesClaudeComment, commentTimestamp);
 
 // findLatestCurrentHead* had identical logic — aliases kept for call-site readability.
-const findLatestCurrentHeadCodexReview = pickLatestCodexReview;
 const findLatestCurrentHeadGeminiReview = pickLatestGeminiReview;
 const findLatestCurrentHeadClaudeComment = pickLatestClaudeComment;
 
@@ -393,18 +385,24 @@ const extractCodexPriority = (body) => {
 };
 
 const classifyCodexReview = async (review) => {
-  if (review.state === "APPROVED") {
-    return {
-      outcome: "pass",
-      reason: "Codex approved the PR with no blocking findings.",
-      details: [],
-    };
-  }
-
   if (review.state === "CHANGES_REQUESTED") {
     return {
       outcome: "fail",
       reason: "Codex requested changes on the PR.",
+      details: [],
+    };
+  }
+  if (!matchesCodexReview(review, headSha)) {
+    return {
+      outcome: "pending",
+      reason: "Codex formal review no longer contains recognized evidence.",
+      details: [],
+    };
+  }
+  if (review.state === "APPROVED") {
+    return {
+      outcome: "pass",
+      reason: "Codex approved the PR with no blocking findings.",
       details: [],
     };
   }
@@ -667,60 +665,43 @@ while (Date.now() < deadline) {
     const reviews = await listPaginated(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
-    const recentReviews = reviews.filter(
-      (review) => new Date(review.submitted_at || 0).getTime() >= triggerTime,
+    const nativeReviews = reviews.filter(
+      (review) =>
+        review.submitted_at &&
+        review.commit_id === headSha &&
+        codexReviewerLogins.has(review.user?.login),
     );
-    const candidateReviews = triggerMode === "skip" ? reviews : recentReviews;
-    const matchedReview =
-      pickLatestCodexReview(candidateReviews) ||
-      (triggerMode === "skip"
-        ? null
-        : findLatestCurrentHeadCodexReview(reviews));
-
-    if (matchedReview) {
-      const mapped = await classifyCodexReview(matchedReview);
-
-      if (mapped.outcome !== "pending") {
-        setOutput("review_agent", selectedAgent);
-        setOutput("review_state", matchedReview.state);
-        setOutput("review_url", matchedReview.html_url);
-        setOutput("review_id", matchedReview.id);
-
-        appendSummary([
-          "## AI Review Gate",
-          "",
-          `- Selected reviewer: \`${selectedAgent}\``,
-          `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
-          `- Matched review: ${matchedReview.html_url}`,
-          `- Review state: \`${matchedReview.state}\``,
-          `- Result: ${mapped.reason}`,
-          ...(mapped.details?.length
-            ? [`- Evidence: ${mapped.details.join(", ")}`]
-            : []),
-        ]);
-
-        if (mapped.outcome === "fail") {
-          throw new Error(mapped.reason);
-        }
-
-        console.log(mapped.reason);
-        await finishSuccessfully();
-      }
-    }
+    const reviewUpdates = await readReviewUpdates(
+      nativeReviews,
+      (path, options) =>
+        request(path, { ...options, body: JSON.stringify(options.body) }),
+    );
+    const latestReviewTime = Math.max(0, ...reviewUpdates.values());
+    const latestReviews = await Promise.all(
+      nativeReviews
+        .filter(
+          (review) => reviewUpdates.get(review.node_id) === latestReviewTime,
+        )
+        .map(async (review) => ({
+          review,
+          classification: await classifyCodexReview(review),
+        })),
+    );
+    // Updates may tie at GitHub's second resolution. Never choose a passing
+    // formal review over nonpassing evidence with an unprovable update order.
+    const formal =
+      latestReviews.find((entry) => entry.classification.outcome === "fail") ||
+      latestReviews.find(
+        (entry) => entry.classification.outcome === "pending",
+      ) ||
+      latestReviews[0];
+    const matchedReview = formal?.review;
+    const formalClassification = formal?.classification;
 
     const dismissalTime =
-      matchedReview?.state === "DISMISSED"
-        ? (
-            await readReviewUpdates([matchedReview], (path, options) =>
-              request(path, {
-                ...options,
-                body: JSON.stringify(options.body),
-              }),
-            )
-          ).get(matchedReview.node_id)
-        : 0;
-    // Read comments independently of timeline order: the connector edits old
-    // comments in place. Timeline is still required for unbound legacy replies.
+      matchedReview?.state === "DISMISSED" ? latestReviewTime : 0;
+    // Read both sources before accepting either. A newer malformed response,
+    // setup failure, or withdrawal must supersede an older formal success.
     const issueComments = await listPaginated(buildIssueCommentsPath(0));
     let timelineEvents = null;
     try {
@@ -746,7 +727,47 @@ while (Date.now() < deadline) {
       headSha,
       issueComments: issueComments.filter(afterDismissal),
     });
-    if (matchedComment) {
+    if (formalClassification?.outcome === "fail") {
+      throw new Error(formalClassification.reason);
+    }
+    const useFormal =
+      formalClassification?.outcome === "pass" &&
+      (!matchedComment ||
+        latestReviewTime > codexCommentTimestamp(matchedComment.comment));
+    if (useFormal) {
+      const mapped = formalClassification;
+      setOutput("review_agent", selectedAgent);
+      setOutput("review_state", matchedReview.state);
+      setOutput("review_url", matchedReview.html_url);
+      setOutput("review_id", matchedReview.id);
+
+      appendSummary([
+        "## AI Review Gate",
+        "",
+        `- Selected reviewer: \`${selectedAgent}\``,
+        `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
+        `- Matched review: ${matchedReview.html_url}`,
+        `- Review state: \`${matchedReview.state}\``,
+        `- Result: ${mapped.reason}`,
+        ...(mapped.details?.length
+          ? [`- Evidence: ${mapped.details.join(", ")}`]
+          : []),
+      ]);
+
+      console.log(mapped.reason);
+      await finishSuccessfully();
+    }
+    const commentCanReplaceFormal =
+      !formal ||
+      formalClassification.outcome === "pass" ||
+      dismissalTime ||
+      (matchedComment &&
+        codexCommentTimestamp(matchedComment.comment) > latestReviewTime);
+    if (
+      matchedComment &&
+      matchedComment.classification.outcome !== "pending" &&
+      commentCanReplaceFormal
+    ) {
       const { comment, classification, reviewState } = matchedComment;
       setOutput("review_agent", selectedAgent);
       setOutput("review_state", reviewState);

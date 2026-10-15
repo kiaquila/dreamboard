@@ -184,19 +184,48 @@ export const pickAuthoritativeCodexSkipModeComment = ({
         isCodexBotComment(entry) &&
         (matchesCodexSummaryComment(entry) || classifyCodexSetupReply(entry)),
     );
+  const position = (entry) =>
+    events.findLastIndex(
+      (event) =>
+        isCommentEvent(event) && entry.id != null && event.id === entry.id,
+    );
+  // Persisted replies can invalidate proof even when timeline retrieval fails.
+  // Ignore unedited replies known to precede the current request/activation;
+  // edits and replies with no observable position remain conservative signals.
+  const persistedReplies = issueComments.filter((entry) => {
+    if (!isCodexBotComment(entry)) return false;
+    if (
+      getBody(entry).startsWith(summaryMarker) &&
+      !matchesCodexSummaryComment(entry) &&
+      !classifyCodexSetupReply(entry)
+    )
+      return false;
+    return (
+      activationIndex < 0 ||
+      position(entry) < 0 ||
+      position(entry) > boundaryIndex ||
+      codexCommentTimestamp(entry) > Date.parse(entry.created_at)
+    );
+  });
   const candidates = [
     ...timelineComments,
     ...boundComments,
     ...receiptComments,
+    ...persistedReplies,
   ];
+  const classify = (entry) =>
+    classifyCodexSetupReply(entry) ||
+    classifyCodexSummaryComment(entry, headSha, {
+      allowUnboundLegacy: timelineComments.some(
+        (candidate) =>
+          candidate === entry ||
+          (entry.id != null && candidate.id === entry.id),
+      ),
+    });
   const latestTimestamp = Math.max(0, ...candidates.map(codexCommentTimestamp));
   const tied = candidates.filter(
     (entry) => codexCommentTimestamp(entry) === latestTimestamp,
   );
-  const position = (entry) =>
-    events.findLastIndex(
-      (event) => event.event === "commented" && event.id === entry.id,
-    );
   const canOrder = tied.every(
     (entry) =>
       codexCommentTimestamp(entry) === Date.parse(entry.created_at) &&
@@ -207,12 +236,8 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   const latestCodexComment =
     (canOrder
       ? tied.sort((a, b) => position(a) - position(b)).at(-1)
-      : tied.find(
-          (entry) =>
-            classifyCodexSummaryComment(entry, headSha, {
-              allowUnboundLegacy: true,
-            }).outcome !== "pass",
-        ) || tied.at(-1)) || null;
+      : tied.find((entry) => classify(entry).outcome !== "pass") ||
+        tied.at(-1)) || null;
 
   if (!latestCodexComment) {
     return null;
@@ -229,23 +254,15 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     };
   }
 
-  if (!matchesCodexSummaryComment(latestCodexComment)) {
-    return null;
-  }
-
-  const summaryClassification = classifyCodexSummaryComment(
-    latestCodexComment,
-    headSha,
-    { allowUnboundLegacy: true },
-  );
-  if (summaryClassification.outcome === "pending") {
-    return null;
-  }
+  const summaryClassification = classify(latestCodexComment);
 
   return {
     comment: latestCodexComment,
     classification: summaryClassification,
-    reviewState: "COMMENTED_NO_FINDINGS",
+    reviewState:
+      summaryClassification.outcome === "pass"
+        ? "COMMENTED_NO_FINDINGS"
+        : "COMMENTED_UNVERIFIED",
     boundaryType:
       boundaryIndex === activationIndex ? "head-activation" : "human-trigger",
   };

@@ -11,7 +11,11 @@ globalThis.fetch = async (url, init = {}) => {
     };
   } else if (path.includes("/commits/"))
     data = { sha: fixture.resolvedHead || fixture.head };
-  else if (path.endsWith("/reviews")) data = fixture.reviews || [];
+  else if (path.endsWith("/reviews"))
+    data = (fixture.reviews || []).map((review) => ({
+      ...review,
+      node_id: review.node_id || `review-${review.id}`,
+    }));
   else if (path.endsWith("/timeline")) {
     if (fixture.timelineUnavailable)
       return new Response("Timeline unavailable", { status: 503 });
@@ -26,7 +30,13 @@ globalThis.fetch = async (url, init = {}) => {
       data: {
         nodes: JSON.parse(init.body).variables.ids.map((id) => ({
           id,
-          updatedAt: fixture.reviewUpdatedAt || "2026-10-15T12:02:00Z",
+          updatedAt:
+            fixture.reviewUpdates?.[id] ||
+            fixture.reviewUpdatedAt ||
+            fixture.reviews?.find(
+              (review) => (review.node_id || `review-${review.id}`) === id,
+            )?.submitted_at ||
+            "2026-10-15T12:02:00Z",
         })),
       },
     };

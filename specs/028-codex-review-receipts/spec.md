@@ -13,6 +13,10 @@ Unknown receipt-like responses must still wake reevaluation and supersede older
 positive evidence. An unprovable timestamp tie must not prefer positive proof.
 Supported receipts with non-current SHA bindings must also supersede older
 current-head positives, even when timeline data is unavailable.
+Persisted setup failures and withdrawn replies must also supersede older proof
+without timeline access. Read issue comments and formal reviews before accepting
+either source; a newer nonpassing reply cannot be hidden by an older formal pass.
+Order formal edits by persisted update time and fail closed on ambiguous ties.
 
 Comment creation and edits must wake completed gates without interrupting
 active polling, looping reruns, or evaluating a new push under an old check.
