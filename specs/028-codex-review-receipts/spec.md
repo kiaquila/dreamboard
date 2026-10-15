@@ -37,3 +37,5 @@ Keep execution pinned to the trusted default branch.
 Reviewer switching must reevaluate the new policy even when a previous backend
 is still active. Cancel and await that attempt before rerunning the latest
 PR-linked same-head gate; reject HEAD/attempt changes and cancellation timeouts.
+Resolve the target run by its pull-request association as well as HEAD, including
+paginated results, so another PR on the same commit cannot be cancelled or rerun.

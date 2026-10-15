@@ -132,3 +132,27 @@ test("explicit no-rerun leaves the active attempt alone", () => {
   assert.equal(result.cancels.length, 0);
   assert.equal(result.reruns.length, 0);
 });
+
+for (const currentPrPresent of [true, false]) {
+  test(`same-SHA runs from another PR are ignored ${currentPrPresent ? "across pages" : "without a matching run"}`, () => {
+    const nativeRun = (id, number) => ({
+      id,
+      head_sha: head,
+      run_attempt: 1,
+      event: "pull_request",
+      pull_requests: [{ number }],
+    });
+    const result = runSwitch({
+      pages: [
+        { workflow_runs: [nativeRun(99, 2)] },
+        { workflow_runs: currentPrPresent ? [nativeRun(7, 1)] : [] },
+      ],
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.reruns.length, currentPrPresent ? 1 : 0);
+    assert.ok(result.cancels.every((call) => call[2] === "7"));
+    assert.ok(result.reruns.every((call) => call[2] === "7"));
+    const api = result.calls.find((call) => call[0] === "api");
+    assert.ok(api.includes("--paginate") && api.includes("--slurp"));
+  });
+}

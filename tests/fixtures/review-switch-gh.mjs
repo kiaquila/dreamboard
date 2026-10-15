@@ -18,8 +18,22 @@ childProcess.execFileSync = (command, args) => {
     });
   if (group === "variable" || (group === "pr" && action === "comment"))
     return "";
-  if (group === "run" && action === "list")
-    return JSON.stringify([fixture.run]);
+  if (group === "api")
+    return JSON.stringify(
+      fixture.pages || [
+        {
+          workflow_runs: [
+            {
+              id: fixture.run.databaseId,
+              head_sha: fixture.run.headSha,
+              run_attempt: fixture.run.attempt,
+              event: "pull_request",
+              pull_requests: [{ number: 1 }],
+            },
+          ],
+        },
+      ],
+    );
   if (group === "run" && action === "view")
     return JSON.stringify({
       ...fixture.run,

@@ -123,23 +123,28 @@ if (options.rerun) {
       "PR head changed after the review request; refusing stale requeue.",
     );
 
+  const repository =
+    options.repo ||
+    JSON.parse(run("gh", ["repo", "view", "--json", "nameWithOwner"]))
+      .nameWithOwner;
   const runsJson = run("gh", [
-    "run",
-    "list",
-    "--workflow",
-    "ai-review.yml",
-    "--commit",
-    headSha,
-    "--event",
-    "pull_request",
-    "--limit",
-    "10",
-    "--json",
-    "databaseId,conclusion,headSha,status,attempt",
-    ...repoArgs,
+    "api",
+    `repos/${repository}/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=${headSha}&per_page=100`,
+    "--paginate",
+    "--slurp",
   ]);
-  const runs = JSON.parse(runsJson);
-  const target = runs.find((entry) => entry.headSha === headSha);
+  const targetRun = JSON.parse(runsJson)
+    .flatMap((page) => page.workflow_runs)
+    .find(
+      (entry) =>
+        entry.event === "pull_request" &&
+        entry.head_sha === headSha &&
+        entry.pull_requests?.some((pr) => pr.number === Number(options.pr)),
+    );
+  const target = targetRun && {
+    databaseId: targetRun.id,
+    attempt: targetRun.run_attempt,
+  };
 
   if (target) {
     const readAttempt = () => {
