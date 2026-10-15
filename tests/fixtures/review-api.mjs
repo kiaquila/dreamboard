@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 const fixture = JSON.parse(readFileSync(process.env.REVIEW_FIXTURE, "utf8"));
 let pullReads = 0;
-globalThis.fetch = async (url) => {
+globalThis.fetch = async (url, init = {}) => {
   const path = new URL(url).pathname;
   let data;
   if (/\/pulls\/1$/.test(path)) {
@@ -15,6 +15,18 @@ globalThis.fetch = async (url) => {
   else if (path.endsWith("/timeline")) data = fixture.timeline || [];
   else if (path.includes("/pulls/1/comments")) data = fixture.inline || [];
   else if (path.endsWith("/comments")) data = fixture.comments || [];
+  else if (
+    path === "/graphql" &&
+    JSON.parse(init.body).query.includes("PullRequestReview")
+  )
+    data = {
+      data: {
+        nodes: JSON.parse(init.body).variables.ids.map((id) => ({
+          id,
+          updatedAt: fixture.reviewUpdatedAt || "2026-10-15T12:02:00Z",
+        })),
+      },
+    };
   else if (path === "/graphql")
     data = {
       data: {

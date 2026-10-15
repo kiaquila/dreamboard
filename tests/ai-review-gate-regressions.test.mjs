@@ -254,3 +254,38 @@ test("abbreviated receipt SHA must resolve unambiguously to the full HEAD", () =
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /does not resolve/);
 });
+
+test("dismissed formal review cannot reuse an older positive receipt", () => {
+  const result = runGate({
+    reviews: [
+      {
+        id: 7,
+        node_id: "review-node",
+        commit_id: head,
+        body: "Codex Review",
+        state: "DISMISSED",
+        user: { login: bot },
+        submitted_at: "2026-10-15T12:00:00Z",
+      },
+    ],
+  });
+  assert.notEqual(result.status, 0, result.stdout);
+});
+
+test("a fresh current-head receipt can supersede a dismissed formal review", () => {
+  const result = runGate({
+    comments: [comment(receipt, { updated_at: "2026-10-15T12:03:00Z" })],
+    reviews: [
+      {
+        id: 7,
+        node_id: "review-node",
+        commit_id: head,
+        body: "Codex Review",
+        state: "DISMISSED",
+        user: { login: bot },
+        submitted_at: "2026-10-15T12:00:00Z",
+      },
+    ],
+  });
+  assert.equal(result.status, 0, result.stderr);
+});

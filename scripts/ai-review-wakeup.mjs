@@ -2,6 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { readReviewUpdates } from "./codex-review-updates.mjs";
 import {
   isCodexWakeupComment,
   codexReviewerLogins,
@@ -71,16 +72,15 @@ export const wakeCodexGate = async ({
   const reviews = await api(`/pulls/${number}/reviews?per_page=100`, {
     paginate: true,
   });
+  const currentReviews = reviews.filter(
+    (review) =>
+      review.commit_id === head && codexReviewerLogins.has(review.user?.login),
+  );
+  const reviewUpdates = await readReviewUpdates(currentReviews, api);
   const newestSignal = Math.max(
     0,
     ...comments.filter(isCodexWakeupComment).map(codexCommentTimestamp),
-    ...reviews
-      .filter(
-        (review) =>
-          review.commit_id === head &&
-          codexReviewerLogins.has(review.user?.login),
-      )
-      .map((review) => Date.parse(review.submitted_at) || 0),
+    ...reviewUpdates.values(),
   );
   // At most one follow-up attempt per new evidence timestamp, including when
   // evidence arrives just as the old gate completes. Reruns start after it.
@@ -107,21 +107,26 @@ if (
   const token = process.env.GITHUB_TOKEN;
   if (!repository || !token)
     throw new Error("GitHub repository and token are required.");
-  const api = async (path, { method = "GET", paginate = false } = {}) => {
-    let url = `https://api.github.com/repos/${repository}${path}`;
+  const api = async (path, { method = "GET", paginate = false, body } = {}) => {
+    let url =
+      path === "/graphql"
+        ? "https://api.github.com/graphql"
+        : `https://api.github.com/repos/${repository}${path}`;
     const items = [];
     do {
       const response = await fetch(url, {
         method,
+        ...(body ? { body: JSON.stringify(body) } : {}),
         headers: {
           Accept: "application/vnd.github+json",
+          ...(body ? { "Content-Type": "application/json" } : {}),
           Authorization: `Bearer ${token}`,
           "X-GitHub-Api-Version": "2022-11-28",
         },
       });
       if (!response.ok)
         throw new Error(`${method} ${path}: ${response.status}`);
-      if (response.status === 204 || method === "POST") return null;
+      if (response.status === 204 || path.endsWith("/rerun")) return null;
       const data = await response.json();
       if (!paginate) return data;
       items.push(...data);

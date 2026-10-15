@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import {
   routesCodexWakeup,
   wakeCodexGate,
@@ -50,7 +52,7 @@ test("workflow subscribes to edited events and uses trusted scripts", () => {
     workflow,
     /ref: \$\{\{ github.event.repository.default_branch \}\}/,
   );
-  assert.match(workflow, /run: node scripts\/ai-review-wakeup.mjs/);
+  assert.match(workflow, /node scripts\/ai-review-wakeup.mjs/);
 });
 test("spoofed author and non-PR comments are rejected by workflow and router", () => {
   for (const payload of [
@@ -81,6 +83,7 @@ const harness = (overrides = {}) => {
       run_started_at: "2026-10-15T12:00:00Z",
     },
     comments: [nativeComment(receipt)],
+    reviews: [],
     ...overrides,
   };
   const api = async (path, options = {}) => {
@@ -98,7 +101,16 @@ const harness = (overrides = {}) => {
     }
     if (path === "/actions/runs/5") return state.run;
     if (path.includes("/issues/1/comments")) return state.comments;
-    if (path.includes("/pulls/1/reviews")) return [];
+    if (path.includes("/pulls/1/reviews")) return state.reviews;
+    if (path === "/graphql")
+      return {
+        data: {
+          nodes: state.reviews.map((review) => ({
+            id: review.node_id,
+            updatedAt: state.reviewUpdatedAt || "2026-10-15T12:01:00Z",
+          })),
+        },
+      };
     throw new Error(`Unexpected API route ${path}`);
   };
   return {
@@ -167,4 +179,85 @@ test("stale workflow completion cannot rerun a different HEAD", async () => {
     "stale-run",
   );
   assert.equal(state.reruns, 0);
+});
+
+test("initial rollout keeps the old trusted gate authoritative until main contains the router", () => {
+  const directory = mkdtempSync(`${tmpdir()}/dreamboard-bootstrap-`);
+  try {
+    const run = workflow
+      .split("        run: |\n")[1]
+      .split("\n")
+      .map((line) => line.slice(10))
+      .join("\n");
+    const result = spawnSync("bash", ["-e", "-c", run], {
+      cwd: directory,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /existing required gate remains authoritative/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+for (const action of ["edited", "dismissed"]) {
+  test(`persisted review update wakes the gate for ${action} without a new submitted_at`, async () => {
+    const review = {
+      id: 7,
+      node_id: "review-node",
+      commit_id: head,
+      user: { login: "chatgpt-codex-connector[bot]" },
+      submitted_at: "2026-10-14T12:00:00Z",
+    };
+    const { state, wake } = harness({ comments: [], reviews: [review] });
+    const payload = { action, pull_request: { number: 1 }, review };
+    assert.ok(workflowAccepts(payload, "pull_request_review"));
+    assert.equal(await wake(payload, "pull_request_review"), "rerun:5");
+    state.run = {
+      ...state.run,
+      status: "completed",
+      run_started_at: "2026-10-15T12:02:00Z",
+    };
+    assert.equal(
+      await wake(
+        {
+          action: "completed",
+          workflow_run: { ...state.run, name: "AI Review" },
+        },
+        "workflow_run",
+      ),
+      "already-evaluated",
+    );
+    assert.equal(state.reruns, 1);
+  });
+}
+
+test("dismissal during an active gate is still visible at gate completion", async () => {
+  const review = {
+    id: 7,
+    node_id: "review-node",
+    commit_id: head,
+    user: { login: "chatgpt-codex-connector[bot]" },
+    submitted_at: "2026-10-14T12:00:00Z",
+  };
+  const { state, wake } = harness({ comments: [], reviews: [review] });
+  state.run.status = "in_progress";
+  assert.equal(
+    await wake(
+      { action: "dismissed", pull_request: { number: 1 }, review },
+      "pull_request_review",
+    ),
+    "active-or-missing",
+  );
+  state.run.status = "completed";
+  assert.equal(
+    await wake(
+      {
+        action: "completed",
+        workflow_run: { ...state.run, name: "AI Review" },
+      },
+      "workflow_run",
+    ),
+    "rerun:5",
+  );
 });

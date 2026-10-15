@@ -49,4 +49,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           AI_REVIEW_AGENT: ${{ vars.AI_REVIEW_AGENT }}
-        run: node scripts/ai-review-wakeup.mjs
+        run: |
+          if [ -f scripts/ai-review-wakeup.mjs ]; then
+            node scripts/ai-review-wakeup.mjs
+          else
+            echo "Wakeup router is not installed on trusted main yet; the existing required gate remains authoritative."
+          fi
