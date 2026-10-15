@@ -322,3 +322,17 @@ for (const after of [true, false]) {
     else assert.notEqual(result.status, 0, result.stdout);
   });
 }
+
+for (const options of [
+  { timeline: [] },
+  { timeline: null, timelineUnavailable: true },
+]) {
+  test(`bound receipt passes when timeline is ${options.timelineUnavailable ? "unavailable" : "empty"}`, () => {
+    const result = runGate(options);
+    assert.equal(result.status, 0, result.stderr);
+  });
+  test(`unbound legacy cannot pass when timeline is ${options.timelineUnavailable ? "unavailable" : "empty"}`, () => {
+    const result = runGate({ ...options, comments: [comment(positive)] });
+    assert.notEqual(result.status, 0, result.stdout);
+  });
+}

@@ -725,7 +725,7 @@ while (Date.now() < deadline) {
       timelineEvents = await listPaginated(buildIssueTimelinePath());
     } catch (error) {
       codexTimelineWarning =
-        "Codex timeline unavailable; comment fallback is disabled.";
+        "Codex timeline unavailable; only SHA-bound comment evidence is allowed.";
       if (!codexTimelineWarningLogged) {
         console.warn(`${codexTimelineWarning} ${error.message}`);
         codexTimelineWarningLogged = true;

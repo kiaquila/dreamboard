@@ -155,39 +155,23 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   headSha,
   issueComments = [],
 }) => {
-  if (
-    !Array.isArray(timelineEvents) ||
-    timelineEvents.length === 0 ||
-    !headSha
-  ) {
-    return null;
-  }
-
-  const activationIndex = findLatestHeadActivationIndex(
-    timelineEvents,
-    headSha,
-  );
-  if (activationIndex < 0) {
-    return null;
-  }
+  if (!headSha) return null;
+  const events = Array.isArray(timelineEvents) ? timelineEvents : [];
+  const activationIndex = findLatestHeadActivationIndex(events, headSha);
 
   let boundaryIndex = activationIndex;
-  for (
-    let index = activationIndex + 1;
-    index < timelineEvents.length;
-    index += 1
-  ) {
-    if (isHumanCodexTriggerComment(timelineEvents[index])) {
+  for (let index = activationIndex + 1; index < events.length; index += 1) {
+    if (isHumanCodexTriggerComment(events[index])) {
       boundaryIndex = index;
     }
   }
 
-  const boundComments = [...timelineEvents, ...issueComments]
+  const boundComments = [...events, ...issueComments]
     .filter((entry) => matchesCodexSummaryComment(entry))
     .filter((entry) => /\*\*Reviewed commit:\*\*/.test(getBody(entry)))
     .filter((entry) => getBody(entry).includes(headSha.slice(0, 10)));
-  const timelineComments = timelineEvents
-    .slice(boundaryIndex + 1)
+  const timelineComments = events
+    .slice(activationIndex >= 0 ? boundaryIndex + 1 : events.length)
     .filter(
       (entry) =>
         isCodexBotComment(entry) &&

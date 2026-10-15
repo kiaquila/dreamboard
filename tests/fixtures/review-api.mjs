@@ -12,8 +12,11 @@ globalThis.fetch = async (url, init = {}) => {
   } else if (path.includes("/commits/"))
     data = { sha: fixture.resolvedHead || fixture.head };
   else if (path.endsWith("/reviews")) data = fixture.reviews || [];
-  else if (path.endsWith("/timeline")) data = fixture.timeline || [];
-  else if (path.includes("/pulls/1/comments")) data = fixture.inline || [];
+  else if (path.endsWith("/timeline")) {
+    if (fixture.timelineUnavailable)
+      return new Response("Timeline unavailable", { status: 503 });
+    data = fixture.timeline || [];
+  } else if (path.includes("/pulls/1/comments")) data = fixture.inline || [];
   else if (path.endsWith("/comments")) data = fixture.comments || [];
   else if (
     path === "/graphql" &&

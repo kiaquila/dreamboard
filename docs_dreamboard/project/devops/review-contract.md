@@ -76,7 +76,9 @@ The trusted gate accepts legacy `Codex Review:` replies and the native
 result and a reviewed commit of 10-40 hex characters matching the current full
 HEAD; abbreviated commits must also resolve through GitHub to that full SHA.
 Unbound legacy replies require current-head timeline activation and
-request ordering. Duplicate markers, conflicting content, malformed commits,
+request ordering. SHA-bound receipts remain usable during timeline outages;
+only legacy binding and equal-second dismissal ordering require the timeline.
+Duplicate markers, conflicting content, malformed commits,
 and unfinished replies cannot pass.
 
 The connector's `codex-pull-request-review-summary` / `codex-review-state:v1`
