@@ -101,7 +101,9 @@ produce success.
 
 When introducing changes to the gate itself, the PR still executes the old
 trusted-main scripts. Obtain real native Codex review for the exact HEAD. If
-its format is unsupported by main, the existing Gemini fallback can provide
+its format is unsupported by main, an existing fallback can provide
 the required `AI Review` through an independent native review of the same HEAD.
+Prefer Gemini; use Claude when Gemini is unavailable and `ANTHROPIC_API_KEY` is
+already configured.
 Restore Codex selection after merge and validate the new trusted-main parser.
 Do not switch checkout to PR code, fabricate a status, or bypass protection.

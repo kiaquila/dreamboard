@@ -12,8 +12,8 @@
    router behavior. Run the repository preflight.
 5. Request native Codex review as the authenticated owner for every new HEAD.
    For initial rollout, first try the existing formal-review path. If Codex
-   emits only the new receipt, use the already-supported Gemini fallback with
-   a real native Gemini review and the unchanged trusted-main required gate,
+   emits only the new receipt, use an already-supported fallback (Gemini, or configured Claude if Gemini
+   is unavailable) with a real native review and the unchanged trusted-main required gate,
    while retaining native Codex review of the same exact HEAD. Restore the
    Codex policy after merge. Never execute PR gate scripts with elevated
    credentials, manufacture a check, or bypass branch protection.
