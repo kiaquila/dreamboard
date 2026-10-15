@@ -76,6 +76,7 @@ const harness = (overrides = {}) => {
     reads: 0,
     reruns: 0,
     cancels: 0,
+    waits: [],
     run: {
       id: 5,
       head_sha: head,
@@ -131,7 +132,14 @@ const harness = (overrides = {}) => {
   return {
     state,
     wake: (payload = event(receipt), eventName = "issue_comment") =>
-      wakeCodexGate({ eventName, event: payload, api, wait: async () => {} }),
+      wakeCodexGate({
+        eventName,
+        event: payload,
+        api,
+        wait: async (ms) => {
+          state.waits.push(ms);
+        },
+      }),
   };
 };
 
@@ -248,6 +256,43 @@ test("positive receipt edits keep active polling", async () => {
   state.run.status = "in_progress";
   assert.equal(await wake(event(receipt, "edited")), "active-or-missing");
   assert.equal(state.cancels, 0);
+});
+
+for (const body of [
+  "Create a Codex account and connect to GitHub.",
+  receipt.replace(head.slice(0, 10), "bad-sha"),
+]) {
+  for (const status of ["completed", "in_progress"]) {
+    test(`new nonpassing comment ${body.slice(0, 25)} invalidates a ${status} gate at the same second`, async () => {
+      const { state, wake } = harness();
+      state.run.status = status;
+      const payload = event(body);
+      payload.comment.created_at = state.run.run_started_at;
+      payload.comment.updated_at = state.run.run_started_at;
+      assert.ok(routesCodexWakeup("issue_comment", payload));
+      assert.equal(await wake(payload), "rerun:5");
+      assert.equal(state.cancels, status === "in_progress" ? 1 : 0);
+      assert.ok(state.waits.includes(1100));
+    });
+  }
+}
+
+test("equal-second completion evidence reruns once after a later-second boundary", async () => {
+  const { state, wake } = harness();
+  state.comments[0].updated_at = state.run.run_started_at;
+  const completed = () => ({
+    action: "completed",
+    workflow_run: { ...state.run, name: "AI Review" },
+  });
+  assert.equal(await wake(completed(), "workflow_run"), "rerun:5");
+  assert.deepEqual(state.waits, [1100]);
+  state.run = {
+    ...state.run,
+    status: "completed",
+    run_started_at: "2026-10-15T12:00:01Z",
+  };
+  assert.equal(await wake(completed(), "workflow_run"), "already-evaluated");
+  assert.equal(state.reruns, 1);
 });
 
 test("replacing a receipt with a summary still withdraws its evidence", async () => {

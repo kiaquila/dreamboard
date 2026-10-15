@@ -80,7 +80,7 @@ export const wakeCodexGate = async ({
     eventName === "pull_request_review" ||
     (eventName === "issue_comment" &&
       (event.action === "deleted" ||
-        (event.action === "edited" &&
+        (["created", "edited"].includes(event.action) &&
           !summaryOnlyEdit &&
           !isPositive(event.comment.body))));
   if (invalidatingEvidence) {
@@ -113,6 +113,10 @@ export const wakeCodexGate = async ({
           "Gate cancellation is still pending after evidence invalidation.",
         );
     }
+    // The webhook precedes this relative delay. The new attempt must therefore
+    // start in a later timestamp second, preventing completion from replaying
+    // a persisted signal tied with the old attempt start.
+    await wait(1100);
     const finalPull = await api(`/pulls/${number}`);
     const finalRun = await api(`/actions/runs/${run.id}`);
     if (
@@ -149,8 +153,11 @@ export const wakeCodexGate = async ({
   );
   // At most one follow-up attempt per new evidence timestamp, including when
   // evidence arrives just as the old gate completes. Reruns start after it.
-  if (newestSignal <= Date.parse(run.run_started_at || run.created_at))
-    return "already-evaluated";
+  const attemptStart = Date.parse(run.run_started_at || run.created_at);
+  if (newestSignal < attemptStart) return "already-evaluated";
+  // Equal-second evidence may have arrived after the final read. Reevaluate
+  // conservatively, after a relative delay that makes the next start later.
+  if (newestSignal === attemptStart) await wait(1100);
   const currentPull = await api(`/pulls/${number}`);
   const currentRun = await api(`/actions/runs/${run.id}`);
   if (

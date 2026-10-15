@@ -91,13 +91,14 @@ before success.
 
 `AI Review Wakeup` runs trusted default-branch scripts for native comment
 creation/edits, formal review updates, and completion of a PR-linked gate.
-Comment deletion, receipt withdrawals, and formal review updates explicitly
+Comment deletion, nonpassing receipt/setup replies, receipt withdrawals, and formal review updates explicitly
 invalidate the old result. Deleted comments cannot be recovered from API scans,
 and a withdrawal timestamp may tie the gate's start. The trusted webhook itself
 therefore forces one reevaluation per delivery. The router rechecks HEAD and
 the run attempt, cancels an active gate, waits for cancellation, then requeues
 it once. This prevents invalidations from racing the gate's final read and exit.
-Completion events do not replay these invalidations.
+Before requeue, a relative delay of just over one second places the next attempt
+after the webhook's timestamp second. Completion events do not replay these invalidations.
 Cancellation waiting is bounded; if it remains pending, the wakeup fails and
 the cancelled check cannot permit merge. A later native receipt can recover.
 Every trusted connector comment edit is eligible, even when its new body no
@@ -107,8 +108,11 @@ decide whether the current body still provides valid evidence.
 For new positive receipts and summary-only updates, active gates keep polling.
 A completed gate can be rerun once for evidence
 newer than its attempt's start, covering the finish/reply race; the next attempt
-starts after that evidence and cannot loop. Wakeups are serialized and recheck
-HEAD and run attempt before rerunning. Persisted GraphQL review `updatedAt`
+starts after that evidence and cannot loop.
+Equal-second evidence is conservatively reevaluated after the same relative
+delay, so the following attempt starts later than the evidence and cannot loop.
+Wakeups are serialized and recheck HEAD and run attempt before rerunning.
+Persisted GraphQL review `updatedAt`
 handles edits and dismissals whose REST `submitted_at` never changes, including
 the active-gate completion race. Receipts older than a dismissal cannot restore
 its positive result; equal-second timestamps use the timeline dismissal/comment

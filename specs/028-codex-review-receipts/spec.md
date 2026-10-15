@@ -19,6 +19,9 @@ itself, since deleted comments do not survive in API scans. Cancel and rerun
 an active gate to close its final-read/deletion race. Receipt withdrawals and
 formal review updates require the same immediate cancellation and reevaluation;
 an eventual completion wakeup cannot close a transient false-success window.
+New recognized nonpassing replies require the same invalidation. Evidence tied
+with an attempt start must be reevaluated after a later-second boundary, rather
+than treated as already evaluated or replayed indefinitely.
 When a same-second edit/dismissal tie has no observable order, fail explicitly
 and require fresh native evidence; never infer edit order from comment creation.
 Keep execution pinned to the trusted default branch.
