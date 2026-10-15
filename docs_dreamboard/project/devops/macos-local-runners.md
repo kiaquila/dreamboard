@@ -90,8 +90,9 @@ pnpm run review:switch -- --to gemini
 The helper resolves the open PR for the current branch, flips the
 `AI_REVIEW_AGENT` repository variable via `gh variable set`, posts the
 correct native trigger comment on the PR (`@codex review`,
-`/gemini review`, or `@claude review once`), and reruns the most recent
-failed `AI Review` run on the current head SHA.
+`/gemini review`, or `@claude review once`), and reruns the latest
+PR-linked `AI Review` run on the current head SHA. An active previous backend is
+cancelled first, with a bounded wait and HEAD/attempt checks before requeue.
 
 Optional flags:
 

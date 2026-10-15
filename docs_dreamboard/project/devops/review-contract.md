@@ -20,8 +20,11 @@ for free, but every new push on an already-open PR needs a manual
 trigger. The canonical recovery path is
 `pnpm run review:switch -- --to <agent>`, which flips the repository
 variable, posts the correct native trigger comment as the current `gh`
-user (human-authored, therefore trusted), and reruns the most recent
-failed `AI Review` job.
+user (human-authored, therefore trusted), and reruns the latest
+PR-linked `AI Review` run for that HEAD. If the previous backend is still active,
+the helper cancels it, waits up to 60 seconds for completion, and requeues it
+under the newly selected policy. It rechecks HEAD and attempt identity before
+rerunning; cancellation timeouts or identity changes stop the operation.
 
 See `docs_dreamboard/project/devops/ai-runner.md` for the full matrix.
 

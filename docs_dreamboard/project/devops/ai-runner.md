@@ -60,8 +60,9 @@ Consequences for orchestration design:
 - The `pnpm run review:switch` helper is the canonical one-shot
   recovery path: it flips `AI_REVIEW_AGENT`, posts the correct native
   trigger comment on behalf of the current user (via `gh` CLI, so the
-  comment is human-authored and trusted), and reruns the most recent
-  failed `AI Review` job on the current head SHA.
+  comment is human-authored and trusted), and reruns the latest
+  PR-linked `AI Review` run on the current head SHA. Active attempts are cancelled
+  and awaited before requeue under the new policy; HEAD/attempt changes abort.
 
 ## Review Gate
 

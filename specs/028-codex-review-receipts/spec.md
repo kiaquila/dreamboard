@@ -33,3 +33,7 @@ than treated as already evaluated or replayed indefinitely.
 When a same-second edit/dismissal tie has no observable order, fail explicitly
 and require fresh native evidence; never infer edit order from comment creation.
 Keep execution pinned to the trusted default branch.
+
+Reviewer switching must reevaluate the new policy even when a previous backend
+is still active. Cancel and await that attempt before rerunning the latest
+PR-linked same-head gate; reject HEAD/attempt changes and cancellation timeouts.
