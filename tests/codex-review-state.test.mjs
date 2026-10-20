@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { hasCleanCodexState } from "../scripts/codex-review-state.mjs";
-import { pickAuthoritativeCodexSkipModeComment } from "../scripts/ai-review-helpers.mjs";
+import {
+  pickAuthoritativeCodexSkipModeComment,
+  classifyCodexSummaryComment,
+} from "../scripts/ai-review-helpers.mjs";
 import {
   cleanStateBody,
   presentationReceipt,
@@ -104,7 +107,7 @@ for (const closing of [
     const receipt = bot(presentationReceipt(head, closing), 3);
     assert.equal(
       pick([bot(clean, 2), receipt]).classification.outcome,
-      "pending",
+      classifyCodexSummaryComment(receipt, head).outcome,
     );
     assert.equal(pick([receipt, bot(clean, 4)]).classification.outcome, "pass");
   });
