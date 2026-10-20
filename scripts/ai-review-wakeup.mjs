@@ -4,6 +4,10 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { readReviewUpdates } from "./codex-review-updates.mjs";
 import {
+  invalidationCutoff,
+  isInvalidationMutation,
+} from "./codex-review-invalidations.mjs";
+import {
   classifyCodexSummaryComment,
   isCodexWakeupComment,
   codexReviewerLogins,
@@ -15,8 +19,9 @@ export const routesCodexWakeup = (eventName, event) => {
     return (
       ["created", "edited", "deleted"].includes(event.action) &&
       Boolean(event.issue?.pull_request) &&
-      codexReviewerLogins.has(event.comment?.user?.login) &&
-      (event.action !== "created" || isCodexWakeupComment(event.comment))
+      ((codexReviewerLogins.has(event.comment?.user?.login) &&
+        (event.action !== "created" || isCodexWakeupComment(event.comment))) ||
+        isInvalidationMutation(event))
     );
   }
   if (eventName === "pull_request_review") {
@@ -61,6 +66,28 @@ export const wakeCodexGate = async ({
     return "stale-review";
   if (eventName === "workflow_run" && event.workflow_run.head_sha !== head)
     return "stale-run";
+  // The deleted object is absent from subsequent API reads. Retain a negative
+  // boundary before requeue, even when no gate run exists yet. GitHub assigns
+  // its timestamp; a rerun must obtain a newly created native assessment after it.
+  const recordDeletion =
+    event.action === "deleted" ||
+    (eventName === "issue_comment" && isInvalidationMutation(event));
+  if (recordDeletion) {
+    if (!Number.isSafeInteger(event.comment?.id) || event.comment.id <= 0)
+      throw new Error("Invalid deleted evidence identifier.");
+    const record = await api(`/issues/${number}/comments`, {
+      method: "POST",
+      body: {
+        body: `<!-- codex-review-invalidation:v1 ${JSON.stringify({
+          head_sha: head,
+          source_event: eventName,
+          source_id: event.comment.id,
+        })} -->\nNative evidence was deleted or its invalidation record changed. A newly created native assessment is required before success.`,
+      },
+    });
+    if (!invalidationCutoff([record], head))
+      throw new Error("Could not persist native evidence invalidation.");
+  }
   const runs = await api(
     `/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=${head}&per_page=100`,
     { paginate: true },
@@ -74,6 +101,22 @@ export const wakeCodexGate = async ({
     )
     .sort((a, b) => b.id - a.id)[0];
   if (!run) return "active-or-missing";
+  const rerun = async () => {
+    try {
+      await api(`/actions/runs/${run.id}/rerun`, { method: "POST" });
+      return `rerun:${run.id}`;
+    } catch (error) {
+      // Independent deliveries can both reach the final read before one queues
+      // the new attempt. Do not retry or cancel the attempt that won the race.
+      const current = await api(`/actions/runs/${run.id}`);
+      if (
+        current.run_attempt !== run.run_attempt ||
+        current.status !== "completed"
+      )
+        return "changed";
+      throw error;
+    }
+  };
   const isPositive = (body) =>
     classifyCodexSummaryComment({ ...event.comment, body }, head, {
       allowUnboundLegacy: true,
@@ -83,6 +126,7 @@ export const wakeCodexGate = async ({
       "<!-- codex-pull-request-review-summary -->",
     ) && !isPositive(event.changes?.body?.from || "");
   const invalidatingEvidence =
+    recordDeletion ||
     eventName === "pull_request_review" ||
     eventName === "pull_request_review_comment" ||
     (eventName === "issue_comment" &&
@@ -92,7 +136,7 @@ export const wakeCodexGate = async ({
           !isPositive(event.comment.body))));
   if (invalidatingEvidence) {
     // A trusted invalidation webhook is evidence even if persisted timestamps
-    // tie the gate start or the comment has disappeared. Cancel an active
+    // tie the gate start. Deletions now have a durable negative record. Cancel an active
     // attempt so a withdrawal cannot race its final evidence read and exit.
     const currentPull = await api(`/pulls/${number}`);
     let currentRun = await api(`/actions/runs/${run.id}`);
@@ -133,8 +177,7 @@ export const wakeCodexGate = async ({
       finalRun.run_attempt !== run.run_attempt
     )
       return "changed";
-    await api(`/actions/runs/${run.id}/rerun`, { method: "POST" });
-    return `rerun:${run.id}`;
+    return rerun();
   }
   // The active gate polls. Its completion event closes the finish/reply race.
   if (run.status !== "completed") return "active-or-missing";
@@ -154,6 +197,9 @@ export const wakeCodexGate = async ({
   const reviewUpdates = await readReviewUpdates(currentReviews, api);
   const newestSignal = Math.max(
     0,
+    // A deletion record may arrive after another attempt's final evidence read.
+    // Completion must notice it even if its delivery observed an older attempt.
+    invalidationCutoff(comments, head),
     // Keep edits that withdraw or replace recognized evidence visible even on
     // workflow completion, when the original edit webhook is no longer present.
     ...[...comments, ...inlineComments]
@@ -177,8 +223,7 @@ export const wakeCodexGate = async ({
     currentRun.run_attempt !== run.run_attempt
   )
     return "changed";
-  await api(`/actions/runs/${run.id}/rerun`, { method: "POST" });
-  return `rerun:${run.id}`;
+  return rerun();
 };
 
 if (

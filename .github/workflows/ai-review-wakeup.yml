@@ -18,7 +18,7 @@ permissions:
   actions: write
   contents: read
   pull-requests: read
-  issues: read
+  issues: write
 
 # Every webhook delivery must reach the router. A shared Actions concurrency
 # group can discard a pending deletion when a later completion event arrives.
@@ -30,7 +30,11 @@ jobs:
       (vars.AI_REVIEW_AGENT == '' || vars.AI_REVIEW_AGENT == 'codex') &&
       (
         (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
-          github.event.comment.user.login == 'chatgpt-codex-connector[bot]') ||
+          (github.event.comment.user.login == 'chatgpt-codex-connector[bot]' ||
+            (github.event.comment.user.login == 'github-actions[bot]' &&
+              github.event.action != 'created' &&
+              (contains(github.event.comment.body, 'codex-review-invalidation') ||
+                contains(github.event.changes.body.from, 'codex-review-invalidation'))))) ||
         (github.event_name == 'pull_request_review' &&
           github.event.review.user.login == 'chatgpt-codex-connector[bot]') ||
         (github.event_name == 'pull_request_review_comment' &&

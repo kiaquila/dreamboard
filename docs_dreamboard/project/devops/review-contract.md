@@ -84,6 +84,9 @@ coming!", "Bravo." (observed in the [2026-10-20 native receipt](https://github.c
 and "Hooray!" (observed in a [later native receipt](https://github.com/kiaquila/dreamboard/pull/56#issuecomment-6292041940)).
 Arbitrary extra verdict text remains unsupported, including text appended after
 an otherwise recognized encouragement.
+Only the exact known native help templates are stripped, allowing whitespace
+and the documented optional question-help paragraph. Unknown footer content,
+including nested markup or a contradictory finding hidden in details, fails closed.
 Unbound legacy replies require current-head timeline activation and
 request ordering. SHA-bound receipts remain usable during timeline outages;
 only legacy binding and equal-second dismissal ordering require the timeline.
@@ -129,8 +132,17 @@ Thread resolution state is checked on every gate evaluation; after changing
 only that state, rerun the PR-linked gate or request a fresh native review.
 GitHub Actions does not document a direct review-thread status trigger.
 Comment deletion, nonpassing receipt/setup replies, receipt withdrawals, and formal review updates explicitly
-invalidate the old result. Deleted comments cannot be recovered from API scans,
-and a withdrawal timestamp may tie the gate's start. The trusted webhook itself
+invalidate the old result. Deleted comments cannot be recovered from API scans.
+Before rerunning, the trusted router writes a negative `codex-review-invalidation:v1`
+issue comment as `github-actions[bot]`, binding the current HEAD and deleted
+object ID. The gate rereads these records before success and requires a newly
+created native assessment strictly after GitHub's record timestamp; editing an
+older positive cannot restore it. A timestamp tie fails closed. These records
+never provide positive authority. Malformed trusted records block evaluation,
+and editing/deleting a record produces a replacement negative boundary.
+New record creation cannot recursively trigger the router. The wakeup's issue
+write permission is used for these negative records; gate code still runs from
+trusted main. A withdrawal timestamp may also tie the gate's start. The trusted webhook
 therefore forces one reevaluation per delivery. The router rechecks HEAD and
 the run attempt, cancels an active gate, waits for cancellation, then requeues
 it once. This prevents invalidations from racing the gate's final read and exit.

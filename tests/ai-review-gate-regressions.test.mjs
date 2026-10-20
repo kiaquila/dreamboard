@@ -1,10 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { classifyCodexSummaryComment } from "../scripts/ai-review-helpers.mjs";
+
+const helpFooter = readFileSync(
+  new URL("./fixtures/codex-help-footer.txt", import.meta.url),
+  "utf8",
+).trim();
 
 const head = "2667f79cd7676ff331730cabf661d38dbbcddb0d";
 const bot = "chatgpt-codex-connector[bot]";
@@ -77,25 +82,29 @@ for (const [name, body] of [
   ["real receipt", receipt],
   ["legacy", positive],
   [
+    "native short help footer",
+    `${receipt}\n\n${helpFooter.split("Codex can also")[0].trim()}\n</details>`,
+  ],
+  [
     "observed keep-them-coming receipt with info footer",
-    `${receipt.replace(":rocket:", "Keep them coming!")}\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>Native review help.\n</details>`,
+    `${receipt.replace(":rocket:", "Keep them coming!")}\n\n${helpFooter}`,
   ],
   [
     "observed keep-it-up receipt with info footer",
-    `${receipt.replace(":rocket:", "Keep it up!")}\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>Native review help.\n</details>`,
+    `${receipt.replace(":rocket:", "Keep it up!")}\n\n${helpFooter}`,
   ],
   [
     "observed bravo receipt with info footer",
-    `${receipt.replace(":rocket:", "Bravo.")}\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>Native review help.\n</details>`,
+    `${receipt.replace(":rocket:", "Bravo.")}\n\n${helpFooter}`,
   ],
   [
     "observed hooray receipt with info footer",
-    `${receipt.replace(":rocket:", "Hooray!")}\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>Native review help.\n</details>`,
+    `${receipt.replace(":rocket:", "Hooray!")}\n\n${helpFooter}`,
   ],
   ["curly legacy", positive.replace("Didn't", "Didn’t")],
   [
     "receipt with help",
-    `${receipt}\n\n<details>\n<summary>About Codex in GitHub</summary>\nNative review help.\n</details>`,
+    `${receipt}\n\n${helpFooter.replace("ℹ️ ", "").replace("<br/>", "")}`,
   ],
 ]) {
   test(`actual gate accepts ${name}`, () => {
@@ -114,6 +123,18 @@ for (const [name, body, extra] of [
   ["duplicate marker", `<!-- codex-review-receipt:v1 -->\n${receipt}`],
   ["malformed marker", receipt.replace(":v1", ":v2")],
   ["conflicting content", `${receipt}\nP1: Fix a bug.`],
+  [
+    "conflicting footer verdict",
+    `${receipt}\n\n${helpFooter.replace("</details>", "P1: Fix a bug\n</details>")}`,
+  ],
+  [
+    "unknown footer body",
+    `${receipt}\n\n${helpFooter.replace("If Codex has suggestions", "There are major blocking findings. If Codex has suggestions")}`,
+  ],
+  [
+    "nested footer",
+    `${receipt}\n\n${helpFooter.replace("</details>", "<details>P1: Bug</details></details>")}`,
+  ],
   [
     "bravo followed by conflicting verdict",
     receipt.replace(":rocket:", "Bravo. However, P1: Fix a bug."),
@@ -627,3 +648,68 @@ for (const [body, passes] of [
     assert.equal(result.status === 0, passes, result.stderr || result.stdout);
   });
 }
+
+const invalidationRecord = (extra = {}) => ({
+  id: 50,
+  user: { login: "github-actions[bot]" },
+  body: `<!-- codex-review-invalidation:v1 ${JSON.stringify({ head_sha: head, source_event: "issue_comment", source_id: 42 })} -->\nNative evidence deleted.`,
+  created_at: "2026-10-15T12:02:00Z",
+  ...extra,
+});
+for (const formal of [false, true]) {
+  test(`persisted deletion prevents reuse of an older ${formal ? "formal approval" : "receipt"}`, () => {
+    const result = runGate({
+      comments: [comment(receipt), invalidationRecord()],
+      reviews: formal
+        ? [
+            {
+              id: 7,
+              user: { login: bot },
+              commit_id: head,
+              body: "Codex Review",
+              state: "APPROVED",
+              submitted_at: "2026-10-15T12:01:30Z",
+            },
+          ]
+        : [],
+    });
+    assert.notEqual(result.status, 0, result.stdout);
+    assert.match(result.stderr, /require a new assessment/);
+  });
+}
+for (const [label, created_at, updated_at, passes] of [
+  ["same-second receipt", "2026-10-15T12:02:00Z", undefined, false],
+  ["edited old receipt", "2026-10-15T12:01:00Z", "2026-10-15T12:03:00Z", false],
+  ["new native receipt", "2026-10-15T12:03:00Z", undefined, true],
+]) {
+  test(`${label} ${passes ? "can" : "cannot"} recover after deletion`, () => {
+    const result = runGate({
+      comments: [
+        invalidationRecord(),
+        comment(receipt, { created_at, updated_at }),
+      ],
+    });
+    assert.equal(result.status === 0, passes, result.stderr || result.stdout);
+  });
+}
+test("a malformed trusted invalidation fails closed", () => {
+  const result = runGate({
+    comments: [
+      comment(receipt),
+      invalidationRecord({ body: "<!-- codex-review-invalidation:v2 -->" }),
+    ],
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /invalidation record/);
+});
+test("untrusted tombstone text and another head cannot provide positive authority or invalidate this head", () => {
+  for (const extra of [
+    { user: { login: "attacker" } },
+    { body: invalidationRecord().body.replace(head, "a".repeat(40)) },
+  ]) {
+    const result = runGate({
+      comments: [comment(receipt), invalidationRecord(extra)],
+    });
+    assert.equal(result.status, 0, result.stderr);
+  }
+});

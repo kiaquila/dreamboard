@@ -1,3 +1,5 @@
+import { isKnownCodexHelpFooter } from "./codex-review-help.mjs";
+
 const reviewerBotLogins = new Set([
   "chatgpt-codex-connector[bot]",
   "gemini-code-assist[bot]",
@@ -96,13 +98,7 @@ export const classifyCodexSummaryComment = (
   const footer = body.indexOf("<details>");
   if (footer >= 0) {
     const help = body.slice(footer);
-    if (
-      !/^<details>\s*<summary>(?:[ℹ💡]\ufe0f?\s*)?About Codex in GitHub<\/summary>[\s\S]*<\/details>$/.test(
-        help,
-      ) ||
-      (help.match(/<details>/g) || []).length !== 1
-    )
-      return pending;
+    if (!isKnownCodexHelpFooter(help)) return pending;
     body = body.slice(0, footer).trim();
   }
   const lines = body.split(/\r?\n/).filter((line) => line.trim());

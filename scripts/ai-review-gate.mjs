@@ -2,6 +2,7 @@
 
 import { appendFileSync, readFileSync } from "node:fs";
 import { readReviewUpdates } from "./codex-review-updates.mjs";
+import { invalidationCutoff } from "./codex-review-invalidations.mjs";
 import {
   classifyCodexSummaryComment,
   codexCommentTimestamp,
@@ -225,8 +226,18 @@ const assertNoUnresolvedCodexFindings = async () => {
       throw new Error("Invalid review thread pagination.");
   } while (after);
 };
-const finishSuccessfully = async () => {
-  if (selectedAgent === "codex") await assertNoUnresolvedCodexFindings();
+const finishSuccessfully = async (assessmentCreatedAt) => {
+  if (selectedAgent === "codex") {
+    await assertNoUnresolvedCodexFindings();
+    const cutoff = invalidationCutoff(
+      await listPaginated(buildIssueCommentsPath(0)),
+      headSha,
+    );
+    if (cutoff && !(assessmentCreatedAt > cutoff))
+      throw new Error(
+        "Native evidence was deleted: require a new assessment after its invalidation record.",
+      );
+  }
   await assertCurrentHead();
   process.exit(0);
 };
@@ -755,7 +766,7 @@ while (Date.now() < deadline) {
       ]);
 
       console.log(mapped.reason);
-      await finishSuccessfully();
+      await finishSuccessfully(Date.parse(matchedReview.submitted_at));
     }
     const commentCanReplaceFormal =
       !formal ||
@@ -795,7 +806,7 @@ while (Date.now() < deadline) {
             "Abbreviated reviewed commit does not resolve to the current full HEAD.",
           );
       }
-      await finishSuccessfully();
+      await finishSuccessfully(Date.parse(comment.created_at));
     }
     const ambiguousEdit =
       dismissalTime &&

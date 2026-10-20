@@ -13,6 +13,12 @@ Unknown receipt-like responses must still wake reevaluation and supersede older
 positive evidence. An unprovable timestamp tie must not prefer positive proof.
 Accept the observed standalone "Bravo." and "Hooray!" encouragements after the exact positive
 verdict; additional contradictory verdict text must still fail closed.
+Strip only exact known native help-template bodies; conflicting or unknown text
+inside the footer must not become positive evidence.
+Persist deletions as current-head negative records owned by GitHub Actions.
+Older receipts or formal approvals cannot regain authority after reevaluation:
+a newly created native assessment must be strictly newer than the record.
+Record mutations must recreate the negative boundary, never clear it.
 Supported receipts with non-current SHA bindings must also supersede older
 current-head positives, even when timeline data is unavailable.
 Persisted setup failures and withdrawn replies must also supersede older proof

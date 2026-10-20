@@ -10,6 +10,9 @@
    independent so concurrency queuing cannot drop transient invalidations.
    Guard overlapping mutations by HEAD and attempt; allow at most one
    follow-up attempt for evidence newer than that attempt's start.
+   Persist deleted evidence as negative issue-comment records, require a new
+   native assessment after the boundary, and repair mutated records. Validate
+   help-footer bodies against known native templates before removing them.
 4. Exercise the actual gate with mocked GitHub responses, plus workflow and
    router behavior. Run the repository preflight.
 5. Request native Codex review as the authenticated owner for every new HEAD.

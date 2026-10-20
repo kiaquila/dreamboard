@@ -13,6 +13,7 @@ const head = "2667f79cd7676ff331730cabf661d38dbbcddb0d";
 const receipt = `<!-- codex-review-receipt:v1 -->\n\nCodex Review: Didn't find any major issues. :rocket:\n\n**Reviewed commit:** \`${head.slice(0, 10)}\``;
 const summary = `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 {"code_review":{"commit_sha":"${head}","status":"completed","has_any_findings":false,"has_unresolved_findings":false}} -->`;
 const nativeComment = (body) => ({
+  id: 10,
   user: { login: "chatgpt-codex-connector[bot]" },
   body,
   created_at: "2026-10-14T11:00:00Z",
@@ -32,8 +33,13 @@ const workflowAccepts = (payload, eventName = "issue_comment") =>
   Function(
     "github",
     "vars",
+    "contains",
     `return (${condition});`,
-  )({ event_name: eventName, event: payload }, { AI_REVIEW_AGENT: "codex" });
+  )(
+    { event_name: eventName, event: { changes: { body: {} }, ...payload } },
+    { AI_REVIEW_AGENT: "codex" },
+    (value, part) => (value || "").includes(part),
+  );
 
 for (const body of [
   receipt,
@@ -114,11 +120,23 @@ const harness = (overrides = {}) => {
       return null;
     }
     if (path === "/actions/runs/5/rerun" && options.method === "POST") {
+      if (state.run.status !== "completed")
+        throw new Error("Run already queued");
       state.reruns++;
       state.run = { ...state.run, status: "queued", run_attempt: 2 };
       return null;
     }
     if (path === "/actions/runs/5") return state.run;
+    if (path.includes("/issues/1/comments") && options.method === "POST") {
+      const record = {
+        ...options.body,
+        id: 20 + state.comments.length,
+        user: { login: "github-actions[bot]" },
+        created_at: "2026-10-15T12:01:01Z",
+      };
+      state.comments.push(record);
+      return record;
+    }
     if (path.includes("/issues/1/comments")) return state.comments;
     if (path.includes("/pulls/1/reviews")) return state.reviews;
     if (path.includes("/pulls/1/comments")) return state.inline;
@@ -215,6 +233,9 @@ globalThis.fetch = async (url, options) => {
       })) };
       headers = { link: '<' + url + '&page=2>; rel="next"' };
     }
+  } else if (parsed.pathname.endsWith('/issues/1/comments') && options.method === 'POST') {
+    data = { ...JSON.parse(options.body), user: { login: 'github-actions[bot]' },
+      created_at: '2026-10-15T12:01:01Z' };
   } else if (parsed.pathname.endsWith('/actions/runs/5')) data = run;
   else if (parsed.pathname.endsWith('/actions/runs/5/rerun') && options.method === 'POST') {
     return new Response(null, { status: 201 });
@@ -259,7 +280,10 @@ globalThis.fetch = async (url, options) => {
         calls
           .filter((call) => call.method === "POST")
           .map((call) => new URL(call.url).pathname),
-        hasTarget ? ["/repos/owner/repo/actions/runs/5/rerun"] : [],
+        [
+          "/repos/owner/repo/issues/1/comments",
+          ...(hasTarget ? ["/repos/owner/repo/actions/runs/5/rerun"] : []),
+        ],
       );
     }
   } finally {
@@ -681,4 +705,58 @@ test("dismissal cancels an active gate before it can publish stale success", asy
     ),
     "already-evaluated",
   );
+});
+
+test("deletion persists a current-head negative record before reevaluation", async () => {
+  const { state, wake } = harness();
+  assert.equal(await wake(event(receipt, "deleted")), "rerun:5");
+  const record = state.comments.find(
+    (c) => c.user.login === "github-actions[bot]",
+  );
+  assert.ok(record);
+  assert.match(record.body, new RegExp(head));
+  assert.match(record.body, /"source_id":10/);
+});
+for (const action of ["edited", "deleted"]) {
+  test(`an invalidation record ${action} is replaced rather than restoring old success`, async () => {
+    const { state, wake } = harness();
+    const payload = event("", action);
+    payload.comment.user.login = "github-actions[bot]";
+    payload.changes = {
+      body: { from: "<!-- codex-review-invalidation:v1 {} -->" },
+    };
+    assert.ok(workflowAccepts(payload));
+    assert.ok(routesCodexWakeup("issue_comment", payload));
+    assert.equal(await wake(payload), "rerun:5");
+    assert.ok(
+      state.comments.some((c) => c.user.login === "github-actions[bot]"),
+    );
+  });
+}
+test("creating a negative record does not recursively wake the gate", () => {
+  const payload = event("<!-- codex-review-invalidation:v1 {} -->");
+  payload.comment.user.login = "github-actions[bot]";
+  assert.equal(Boolean(workflowAccepts(payload)), false);
+  assert.equal(routesCodexWakeup("issue_comment", payload), false);
+});
+
+test("completion detects a deletion record created after its final read", async () => {
+  const { state, wake } = harness();
+  state.comments[0].updated_at = "2026-10-15T11:59:00Z";
+  state.comments.push({
+    user: { login: "github-actions[bot]" },
+    body: `<!-- codex-review-invalidation:v1 ${JSON.stringify({ head_sha: head, source_event: "issue_comment", source_id: 42 })} -->\nDeleted.`,
+    created_at: "2026-10-15T12:00:01Z",
+  });
+  const completion = () => ({
+    action: "completed",
+    workflow_run: { ...state.run, name: "AI Review" },
+  });
+  assert.equal(await wake(completion(), "workflow_run"), "rerun:5");
+  state.run = {
+    ...state.run,
+    status: "completed",
+    run_started_at: "2026-10-15T12:00:02Z",
+  };
+  assert.equal(await wake(completion(), "workflow_run"), "already-evaluated");
 });
