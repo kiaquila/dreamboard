@@ -119,6 +119,10 @@ for (const [name, body] of [
     "PR 56 on-a-roll receipt with info footer",
     `${receipt.replace(":rocket:", "You're on a roll.")}\n\n${helpFooter}`,
   ],
+  [
+    "PR 57 chef's-kiss receipt with info footer",
+    `${receipt.replace(":rocket:", "Chef's kiss.")}\n\n${helpFooter}`,
+  ],
   ["curly legacy", positive.replace("Didn't", "Didn’t")],
   [
     "receipt with help",
@@ -188,6 +192,10 @@ for (const [name, body, extra] of [
   ],
   ["unknown numeric shortcode", receipt.replace(":rocket:", ":-1:")],
   ["unknown encouragement", receipt.replace(":rocket:", "Almost ready!")],
+  [
+    "chef's-kiss followed by conflicting verdict",
+    receipt.replace(":rocket:", "Chef's kiss. However, P1: Fix a bug."),
+  ],
   ["duplicate SHA", `${receipt}\n**Reviewed commit:** \`${head}\``],
   [
     "negative",
