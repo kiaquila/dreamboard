@@ -14,7 +14,7 @@ export const cleanStateBody = (head, transform = (state) => state) => {
       status: null,
     },
   });
-  return `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** | \`${head.slice(0, 7)}\` | Manual request |`;
+  return `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime="2026-10-20T12:02:00Z">2026-10-20T12:02:00Z</relative-time> | \`${head.slice(0, 7)}\` | Manual request |`;
 };
 export const presentationReceipt = (
   head,

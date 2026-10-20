@@ -109,7 +109,16 @@ for (const closing of [
       pick([bot(clean, 2), receipt]).classification.outcome,
       classifyCodexSummaryComment(receipt, head).outcome,
     );
-    assert.equal(pick([receipt, bot(clean, 4)]).classification.outcome, "pass");
+    assert.equal(
+      pick([
+        receipt,
+        bot(
+          clean.replaceAll("2026-10-20T12:02:00Z", "2026-10-20T12:04:00Z"),
+          4,
+        ),
+      ]).classification.outcome,
+      "pass",
+    );
   });
 }
 test("newer pending state withdraws proof", () => {
@@ -197,7 +206,7 @@ test("security review can be clean only with matching visible row", () => {
   assert.equal(
     hasCleanCodexState(
       active +
-        `\n| 🔒 **Security Review** | ✅ **Completed** | \`${head.slice(0, 7)}\` | Manual request |`,
+        `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="2026-10-20T12:02:00Z">2026-10-20T12:02:00Z</relative-time> | \`${head.slice(0, 7)}\` | Manual request |`,
       head,
     ),
     true,
@@ -218,3 +227,51 @@ for (const closing of [
       "pending",
     );
   });
+
+test("security-only edit cannot refresh code completion from before request", () => {
+  const oldCode = clean.replaceAll(
+    "2026-10-20T12:02:00Z",
+    "2026-10-20T12:00:00Z",
+  );
+  const edited = bot(oldCode, 0);
+  edited.updated_at = "2026-10-20T12:04:00Z";
+  assert.equal(pick([edited]).classification.outcome, "pending");
+  const noTime = clean.replace(
+    / <relative-time[^>]+>[^<]+<\/relative-time>/g,
+    "",
+  );
+  assert.equal(hasCleanCodexState(noTime, head), false);
+});
+
+test("security edit cannot reorder old code completion after newer unknown receipt", () => {
+  const snapshot = { ...bot(clean, 2), updated_at: "2026-10-20T12:05:00Z" };
+  assert.equal(
+    pick([snapshot, bot(presentationReceipt(head), 3)]).classification.outcome,
+    "pending",
+  );
+});
+test("future-dated code row cannot supply completion proof", () => {
+  assert.equal(
+    pick([
+      bot(clean.replaceAll("2026-10-20T12:02:00Z", "2026-10-20T12:09:00Z"), 2),
+    ]).classification.outcome,
+    "pending",
+  );
+});
+
+test("subsecond completion cannot order GitHub second-level boundaries", () => {
+  const fractional = clean.replaceAll(
+    "2026-10-20T12:02:00Z",
+    "2026-10-20T12:02:00.070Z",
+  );
+  assert.equal(
+    pick([bot(fractional, 2), bot(presentationReceipt(head), 2, 25)])
+      .classification.outcome,
+    "pending",
+  );
+  const requestSecond = clean.replaceAll(
+    "2026-10-20T12:02:00Z",
+    "2026-10-20T12:01:00.070Z",
+  );
+  assert.equal(pick([bot(requestSecond, 2)]).classification.outcome, "pending");
+});

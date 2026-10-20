@@ -96,6 +96,7 @@ export const hasCleanCodexState = (body, head) => {
     );
     if (
       !row ||
+      !row[2] ||
       row[1] !== label ||
       !head.startsWith(row[4]) ||
       (row[2] && (row[2] !== row[3] || !Number.isFinite(Date.parse(row[2]))))
@@ -103,4 +104,13 @@ export const hasCleanCodexState = (body, head) => {
       return false;
   }
   return true;
+};
+
+// The summary can also be edited by security activity. Code completion time,
+// not the mutable comment timestamp alone, proves this request was reviewed.
+export const codexCodeReviewCompletionTime = (body) => {
+  const match = String(body || "").match(
+    /^\| 📝 \*\*Code Review\*\* \| ✅ \*\*Completed\*\* <relative-time datetime="([^"<>]+)">/m,
+  );
+  return Date.parse(match?.[1] || "");
 };

@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+import {
+  hasCleanCodexState,
+  codexCodeReviewCompletionTime,
+} from "./codex-review-state.mjs";
+
 import { appendFileSync, readFileSync } from "node:fs";
 import { readReviewUpdates } from "./codex-review-updates.mjs";
 import { invalidationCutoff } from "./codex-review-invalidations.mjs";
@@ -726,13 +731,18 @@ while (Date.now() < deadline) {
       }
     }
     const afterDismissal = (entry) =>
-      !codexReviewerLogins.has(entry.user?.login) ||
-      !dismissalTime ||
-      isAfterCodexDismissal(entry, {
-        timelineEvents: timelineEvents || [],
-        dismissalTime,
-        reviewId: matchedReview.id,
-      });
+      dismissalTime &&
+      codexReviewerLogins.has(entry.user?.login) &&
+      hasCleanCodexState(entry.body, headSha)
+        ? Math.floor(codexCodeReviewCompletionTime(entry.body) / 1000) * 1000 >
+          dismissalTime
+        : !codexReviewerLogins.has(entry.user?.login) ||
+          !dismissalTime ||
+          isAfterCodexDismissal(entry, {
+            timelineEvents: timelineEvents || [],
+            dismissalTime,
+            reviewId: matchedReview.id,
+          });
     const matchedComment = pickAuthoritativeCodexSkipModeComment({
       timelineEvents: timelineEvents?.filter(afterDismissal),
       headSha,
@@ -744,7 +754,9 @@ while (Date.now() < deadline) {
     const useFormal =
       formalClassification?.outcome === "pass" &&
       (!matchedComment ||
-        latestReviewTime > codexCommentTimestamp(matchedComment.comment));
+        latestReviewTime >
+          (matchedComment.classification.evidenceTimestamp ??
+            codexCommentTimestamp(matchedComment.comment)));
     if (useFormal) {
       const mapped = formalClassification;
       setOutput("review_agent", selectedAgent);
@@ -773,7 +785,8 @@ while (Date.now() < deadline) {
       formalClassification.outcome === "pass" ||
       dismissalTime ||
       (matchedComment &&
-        codexCommentTimestamp(matchedComment.comment) > latestReviewTime);
+        (matchedComment.classification.evidenceTimestamp ??
+          codexCommentTimestamp(matchedComment.comment)) > latestReviewTime);
     if (
       matchedComment &&
       matchedComment.classification.outcome !== "pending" &&
@@ -808,7 +821,7 @@ while (Date.now() < deadline) {
       }
       await finishSuccessfully(
         (comment.body || "").includes("codex-review-state")
-          ? codexCommentTimestamp(comment)
+          ? classification.evidenceTimestamp
           : Date.parse(comment.created_at),
       );
     }

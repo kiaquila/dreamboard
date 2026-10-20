@@ -236,8 +236,16 @@ keys, unknown keys/versions, wrong types, partial security state and stale SHAs
 remain pending. The matching native visible review table is required; extra or
 contradictory visible text, stale commits and unknown help content fail closed.
 
-The snapshot's `updated_at` must follow the current head activation and latest
-human request boundary; an older creation can qualify only through a fresh edit.
+The visible code-row completion datetime is required and must follow both the
+current head activation and latest request boundary. Security-only summary edits
+cannot refresh an older code verdict. The snapshot's `updated_at` must also follow
+the same boundary; an older creation can qualify only through a fresh edit.
+Clean snapshot ordering uses its actual code completion time, conservatively
+bucketed to GitHub seconds. Completion in a request, activation, receipt or
+formal-withdrawal second cannot prove a later review. A security-only
+edit cannot reorder that code verdict after a later unknown receipt. Completion
+must not exceed the comment update clock (allowing GitHub second truncation).
+Invalid snapshots use their mutable update time as conservative veto signals.
 The latest summary supersedes older clean state even when malformed, negative,
 for another head or still running. A non-passing snapshot wins timestamp ties.
 No timeline means no structured-state approval.
