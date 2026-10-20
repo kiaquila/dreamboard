@@ -111,6 +111,14 @@ for (const [name, body] of [
     "observed hooray receipt with info footer",
     `${receipt.replace(":rocket:", "Hooray!")}\n\n${helpFooter}`,
   ],
+  [
+    "PR 57 thumbs-up shortcode receipt with info footer",
+    `${receipt.replace(":rocket:", ":+1:")}\n\n${helpFooter}`,
+  ],
+  [
+    "PR 56 on-a-roll receipt with info footer",
+    `${receipt.replace(":rocket:", "You're on a roll.")}\n\n${helpFooter}`,
+  ],
   ["curly legacy", positive.replace("Didn't", "Didn’t")],
   [
     "receipt with help",
@@ -170,6 +178,16 @@ for (const [name, body, extra] of [
     "hooray followed by conflicting verdict",
     receipt.replace(":rocket:", "Hooray! However, P1: Fix a bug."),
   ],
+  [
+    "thumbs-up shortcode followed by conflicting verdict",
+    receipt.replace(":rocket:", ":+1: However, P1: Fix a bug."),
+  ],
+  [
+    "on-a-roll followed by conflicting verdict",
+    receipt.replace(":rocket:", "You're on a roll. However, P1: Fix a bug."),
+  ],
+  ["unknown numeric shortcode", receipt.replace(":rocket:", ":-1:")],
+  ["unknown encouragement", receipt.replace(":rocket:", "Almost ready!")],
   ["duplicate SHA", `${receipt}\n**Reviewed commit:** \`${head}\``],
   [
     "negative",
