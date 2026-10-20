@@ -1,0 +1,33 @@
+# Tasks
+
+- [x] Reproduce the receipt prefix regression on current origin/main.
+- [x] Implement receipt parsing, edited-comment retrieval, and HEAD guards.
+- [x] Preserve unresolved finding and severity enforcement.
+- [x] Add trusted native-event wakeup and bounded requeue.
+- [x] Add actual gate, workflow-filter, and runtime-router regression coverage.
+- [x] Complete local preflight with locked dependencies (188 tests).
+- [x] Address native P1 on dismissed-review wakeups using persisted update times.
+- [x] Address native P2 on equal receipt/dismissal timestamps using timeline ordering.
+- [x] Address native P2 on timeline outages: bound receipts do not require timeline data.
+- [x] Address native P1 on edits withdrawing recognized comment evidence.
+- [x] Make ambiguous same-second old edits fail explicitly and recover with fresh evidence.
+- [x] Invalidate deleted receipt evidence, including deletion during active completion.
+- [x] Cancel active gates on receipt withdrawals and formal review changes before reevaluation.
+- [x] Invalidate new nonpassing replies and requeue equal-second evidence without looping.
+- [x] Route unknown receipt markers and prevent older positives from surviving them.
+- [x] Make wrong-head supported receipts supersede older positives without timeline data.
+- [x] Include persisted setup failures during timeline outages and compare both review sources before success.
+- [x] Cancel and requeue an active previous backend when switching review policy.
+- [x] Filter reviewer-switch runs by the target PR association across result pages.
+- [x] Accept the observed native positive suffix "Keep them coming!" and replay the real GitHub receipt offline.
+- [x] Invalidate native inline mutations and cover persisted inline edits at completion.
+- [x] Reproduce and accept the 2026-10-20 native "Bravo." suffix while rejecting appended conflicting verdicts.
+- [x] Reproduce and accept the later native "Hooray!" suffix while rejecting appended conflicting verdicts.
+- [x] Reproduce the native P1 pending-event replacement race and preserve independent invalidation deliveries.
+- [x] Reproduce the native P2 workflow-run pagination gap through the real wakeup CLI and select only the target PR across pages.
+- [x] Address native P1 deletion replay with persisted negative records, strict assessment creation boundaries, and record-mutation recovery.
+- [x] Address native P2 hidden footer verdicts with exact native-template validation and hostile-footer regressions.
+- [x] Accept the observed exact native follow-up question and service-owned task-link footer while rejecting appended findings and unknown links.
+- [ ] Obtain native reviews for the final HEAD.
+- [ ] Verify required gates, resolved threads, and the stable 120-second window.
+- [ ] Merge and confirm trusted-main deployment of the new gate.

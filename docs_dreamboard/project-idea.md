@@ -30,7 +30,7 @@ Before deeper refactoring, the repository must follow the standard delivery path
 
 1. PR-only changes
 2. required checks in GitHub
-3. AI review routing through repository policy with Gemini as the default reviewer
+3. AI review routing through repository policy with Codex as the default reviewer
 4. Vercel preview deploys on PR
 5. Cloudflare Workers publishes an isolated staging URL for every PR
 6. `cz` deploys reviewed `main` revisions after post-merge checks pass

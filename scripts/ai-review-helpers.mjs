@@ -1,3 +1,5 @@
+import { isKnownCodexHelpFooter } from "./codex-review-help.mjs";
+
 const reviewerBotLogins = new Set([
   "chatgpt-codex-connector[bot]",
   "gemini-code-assist[bot]",
@@ -6,9 +8,9 @@ const reviewerBotLogins = new Set([
 
 export const codexReviewerLogins = new Set(["chatgpt-codex-connector[bot]"]);
 
+const receiptMarker = "<!-- codex-review-receipt:v1 -->";
+const summaryMarker = "<!-- codex-pull-request-review-summary -->";
 const codexSummaryPrefix = /^Codex Review:/i;
-const codexNoIssuesPattern =
-  /did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues/i;
 const codexEnvironmentPattern = /create an environment for this repo/i;
 const codexAccountPattern = /create a codex account and connect to github/i;
 const codexTriggerPattern = /@codex review\b/i;
@@ -37,8 +39,18 @@ export const matchesCodexReview = (review, headSha) =>
   codexReviewerLogins.has(review?.user?.login || "") &&
   (review?.body || "").includes("Codex Review");
 
+// Structured summaries are wakeup signals only, never positive evidence.
+export const isCodexWakeupComment = (comment) =>
+  isCodexBotComment(comment) &&
+  (getBody(comment).includes("codex-review-receipt") ||
+    getBody(comment).startsWith(summaryMarker) ||
+    codexSummaryPrefix.test(getBody(comment)) ||
+    Boolean(classifyCodexSetupReply(comment)));
+
 export const matchesCodexSummaryComment = (comment) =>
-  isCodexBotComment(comment) && codexSummaryPrefix.test(getBody(comment));
+  isCodexBotComment(comment) &&
+  (codexSummaryPrefix.test(getBody(comment)) ||
+    getBody(comment).includes("codex-review-receipt"));
 
 export const classifyCodexSetupReply = (comment) => {
   const body = getBody(comment);
@@ -64,24 +76,70 @@ export const classifyCodexSetupReply = (comment) => {
   return null;
 };
 
-export const classifyCodexSummaryComment = (comment) => {
-  const body = getBody(comment);
-
-  if (codexNoIssuesPattern.test(body)) {
-    return {
-      outcome: "pass",
-      reason: "Codex completed review with no major issues.",
-      details: [comment.html_url],
-    };
-  }
-
-  return {
+export const classifyCodexSummaryComment = (
+  comment,
+  headSha,
+  { allowUnboundLegacy = false } = {},
+) => {
+  const pending = {
     outcome: "pending",
     reason:
-      "Codex summary comment did not match a recognized no-findings reply.",
+      "Codex comment lacks unambiguous current-head no-findings evidence.",
+    details: [comment?.html_url],
+  };
+  if (!matchesCodexSummaryComment(comment)) return pending;
+  let body = getBody(comment);
+  const receipt = body.startsWith(receiptMarker);
+  const receiptMentions = body.match(/codex-review-receipt/g) || [];
+  if (receiptMentions.length !== (receipt ? 1 : 0)) return pending;
+  if (receipt) body = body.slice(receiptMarker.length).trim();
+
+  // Ordinary native tasks append this service-owned link after their reply.
+  // Remove only one exact trailing link, never arbitrary prose or link text.
+  body = body
+    .replace(
+      /\n\s*\[View task →\]\(https:\/\/chatgpt\.com\/s\/cd_[a-f0-9]{32}\)\s*$/,
+      "",
+    )
+    .trim();
+
+  // Only the known optional GitHub help footer may follow the result.
+  const footer = body.indexOf("<details>");
+  if (footer >= 0) {
+    const help = body.slice(footer);
+    if (!isKnownCodexHelpFooter(help)) return pending;
+    body = body.slice(0, footer).trim();
+  }
+  const lines = body.split(/\r?\n/).filter((line) => line.trim());
+  if (
+    !/^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s*(?:Nice work!|Keep it up!|Keep them coming!|Bravo\.|Hooray!|You're on a roll\.|What shall we delve into next\?|:\+1:|:[a-z_]+:|🚀|🎉))*$/i.test(
+      lines[0] || "",
+    )
+  )
+    return pending;
+
+  const shaLine = lines[1]?.match(
+    /^\*\*Reviewed commit:\*\* `([a-f0-9]{10,40})`$/,
+  );
+  if (lines.length > (shaLine ? 2 : 1)) return pending;
+  if (shaLine) {
+    if (
+      !/^[a-f0-9]{40}$/.test(headSha || "") ||
+      !headSha.startsWith(shaLine[1])
+    )
+      return pending;
+  } else if (receipt || !allowUnboundLegacy) {
+    return pending;
+  }
+  return {
+    outcome: "pass",
+    reason: "Codex completed review with no major issues.",
     details: [comment.html_url],
   };
 };
+
+export const codexCommentTimestamp = (comment) =>
+  Date.parse(comment.updated_at || comment.created_at || "") || 0;
 
 export const findLatestHeadActivationIndex = (timelineEvents, headSha) => {
   if (!Array.isArray(timelineEvents) || !headSha) {
@@ -100,39 +158,91 @@ export const findLatestHeadActivationIndex = (timelineEvents, headSha) => {
 export const pickAuthoritativeCodexSkipModeComment = ({
   timelineEvents,
   headSha,
+  issueComments = [],
 }) => {
-  if (
-    !Array.isArray(timelineEvents) ||
-    timelineEvents.length === 0 ||
-    !headSha
-  ) {
-    return null;
-  }
-
-  const activationIndex = findLatestHeadActivationIndex(
-    timelineEvents,
-    headSha,
-  );
-  if (activationIndex < 0) {
-    return null;
-  }
+  if (!headSha) return null;
+  const events = Array.isArray(timelineEvents) ? timelineEvents : [];
+  const activationIndex = findLatestHeadActivationIndex(events, headSha);
 
   let boundaryIndex = activationIndex;
-  for (
-    let index = activationIndex + 1;
-    index < timelineEvents.length;
-    index += 1
-  ) {
-    if (isHumanCodexTriggerComment(timelineEvents[index])) {
+  for (let index = activationIndex + 1; index < events.length; index += 1) {
+    if (isHumanCodexTriggerComment(events[index])) {
       boundaryIndex = index;
     }
   }
 
+  const boundComments = [...events, ...issueComments]
+    .filter((entry) => matchesCodexSummaryComment(entry))
+    .filter((entry) => /\*\*Reviewed commit:\*\*/.test(getBody(entry)))
+    .filter((entry) => getBody(entry).includes(headSha.slice(0, 10)));
+  // Binding is required to pass, never to supersede old evidence. Include all
+  // receipt-like responses, including supported receipts for another commit.
+  const receiptComments = [...events, ...issueComments].filter(
+    (entry) =>
+      isCodexBotComment(entry) &&
+      getBody(entry).includes("codex-review-receipt"),
+  );
+  const timelineComments = events
+    .slice(activationIndex >= 0 ? boundaryIndex + 1 : events.length)
+    .filter(
+      (entry) =>
+        isCodexBotComment(entry) &&
+        (matchesCodexSummaryComment(entry) || classifyCodexSetupReply(entry)),
+    );
+  const position = (entry) =>
+    events.findLastIndex(
+      (event) =>
+        isCommentEvent(event) && entry.id != null && event.id === entry.id,
+    );
+  // Persisted replies can invalidate proof even when timeline retrieval fails.
+  // Ignore unedited replies known to precede the current request/activation;
+  // edits and replies with no observable position remain conservative signals.
+  const persistedReplies = issueComments.filter((entry) => {
+    if (!isCodexBotComment(entry)) return false;
+    if (
+      getBody(entry).startsWith(summaryMarker) &&
+      !matchesCodexSummaryComment(entry) &&
+      !classifyCodexSetupReply(entry)
+    )
+      return false;
+    return (
+      activationIndex < 0 ||
+      position(entry) < 0 ||
+      position(entry) > boundaryIndex ||
+      codexCommentTimestamp(entry) > Date.parse(entry.created_at)
+    );
+  });
+  const candidates = [
+    ...timelineComments,
+    ...boundComments,
+    ...receiptComments,
+    ...persistedReplies,
+  ];
+  const classify = (entry) =>
+    classifyCodexSetupReply(entry) ||
+    classifyCodexSummaryComment(entry, headSha, {
+      allowUnboundLegacy: timelineComments.some(
+        (candidate) =>
+          candidate === entry ||
+          (entry.id != null && candidate.id === entry.id),
+      ),
+    });
+  const latestTimestamp = Math.max(0, ...candidates.map(codexCommentTimestamp));
+  const tied = candidates.filter(
+    (entry) => codexCommentTimestamp(entry) === latestTimestamp,
+  );
+  const canOrder = tied.every(
+    (entry) =>
+      codexCommentTimestamp(entry) === Date.parse(entry.created_at) &&
+      position(entry) >= 0,
+  );
+  // Creation order cannot prove edit order. Resolve the whole timestamp group
+  // conservatively, so the result is independent of API order and duplicates.
   const latestCodexComment =
-    timelineEvents
-      .slice(boundaryIndex + 1)
-      .filter((entry) => isCodexBotComment(entry))
-      .at(-1) || null;
+    (canOrder
+      ? tied.sort((a, b) => position(a) - position(b)).at(-1)
+      : tied.find((entry) => classify(entry).outcome !== "pass") ||
+        tied.at(-1)) || null;
 
   if (!latestCodexComment) {
     return null;
@@ -149,20 +259,37 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     };
   }
 
-  if (!matchesCodexSummaryComment(latestCodexComment)) {
-    return null;
-  }
-
-  const summaryClassification = classifyCodexSummaryComment(latestCodexComment);
-  if (summaryClassification.outcome === "pending") {
-    return null;
-  }
+  const summaryClassification = classify(latestCodexComment);
 
   return {
     comment: latestCodexComment,
     classification: summaryClassification,
-    reviewState: "COMMENTED_NO_FINDINGS",
+    reviewState:
+      summaryClassification.outcome === "pass"
+        ? "COMMENTED_NO_FINDINGS"
+        : "COMMENTED_UNVERIFIED",
     boundaryType:
       boundaryIndex === activationIndex ? "head-activation" : "human-trigger",
   };
+};
+
+export const isAfterCodexDismissal = (
+  entry,
+  { timelineEvents, dismissalTime, reviewId },
+) => {
+  const timestamp = codexCommentTimestamp(entry);
+  if (timestamp !== dismissalTime) return timestamp > dismissalTime;
+  // GitHub truncates these timestamps to seconds. For a fresh comment in the
+  // same second, timeline order distinguishes a replacement from old evidence.
+  // An older comment's creation position cannot order a later edit. If its
+  // update timestamp ties the dismissal, the gate requires fresh evidence.
+  const dismissalIndex = timelineEvents.findLastIndex(
+    (event) =>
+      event.event === "review_dismissed" &&
+      event.dismissed_review?.review_id === reviewId,
+  );
+  const commentIndex = timelineEvents.findLastIndex(
+    (event) => event.event === "commented" && event.id === entry.id,
+  );
+  return dismissalIndex >= 0 && commentIndex > dismissalIndex;
 };
