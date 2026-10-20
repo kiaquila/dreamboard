@@ -16,7 +16,7 @@
 4. Exercise the actual gate with mocked GitHub responses, plus workflow and
    router behavior. Run the repository preflight.
 5. Request native Codex review as the authenticated owner for every new HEAD.
-   For initial rollout, first try the existing formal-review path. If Codex
+   For initial rollout, first try the existing formal-review path. A native Codex task may also independently audit the exact full diff from its git checkout and return a genuine legacy-format assessment; verify live HEAD, threads, and checks externally before merge when that environment lacks live GitHub access. Never turn an unverified metadata copy into a positive result. If Codex
    emits only the new receipt, use an already-supported fallback (Gemini, or configured Claude if Gemini
    is unavailable) with a real native review and the unchanged trusted-main required gate,
    while retaining native Codex review of the same exact HEAD. Restore the

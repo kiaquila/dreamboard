@@ -13,6 +13,8 @@ Unknown receipt-like responses must still wake reevaluation and supersede older
 positive evidence. An unprovable timestamp tie must not prefer positive proof.
 Accept the observed standalone "Bravo." and "Hooray!" encouragements after the exact positive
 verdict; additional contradictory verdict text must still fail closed.
+Accept the observed exact follow-up question and the exact native task-link
+footer, without permitting arbitrary questions, prose, domains, or duplicate links.
 Strip only exact known native help-template bodies; conflicting or unknown text
 inside the footer must not become positive evidence.
 Persist deletions as current-head negative records owned by GitHub Actions.

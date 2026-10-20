@@ -82,6 +82,13 @@ HEAD; abbreviated commits must also resolve through GitHub to that full SHA.
 Known encouragement suffixes include "Nice work!", "Keep it up!", "Keep them
 coming!", "Bravo." (observed in the [2026-10-20 native receipt](https://github.com/kiaquila/dreamboard/pull/56#issuecomment-6291144147)),
 and "Hooray!" (observed in a [later native receipt](https://github.com/kiaquila/dreamboard/pull/56#issuecomment-6292041940)).
+The exact follow-up question "What shall we delve into next?" is also observed
+in a [completed native receipt](https://github.com/kiaquila/dreamboard/pull/56#issuecomment-6292550550).
+Ordinary native tasks can append one exact trailing `[View task →]` link to
+`https://chatgpt.com/s/cd_<32 lowercase hex characters>`. Only that service link
+may be stripped; duplicate links, foreign domains, extra prose, and findings
+before or after the link remain unsupported. A task reply needs a genuine
+independent assessment and the same author, SHA, freshness, and thread checks.
 Arbitrary extra verdict text remains unsupported, including text appended after
 an otherwise recognized encouragement.
 Only the exact known native help templates are stripped, allowing whitespace

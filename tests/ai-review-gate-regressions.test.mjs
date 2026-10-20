@@ -14,6 +14,8 @@ const helpFooter = readFileSync(
 const head = "2667f79cd7676ff331730cabf661d38dbbcddb0d";
 const bot = "chatgpt-codex-connector[bot]";
 const positive = "Codex Review: Didn't find any major issues. :rocket:";
+const taskLink =
+  "[View task →](https://chatgpt.com/s/cd_6ad7739599808191a9f9f3d75b130484)";
 const receipt = `<!-- codex-review-receipt:v1 -->\n\n${positive}\n\n**Reviewed commit:** \`${head.slice(0, 10)}\``;
 const summary = `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 {"code_review":{"commit_sha":"${head}","has_any_findings":false,"has_unresolved_findings":false,"status":"completed"},"security_review":{"commit_sha":null,"has_any_findings":null,"has_unresolved_findings":null,"status":null}} -->\n\n## Codex Review Summary`;
 const comment = (body, extra = {}) => ({
@@ -82,6 +84,14 @@ for (const [name, body] of [
   ["real receipt", receipt],
   ["legacy", positive],
   [
+    "SHA-bound native task reply with its service link",
+    `${positive}\n\n**Reviewed commit:** \`${head}\`\n\n ${taskLink}`,
+  ],
+  [
+    "observed follow-up question",
+    receipt.replace(":rocket:", "What shall we delve into next?"),
+  ],
+  [
     "native short help footer",
     `${receipt}\n\n${helpFooter.split("Codex can also")[0].trim()}\n</details>`,
   ],
@@ -123,6 +133,23 @@ for (const [name, body, extra] of [
   ["duplicate marker", `<!-- codex-review-receipt:v1 -->\n${receipt}`],
   ["malformed marker", receipt.replace(":v1", ":v2")],
   ["conflicting content", `${receipt}\nP1: Fix a bug.`],
+  [
+    "conflicting follow-up question",
+    receipt.replace(
+      ":rocket:",
+      "What shall we delve into next? P1: Fix a bug.",
+    ),
+  ],
+  [
+    "task link followed by a finding",
+    `${receipt}\n\n${taskLink}\nP1: Fix a bug.`,
+  ],
+  ["finding before task link", `${receipt}\nP1: Fix a bug.\n${taskLink}`],
+  [
+    "task link to another domain",
+    `${receipt}\n${taskLink.replace("chatgpt.com", "example.com")}`,
+  ],
+  ["duplicate task links", `${receipt}\n${taskLink}\n${taskLink}`],
   [
     "conflicting footer verdict",
     `${receipt}\n\n${helpFooter.replace("</details>", "P1: Fix a bug\n</details>")}`,

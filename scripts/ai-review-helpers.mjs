@@ -94,6 +94,15 @@ export const classifyCodexSummaryComment = (
   if (receiptMentions.length !== (receipt ? 1 : 0)) return pending;
   if (receipt) body = body.slice(receiptMarker.length).trim();
 
+  // Ordinary native tasks append this service-owned link after their reply.
+  // Remove only one exact trailing link, never arbitrary prose or link text.
+  body = body
+    .replace(
+      /\n\s*\[View task →\]\(https:\/\/chatgpt\.com\/s\/cd_[a-f0-9]{32}\)\s*$/,
+      "",
+    )
+    .trim();
+
   // Only the known optional GitHub help footer may follow the result.
   const footer = body.indexOf("<details>");
   if (footer >= 0) {
@@ -103,7 +112,7 @@ export const classifyCodexSummaryComment = (
   }
   const lines = body.split(/\r?\n/).filter((line) => line.trim());
   if (
-    !/^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s*(?:Nice work!|Keep it up!|Keep them coming!|Bravo\.|Hooray!|:[a-z_]+:|🚀|🎉))*$/i.test(
+    !/^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s*(?:Nice work!|Keep it up!|Keep them coming!|Bravo\.|Hooray!|What shall we delve into next\?|:[a-z_]+:|🚀|🎉))*$/i.test(
       lines[0] || "",
     )
   )
