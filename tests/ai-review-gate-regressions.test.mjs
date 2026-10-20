@@ -259,7 +259,7 @@ for (const [name, body, extra] of [
   });
 }
 
-test("edited old receipt is read from issue comments despite its old timeline position", () => {
+test("edited old receipt cannot supersede a newer incomplete summary", () => {
   const updated = comment(receipt, {
     created_at: "2026-10-14T12:00:00Z",
     updated_at: "2026-10-15T12:02:00Z",
@@ -276,7 +276,7 @@ test("edited old receipt is read from issue comments despite its old timeline po
       },
     ],
   });
-  assert.equal(result.status, 0, result.stderr);
+  assert.notEqual(result.status, 0, result.stdout);
 });
 
 test("legacy summary before activation is stale", () => {
@@ -860,3 +860,48 @@ test("security-only snapshot edit cannot supersede later formal dismissal", () =
   });
   assert.notEqual(result.status, 0, result.stdout);
 });
+
+for (const scenario of ["newer-pending", "prerequest", "edited-unknown"]) {
+  test(`actual gate rejects static edit renewal: ${scenario}`, () => {
+    const request = {
+      ...comment(`@codex review ${head}`, {
+        id: 79,
+        created_at: "2026-10-20T12:01:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const edited = comment(
+      presentationReceipt(
+        head,
+        scenario === "edited-unknown" ? "Unseen closing!" : ":rocket:",
+      ),
+      {
+        id: 80,
+        created_at:
+          scenario === "newer-pending"
+            ? "2026-10-20T12:02:00Z"
+            : "2026-10-20T12:00:00Z",
+        updated_at: "2026-10-20T12:05:00Z",
+      },
+    );
+    const snapshot = comment(
+      scenario === "newer-pending"
+        ? cleanStateBody(head).replaceAll(
+            '"status":"completed"',
+            '"status":"running"',
+          )
+        : cleanStateBody(head),
+      { id: 81, created_at: "2026-10-20T12:03:00Z" },
+    );
+    const events = [
+      { ...activation, created_at: "2026-10-20T11:59:00Z" },
+      request,
+      edited,
+      ...(scenario === "prerequest" ? [] : [snapshot]),
+    ];
+    const result = runGate({ timeline: events, comments: events });
+    assert.notEqual(result.status, 0, result.stdout);
+  });
+}

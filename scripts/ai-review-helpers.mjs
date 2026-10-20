@@ -229,7 +229,31 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     eligibleState(entry) &&
     hasCleanCodexState(getBody(entry), headSha)
       ? Math.floor(codexCodeReviewCompletionTime(getBody(entry)) / 1000) * 1000
-      : codexCommentTimestamp(entry);
+      : !isCodexStateBody(getBody(entry)) &&
+          classifyCodexSummaryComment(entry, headSha, {
+            allowUnboundLegacy: true,
+          }).outcome === "pass"
+        ? Date.parse(entry.created_at || "") || 0
+        : codexCommentTimestamp(entry);
+  const eligibleStaticApproval = (entry) => {
+    const createdAt = Date.parse(entry.created_at || "");
+    const entryIndex = events.findLastIndex(
+      (event) => event === entry || (entry.id != null && event.id === entry.id),
+    );
+    return (
+      Number.isFinite(createdAt) &&
+      [activationIndex, boundaryIndex].every((index) => {
+        const time = Date.parse(events[index]?.created_at || "");
+        return (
+          !Number.isFinite(time) ||
+          createdAt > time ||
+          (createdAt === time &&
+            codexCommentTimestamp(entry) === createdAt &&
+            entryIndex > index)
+        );
+      })
+    );
+  };
   const stateComments = allComments.filter(
     (entry) =>
       isCodexBotComment(entry) &&
@@ -337,6 +361,15 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   }
 
   const summaryClassification = classify(latestCodexComment);
+  if (
+    summaryClassification.outcome === "pass" &&
+    !isCodexStateBody(getBody(latestCodexComment)) &&
+    !eligibleStaticApproval(latestCodexComment)
+  ) {
+    summaryClassification.outcome = "pending";
+    summaryClassification.reason =
+      "Static review predates the current request or head activation.";
+  }
   summaryClassification.evidenceTimestamp = evidenceTime(latestCodexComment);
 
   return {

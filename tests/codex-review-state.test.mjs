@@ -275,3 +275,75 @@ test("subsecond completion cannot order GitHub second-level boundaries", () => {
   );
   assert.equal(pick([bot(requestSecond, 2)]).classification.outcome, "pending");
 });
+
+const staticReceipt = () => presentationReceipt(head, ":rocket:");
+test("editing static approval cannot outrank newer pending state", () => {
+  const receipt = {
+    ...bot(staticReceipt(), 2),
+    updated_at: "2026-10-20T12:05:00Z",
+  };
+  const pending = bot(
+    clean.replaceAll('"status":"completed"', '"status":"running"'),
+    3,
+  );
+  assert.equal(pick([receipt, pending]).classification.outcome, "pending");
+});
+test("editing prerequest static approval cannot make it fresh", () => {
+  const receipt = {
+    ...bot(staticReceipt(), 0),
+    updated_at: "2026-10-20T12:05:00Z",
+  };
+  assert.notEqual(pick([receipt])?.classification.outcome, "pass");
+});
+test("editing receipt into unknown prose invalidates newer clean completion", () => {
+  const receipt = {
+    ...bot(presentationReceipt(head), 0),
+    updated_at: "2026-10-20T12:05:00Z",
+  };
+  assert.equal(
+    pick([receipt, bot(clean, 2)]).classification.outcome,
+    "pending",
+  );
+});
+test("static approval retains its creation evidence time after edit", () => {
+  const receipt = {
+    ...bot(staticReceipt(), 2),
+    updated_at: "2026-10-20T12:05:00Z",
+  };
+  const selected = pick([receipt]);
+  assert.equal(selected.classification.outcome, "pass");
+  assert.equal(
+    selected.classification.evidenceTimestamp,
+    Date.parse(receipt.created_at),
+  );
+});
+
+test("editing legacy approval cannot outrank newer pending state", () => {
+  const legacy = {
+    ...bot("Codex Review: Didn't find any major issues. :rocket:", 2),
+    updated_at: "2026-10-20T12:05:00Z",
+  };
+  const pending = bot(
+    clean.replaceAll('"status":"completed"', '"status":"running"'),
+    3,
+  );
+  assert.equal(pick([legacy, pending]).classification.outcome, "pending");
+});
+
+test("unedited same-second static receipt uses proven timeline order", () => {
+  const receipt = bot(staticReceipt(), 1, 200);
+  assert.equal(pick([receipt]).classification.outcome, "pass");
+  assert.equal(
+    pick([{ ...receipt, updated_at: "2026-10-20T12:03:00Z" }]).classification
+      .outcome,
+    "pending",
+  );
+  assert.notEqual(
+    pickAuthoritativeCodexSkipModeComment({
+      timelineEvents: [activation, receipt, trigger],
+      issueComments: [receipt],
+      headSha: head,
+    })?.classification.outcome,
+    "pass",
+  );
+});

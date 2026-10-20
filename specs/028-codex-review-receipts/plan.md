@@ -37,3 +37,5 @@ a newer strict clean summary. Preserve exact SHA resolution and finding vetoes. 
 review and final-head checks. Regression coverage exercises actual gates, both
 arrival orders, schemas, freshness, spoofing, contradictions and native blockers.
 Run full preflight and obtain current-head native review before protected merge.
+
+Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
