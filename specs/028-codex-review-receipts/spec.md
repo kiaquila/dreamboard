@@ -11,6 +11,8 @@ signals only. Preserve P0-P2 blocking and P3 advisory policy, including
 unresolved findings from earlier commits. A request marker cannot clear findings.
 Unknown receipt-like responses must still wake reevaluation and supersede older
 positive evidence. An unprovable timestamp tie must not prefer positive proof.
+Accept the observed standalone "Bravo." encouragement after the exact positive
+verdict; additional contradictory verdict text must still fail closed.
 Supported receipts with non-current SHA bindings must also supersede older
 current-head positives, even when timeline data is unavailable.
 Persisted setup failures and withdrawn replies must also supersede older proof

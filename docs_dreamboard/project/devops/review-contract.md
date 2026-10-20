@@ -79,8 +79,10 @@ The trusted gate accepts legacy `Codex Review:` replies and the native
 `chatgpt-codex-connector[bot]`. Receipts require an explicit no-major-issues
 result and a reviewed commit of 10-40 hex characters matching the current full
 HEAD; abbreviated commits must also resolve through GitHub to that full SHA.
-Known encouragement suffixes include "Nice work!", "Keep it up!", and the
-observed "Keep them coming!"; arbitrary extra verdict text remains unsupported.
+Known encouragement suffixes include "Nice work!", "Keep it up!", "Keep them
+coming!", and "Bravo." (observed in the [2026-10-20 native receipt](https://github.com/kiaquila/dreamboard/pull/56#issuecomment-6291144147)).
+Arbitrary extra verdict text remains unsupported, including text appended after
+an otherwise recognized encouragement.
 Unbound legacy replies require current-head timeline activation and
 request ordering. SHA-bound receipts remain usable during timeline outages;
 only legacy binding and equal-second dismissal ordering require the timeline.
