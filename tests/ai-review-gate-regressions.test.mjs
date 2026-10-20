@@ -123,6 +123,10 @@ for (const [name, body] of [
     "PR 57 chef's-kiss receipt with info footer",
     `${receipt.replace(":rocket:", "Chef's kiss.")}\n\n${helpFooter}`,
   ],
+  [
+    "PR 57 swish receipt with info footer",
+    `${receipt.replace(":rocket:", "Swish!")}\n\n${helpFooter}`,
+  ],
   ["curly legacy", positive.replace("Didn't", "Didn’t")],
   [
     "receipt with help",
@@ -195,6 +199,10 @@ for (const [name, body, extra] of [
   [
     "chef's-kiss followed by conflicting verdict",
     receipt.replace(":rocket:", "Chef's kiss. However, P1: Fix a bug."),
+  ],
+  [
+    "swish followed by conflicting verdict",
+    receipt.replace(":rocket:", "Swish! However, P1: Fix a bug."),
   ],
   ["duplicate SHA", `${receipt}\n**Reviewed commit:** \`${head}\``],
   [

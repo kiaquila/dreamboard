@@ -14,6 +14,6 @@ Confirm both sides of the contract against real GitHub output: a clean Codex
 assessment can pass the gate, and a native P2 finding remains blocking.
 
 The synchronized actions update in PR #57 later received the exact additional
-suffix "Chef's kiss.". Accept this harmless native suffix with a conflicting
+suffixes "Chef's kiss." and "Swish!". Accept these harmless native suffixes with a conflicting
 verdict regression. Keep unknown text fail-closed and obtain a new native
 assessment when this actual gate code change advances the PR HEAD.

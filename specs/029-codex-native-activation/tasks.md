@@ -11,8 +11,8 @@
 PR #59 delivery is recorded in its final-SHA PR evidence. Follow-up on PR #57:
 
 - [x] Update the original actions branch to protected main under strict checks.
-- [x] Reproduce its genuine native "Chef's kiss." clean receipt.
+- [x] Reproduce its genuine native "Chef's kiss." and "Swish!" clean receipts.
 - [x] Add exact-suffix support and conflicting-verdict rejection coverage.
-- [x] Pass local preflight with 196 tests on the final code.
+- [x] Pass local preflight with 198 tests, including both observed suffixes.
 - [ ] Pass final-head preflight, native Codex, required checks, and thread checks.
 - [ ] Hand off for the supervising chat's two-minute check and merge.
