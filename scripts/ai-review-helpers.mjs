@@ -112,7 +112,7 @@ export const classifyCodexSummaryComment = (
   }
   const lines = body.split(/\r?\n/).filter((line) => line.trim());
   if (
-    !/^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s*(?:Nice work!|Keep it up!|Keep them coming!|Bravo\.|Hooray!|What shall we delve into next\?|:[a-z_]+:|🚀|🎉))*$/i.test(
+    !/^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s*(?:Nice work!|Keep it up!|Keep them coming!|Bravo\.|Hooray!|You're on a roll\.|What shall we delve into next\?|:\+1:|:[a-z_]+:|🚀|🎉))*$/i.test(
       lines[0] || "",
     )
   )
