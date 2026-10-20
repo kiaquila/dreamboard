@@ -37,6 +37,14 @@ See `docs_dreamboard/project/devops/ai-runner.md` for the full matrix.
 - `P3`-only findings are advisory
 - `P0` to `P2` findings block merge
 
+The active operating path uses Codex without Gemini or new API keys. In Codex
+repository settings, enable **Automatic review**, select **All PRs**, and use
+**On PR open**. Do not inherit disabled personal preferences. Existing PRs and
+later pushes need an authenticated owner command:
+`pnpm run review:switch -- --to codex --pr <number>`. This posts the native
+request and reevaluates the PR-linked gate; it does not dispatch a replacement
+check or treat a bot-authored trigger as a human request.
+
 ## Gemini Review
 
 - Fallback review backend, used when `AI_REVIEW_AGENT=gemini`
@@ -186,11 +194,21 @@ A later receipt supersedes that ambiguity and wakes the gate normally. This
 recovery preserves the dismissal boundary; an edited receipt with a strictly
 later update time remains valid without timeline ordering.
 
+The positive suffix allowlist includes the exact native `:+1:` shortcode
+([PR #57 receipt](https://github.com/kiaquila/dreamboard/pull/57#issuecomment-6293144095))
+and "You're on a roll."
+([PR #56 receipt](https://github.com/kiaquila/dreamboard/pull/56#issuecomment-6292798502)).
+This does not permit arbitrary numeric shortcodes, encouragements, or text
+after a known suffix. Contradictory verdicts still fail closed.
+
 When introducing changes to the gate itself, the PR still executes the old
 trusted-main scripts. Obtain real native Codex review for the exact HEAD. If
-its format is unsupported by main, an existing fallback can provide
-the required `AI Review` through an independent native review of the same HEAD.
-Prefer Gemini; use Claude when Gemini is unavailable and `ANTHROPIC_API_KEY` is
-already configured.
-Restore Codex selection after merge and validate the new trusted-main parser.
-Do not switch checkout to PR code, fabricate a status, or bypass protection.
+its clean-result format is unsupported by main, a separate native Codex task
+may independently audit the full diff between the exact base and HEAD git
+objects and return a genuine legacy-format assessment with the full HEAD SHA.
+The task must inspect the source itself and report all material findings;
+copying or translating an earlier verdict is not an assessment. Verify live
+HEAD, required checks, and unresolved threads externally if the task lacks
+GitHub API access. This keeps Codex selected without Gemini or key changes.
+Validate the new trusted-main parser after merge. Do not switch checkout to PR
+code, fabricate a status, or bypass protection.
