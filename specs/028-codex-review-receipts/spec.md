@@ -59,3 +59,16 @@ paginated results, so another PR on the same commit cannot be cancelled or rerun
 Native inline review-comment creation, edits, and deletion must invalidate the
 current gate, including findings on older commits. Completion scans must retain
 inline update timestamps so a mutation racing gate completion is reevaluated.
+
+## Strict native structured state
+
+Support unseen friendly closings through independent official structured proof,
+not an open-ended prose verdict. Validate one closed-schema native v1 snapshot,
+full current head, completed clean code/security state and matching visible table.
+Use mutable update time and request/head boundaries; newer malformed, stale,
+pending or negative state invalidates old clean state, including timestamp ties.
+Keep standalone receipts strict: unknown later/equal receipts stay pending until
+a newer strict clean summary. Preserve exact SHA resolution and finding vetoes. Preserve blocking threads, formal
+review and final-head checks. Regression coverage exercises actual gates, both
+arrival orders, schemas, freshness, spoofing, contradictions and native blockers.
+Run full preflight and obtain current-head native review before protected merge.

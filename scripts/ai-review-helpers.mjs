@@ -1,3 +1,4 @@
+import { hasCleanCodexState, isCodexStateBody } from "./codex-review-state.mjs";
 import { isKnownCodexHelpFooter } from "./codex-review-help.mjs";
 
 const reviewerBotLogins = new Set([
@@ -39,7 +40,7 @@ export const matchesCodexReview = (review, headSha) =>
   codexReviewerLogins.has(review?.user?.login || "") &&
   (review?.body || "").includes("Codex Review");
 
-// Structured summaries are wakeup signals only, never positive evidence.
+// Wakeup routing recognizes state; only the strict classifier can grant proof.
 export const isCodexWakeupComment = (comment) =>
   isCodexBotComment(comment) &&
   (getBody(comment).includes("codex-review-receipt") ||
@@ -50,6 +51,7 @@ export const isCodexWakeupComment = (comment) =>
 export const matchesCodexSummaryComment = (comment) =>
   isCodexBotComment(comment) &&
   (codexSummaryPrefix.test(getBody(comment)) ||
+    isCodexStateBody(getBody(comment)) ||
     getBody(comment).includes("codex-review-receipt"));
 
 export const classifyCodexSetupReply = (comment) => {
@@ -88,6 +90,16 @@ export const classifyCodexSummaryComment = (
     details: [comment?.html_url],
   };
   if (!matchesCodexSummaryComment(comment)) return pending;
+  if (isCodexStateBody(getBody(comment))) {
+    return hasCleanCodexState(getBody(comment), headSha)
+      ? {
+          outcome: "pass",
+          reason:
+            "Codex completed current-head structured review with no findings.",
+          details: [comment.html_url],
+        }
+      : pending;
+  }
   let body = getBody(comment);
   const receipt = body.startsWith(receiptMarker);
   const receiptMentions = body.match(/codex-review-receipt/g) || [];
@@ -171,6 +183,36 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     }
   }
 
+  const allComments = [...events, ...issueComments];
+  const statePosition = (entry) =>
+    events.findLastIndex(
+      (event) =>
+        isCommentEvent(event) && entry.id != null && event.id === entry.id,
+    );
+  const stateBoundaryTime = Date.parse(events[boundaryIndex]?.created_at || "");
+  const eligibleState = (entry) => {
+    if (activationIndex < 0) return false;
+    const time = codexCommentTimestamp(entry);
+    if (Number.isFinite(stateBoundaryTime)) {
+      return (
+        time > stateBoundaryTime ||
+        (time === stateBoundaryTime &&
+          time === Date.parse(entry.created_at) &&
+          statePosition(entry) > boundaryIndex)
+      );
+    }
+    return (
+      statePosition(entry) > boundaryIndex &&
+      time === Date.parse(entry.created_at)
+    );
+  };
+  const stateComments = allComments.filter(
+    (entry) =>
+      isCodexBotComment(entry) &&
+      isCodexStateBody(getBody(entry)) &&
+      eligibleState(entry),
+  );
+
   const boundComments = [...events, ...issueComments]
     .filter((entry) => matchesCodexSummaryComment(entry))
     .filter((entry) => /\*\*Reviewed commit:\*\*/.test(getBody(entry)))
@@ -217,8 +259,17 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     ...boundComments,
     ...receiptComments,
     ...persistedReplies,
+    ...stateComments,
   ];
   const classify = (entry) =>
+    (isCodexStateBody(getBody(entry)) && !eligibleState(entry)
+      ? {
+          outcome: "pending",
+          reason:
+            "Structured review predates the current request or head activation.",
+          details: [entry.html_url],
+        }
+      : null) ||
     classifyCodexSetupReply(entry) ||
     classifyCodexSummaryComment(entry, headSha, {
       allowUnboundLegacy: timelineComments.some(
@@ -239,10 +290,12 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   // Creation order cannot prove edit order. Resolve the whole timestamp group
   // conservatively, so the result is independent of API order and duplicates.
   const latestCodexComment =
-    (canOrder
-      ? tied.sort((a, b) => position(a) - position(b)).at(-1)
-      : tied.find((entry) => classify(entry).outcome !== "pass") ||
-        tied.at(-1)) || null;
+    (tied.some((entry) => isCodexStateBody(getBody(entry)))
+      ? tied.find((entry) => classify(entry).outcome !== "pass") || tied.at(-1)
+      : canOrder
+        ? tied.sort((a, b) => position(a) - position(b)).at(-1)
+        : tied.find((entry) => classify(entry).outcome !== "pass") ||
+          tied.at(-1)) || null;
 
   if (!latestCodexComment) {
     return null;

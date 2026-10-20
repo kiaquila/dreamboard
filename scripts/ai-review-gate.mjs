@@ -806,7 +806,11 @@ while (Date.now() < deadline) {
             "Abbreviated reviewed commit does not resolve to the current full HEAD.",
           );
       }
-      await finishSuccessfully(Date.parse(comment.created_at));
+      await finishSuccessfully(
+        (comment.body || "").includes("codex-review-state")
+          ? codexCommentTimestamp(comment)
+          : Date.parse(comment.created_at),
+      );
     }
     const ambiguousEdit =
       dismissalTime &&
