@@ -198,9 +198,9 @@ The positive suffix allowlist includes the exact native `:+1:` shortcode
 ([PR #57 receipt](https://github.com/kiaquila/dreamboard/pull/57#issuecomment-6293144095))
 and "You're on a roll."
 ([PR #56 receipt](https://github.com/kiaquila/dreamboard/pull/56#issuecomment-6292798502)).
-It also includes "Chef's kiss."
-([synchronized PR #57 receipt](https://github.com/kiaquila/dreamboard/pull/57#issuecomment-6294143215)).
-The subsequent "Swish!" suffix is also an exact supported form
+It also includes the literal "Chef's kiss."
+([PR #57 receipt](https://github.com/kiaquila/dreamboard/pull/57#issuecomment-6294585352))
+and "Swish!"
 ([PR #57 receipt](https://github.com/kiaquila/dreamboard/pull/57#issuecomment-6294362761)).
 This does not permit arbitrary numeric shortcodes, encouragements, or text
 after a known suffix. Contradictory verdicts still fail closed.

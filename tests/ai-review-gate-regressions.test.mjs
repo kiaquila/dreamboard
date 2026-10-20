@@ -196,14 +196,41 @@ for (const [name, body, extra] of [
   ],
   ["unknown numeric shortcode", receipt.replace(":rocket:", ":-1:")],
   ["unknown encouragement", receipt.replace(":rocket:", "Almost ready!")],
-  [
-    "chef's-kiss followed by conflicting verdict",
-    receipt.replace(":rocket:", "Chef's kiss. However, P1: Fix a bug."),
-  ],
-  [
-    "swish followed by conflicting verdict",
-    receipt.replace(":rocket:", "Swish! However, P1: Fix a bug."),
-  ],
+  ...["Chef's kiss.", "Swish!"].flatMap((suffix) => {
+    const native = receipt.replace(":rocket:", suffix);
+    return [
+      [
+        `${suffix} with wrong SHA`,
+        native.replace(head.slice(0, 10), "aaaaaaaaaa"),
+      ],
+      [
+        `${suffix} with spoofed author`,
+        native,
+        { user: { login: "attacker" } },
+      ],
+      [
+        `${suffix} with duplicate marker`,
+        `<!-- codex-review-receipt:v1 -->\n${native}`,
+      ],
+      [`${suffix} with unknown marker`, native.replace(":v1", ":v2")],
+      [
+        `${suffix} with unknown footer`,
+        `${native}\n\n${helpFooter.replace("If Codex has suggestions", "P1: Fix a bug. If Codex has suggestions")}`,
+      ],
+      [
+        `${suffix} with trailing prose`,
+        native.replace(suffix, `${suffix} Almost ready!`),
+      ],
+      [
+        `${suffix} with conflicting verdict`,
+        native.replace(suffix, `${suffix} However, P1: Fix a bug.`),
+      ],
+      [
+        `${suffix} with negative verdict`,
+        native.replace("Didn't find any major issues.", "Found major issues."),
+      ],
+    ];
+  }),
   ["duplicate SHA", `${receipt}\n**Reviewed commit:** \`${head}\``],
   [
     "negative",
