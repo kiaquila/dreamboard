@@ -265,3 +265,5 @@ SHA resolution and final-head checks keep their existing blocking rules.
 Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
 
 A fresh unedited static receipt at the same timestamp second as a request or head activation may use observed timeline order after that boundary. Edited or unordered equal-second receipts remain pending.
+
+Strict valid same-head structured finding flags persist per section across repeated review requests. Only a strictly newer canonical completed false/false result for the affected section clears them. Security null and later code-only/formal/static approvals cannot clear security findings; equal-second evidence stays blocked. Malformed and untrusted historical snapshots cannot create a permanent latch.

@@ -12,6 +12,13 @@ const cleanReview = (review, head) =>
   review.has_any_findings === false &&
   review.has_unresolved_findings === false &&
   review.status === "completed";
+const validReview = (review, head) =>
+  cleanKeys(review, fields) &&
+  review.commit_sha === head &&
+  ["completed", "running"].includes(review.status) &&
+  [review.has_any_findings, review.has_unresolved_findings].every(
+    (flag) => flag === null || typeof flag === "boolean",
+  );
 const inactiveReview = (review) =>
   cleanKeys(review, fields) &&
   Object.values(review).every((value) => value === null);
@@ -29,7 +36,7 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 
 // A structured snapshot is authoritative only with one closed-schema machine
 // record and the matching native visible table. Prose and reactions are not proof.
-export const hasCleanCodexState = (body, head) => {
+export const parseCodexState = (body, head) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
   const match = String(body || "")
     .trim()
@@ -49,10 +56,10 @@ export const hasCleanCodexState = (body, head) => {
   if (
     JSON.stringify(state) !== raw ||
     !cleanKeys(state, "code_review,security_review") ||
-    !cleanReview(state.code_review, head) ||
+    !validReview(state.code_review, head) ||
     !(
       inactiveReview(state.security_review) ||
-      cleanReview(state.security_review, head)
+      validReview(state.security_review, head)
     )
   )
     return false;
@@ -90,20 +97,81 @@ export const hasCleanCodexState = (body, head) => {
   const expected = activeSecurity
     ? ["Code Review", "Security Review"]
     : ["Code Review"];
+  const times = {};
   for (const [index, label] of expected.entries()) {
     const row = lines[4 + index].match(
-      /^\| (?:📝|🔒|🛡️) \*\*(Code Review|Security Review)\*\* \| ✅ \*\*Completed\*\*(?: <relative-time datetime="([^"<>]+)">([^<>]+)<\/relative-time>)? \| `([a-f0-9]{7,40})` \| ([^|<>`]+) \|$/,
+      /^\| (?:📝|🔒|🛡️) \*\*(Code Review|Security Review)\*\* \| (?:✅ \*\*Completed\*\*|🔄 \*\*Running\*\* since)(?: <relative-time datetime="([^"<>]+)">([^<>]+)<\/relative-time>)? \| `([a-f0-9]{7,40})` \| ([^|<>`]+) \|$/,
     );
+    const section = index === 0 ? "code_review" : "security_review";
     if (
       !row ||
+      !lines[4 + index].includes(
+        state[section].status === "completed"
+          ? "✅ **Completed**"
+          : "🔄 **Running** since",
+      ) ||
       !row[2] ||
       row[1] !== label ||
       !head.startsWith(row[4]) ||
       (row[2] && (row[2] !== row[3] || !Number.isFinite(Date.parse(row[2]))))
     )
       return false;
+    times[section] = Date.parse(row[2]);
   }
-  return true;
+  return { state, times };
+};
+
+export const hasCleanCodexState = (body, head) => {
+  const parsed = parseCodexState(body, head);
+  return Boolean(
+    parsed &&
+    cleanReview(parsed.state.code_review, head) &&
+    (inactiveReview(parsed.state.security_review) ||
+      cleanReview(parsed.state.security_review, head)),
+  );
+};
+
+// Findings belong to their review section across repeated same-head requests.
+// Only a strictly newer canonical completion for that section can clear them.
+export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
+  const sections = { code_review: [], security_review: [] };
+  for (const entry of comments) {
+    if (!isTrusted(entry)) continue;
+    const parsed = parseCodexState(entry.body || "", head);
+    if (!parsed) continue;
+    const observed = Date.parse(entry.updated_at || entry.created_at || "");
+    if (!Number.isFinite(observed)) continue;
+    for (const section of Object.keys(sections)) {
+      const review = parsed.state[section];
+      if (
+        review.has_any_findings === true ||
+        review.has_unresolved_findings === true
+      )
+        sections[section].push({
+          negative: true,
+          time: Math.floor(observed / 1000),
+        });
+      else if (cleanReview(review, head)) {
+        const completed = parsed.times[section];
+        if (Number.isFinite(completed) && completed < observed + 1000)
+          sections[section].push({
+            negative: false,
+            time: Math.floor(completed / 1000),
+          });
+      }
+    }
+  }
+  return Object.values(sections).some((entries) => {
+    const negative = Math.max(
+      -Infinity,
+      ...entries.filter((entry) => entry.negative).map((entry) => entry.time),
+    );
+    const clean = Math.max(
+      -Infinity,
+      ...entries.filter((entry) => !entry.negative).map((entry) => entry.time),
+    );
+    return negative !== -Infinity && clean <= negative;
+  });
 };
 
 // The summary can also be edited by security activity. Code completion time,
