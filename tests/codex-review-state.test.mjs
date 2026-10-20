@@ -329,3 +329,21 @@ test("editing legacy approval cannot outrank newer pending state", () => {
   );
   assert.equal(pick([legacy, pending]).classification.outcome, "pending");
 });
+
+test("unedited same-second static receipt uses proven timeline order", () => {
+  const receipt = bot(staticReceipt(), 1, 200);
+  assert.equal(pick([receipt]).classification.outcome, "pass");
+  assert.equal(
+    pick([{ ...receipt, updated_at: "2026-10-20T12:03:00Z" }]).classification
+      .outcome,
+    "pending",
+  );
+  assert.notEqual(
+    pickAuthoritativeCodexSkipModeComment({
+      timelineEvents: [activation, receipt, trigger],
+      issueComments: [receipt],
+      headSha: head,
+    })?.classification.outcome,
+    "pass",
+  );
+});

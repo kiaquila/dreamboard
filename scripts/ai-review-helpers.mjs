@@ -237,13 +237,21 @@ export const pickAuthoritativeCodexSkipModeComment = ({
         : codexCommentTimestamp(entry);
   const eligibleStaticApproval = (entry) => {
     const createdAt = Date.parse(entry.created_at || "");
-    const boundaries = [
-      events[activationIndex]?.created_at,
-      events[boundaryIndex]?.created_at,
-    ].map((time) => Date.parse(time || ""));
+    const entryIndex = events.findLastIndex(
+      (event) => event === entry || (entry.id != null && event.id === entry.id),
+    );
     return (
       Number.isFinite(createdAt) &&
-      boundaries.every((time) => !Number.isFinite(time) || createdAt > time)
+      [activationIndex, boundaryIndex].every((index) => {
+        const time = Date.parse(events[index]?.created_at || "");
+        return (
+          !Number.isFinite(time) ||
+          createdAt > time ||
+          (createdAt === time &&
+            codexCommentTimestamp(entry) === createdAt &&
+            entryIndex > index)
+        );
+      })
     );
   };
   const stateComments = allComments.filter(

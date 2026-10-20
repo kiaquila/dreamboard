@@ -263,3 +263,5 @@ Native P0–P2 findings, unresolved threads, formal retractions, abbreviated rec
 SHA resolution and final-head checks keep their existing blocking rules.
 
 Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
+
+A fresh unedited static receipt at the same timestamp second as a request or head activation may use observed timeline order after that boundary. Edited or unordered equal-second receipts remain pending.
