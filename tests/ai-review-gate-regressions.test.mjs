@@ -88,6 +88,10 @@ for (const [name, body] of [
     "observed bravo receipt with info footer",
     `${receipt.replace(":rocket:", "Bravo.")}\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>Native review help.\n</details>`,
   ],
+  [
+    "observed hooray receipt with info footer",
+    `${receipt.replace(":rocket:", "Hooray!")}\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>Native review help.\n</details>`,
+  ],
   ["curly legacy", positive.replace("Didn't", "Didn’t")],
   [
     "receipt with help",
@@ -113,6 +117,10 @@ for (const [name, body, extra] of [
   [
     "bravo followed by conflicting verdict",
     receipt.replace(":rocket:", "Bravo. However, P1: Fix a bug."),
+  ],
+  [
+    "hooray followed by conflicting verdict",
+    receipt.replace(":rocket:", "Hooray! However, P1: Fix a bug."),
   ],
   ["duplicate SHA", `${receipt}\n**Reviewed commit:** \`${head}\``],
   [
