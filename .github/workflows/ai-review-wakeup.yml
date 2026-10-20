@@ -20,13 +20,9 @@ permissions:
   pull-requests: read
   issues: read
 
-concurrency:
-  group: >-
-    ai-review-wakeup-${{ github.event.issue.number ||
-      github.event.pull_request.number ||
-      github.event.workflow_run.pull_requests[0].number ||
-      github.event.workflow_run.head_sha }}
-  cancel-in-progress: false
+# Every webhook delivery must reach the router. A shared Actions concurrency
+# group can discard a pending deletion when a later completion event arrives.
+# The router guards mutations with the current HEAD and gate run attempt.
 
 jobs:
   wakeup:

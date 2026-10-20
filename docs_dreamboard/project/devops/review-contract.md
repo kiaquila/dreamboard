@@ -115,7 +115,13 @@ before success.
 
 `AI Review Wakeup` runs trusted default-branch scripts for native comment
 creation/edits, formal review updates, native inline comment creation/edits/deletions,
-and completion of a PR-linked gate. Inline mutations invalidate completed or
+and completion of a PR-linked gate. Every webhook runs independently, without
+a shared Actions concurrency group: even `cancel-in-progress: false` replaces
+the previous pending run, potentially dropping the only copy of a deletion.
+HEAD and run-attempt checks guard overlapping router mutations. A changed
+attempt is left for its fresh evidence evaluation; cancelled attempts cannot
+permit merge. This avoids relying on a bounded concurrency queue to preserve
+transient invalidations. Inline mutations invalidate completed or
 active results even for older commits, since unresolved older findings still
 block. Completion scans persist inline update times to close the finish/edit race.
 Thread resolution state is checked on every gate evaluation; after changing
@@ -141,7 +147,7 @@ newer than its attempt's start, covering the finish/reply race; the next attempt
 starts after that evidence and cannot loop.
 Equal-second evidence is conservatively reevaluated after the same relative
 delay, so the following attempt starts later than the evidence and cannot loop.
-Wakeups are serialized and recheck HEAD and run attempt before rerunning.
+Independent wakeups recheck HEAD and run attempt before rerunning.
 Persisted GraphQL review `updatedAt`
 handles edits and dismissals whose REST `submitted_at` never changes, including
 the active-gate completion race. Receipts older than a dismissal cannot restore

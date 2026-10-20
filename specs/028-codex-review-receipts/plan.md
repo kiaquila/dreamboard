@@ -6,8 +6,10 @@
 2. Fetch edited issue comments separately, inspect unresolved Codex threads,
    and recheck the live full HEAD before publishing success.
 3. Add a trusted default-branch wakeup workflow and runtime router for native
-   comments, formal reviews, and gate completion. Serialize wakeups and allow
-   at most one follow-up attempt for evidence newer than that attempt's start.
+   comments, formal reviews, and gate completion. Keep webhook deliveries
+   independent so concurrency queuing cannot drop transient invalidations.
+   Guard overlapping mutations by HEAD and attempt; allow at most one
+   follow-up attempt for evidence newer than that attempt's start.
 4. Exercise the actual gate with mocked GitHub responses, plus workflow and
    router behavior. Run the repository preflight.
 5. Request native Codex review as the authenticated owner for every new HEAD.

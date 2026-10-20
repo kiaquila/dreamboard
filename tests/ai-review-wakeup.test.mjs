@@ -159,6 +159,32 @@ test("completed gate is rerun once for new evidence", async () => {
   assert.equal(state.reruns, 1);
 });
 
+test("a gate completion cannot displace a queued deletion webhook", async () => {
+  for (const completionFirst of [false, true]) {
+    const { state, wake } = harness({ comments: [] });
+    state.run.conclusion = "success";
+    const deletion = [event(receipt, "deleted"), "issue_comment"];
+    const completion = [
+      {
+        action: "completed",
+        workflow_run: { ...state.run, name: "AI Review" },
+      },
+      "workflow_run",
+    ];
+    const arrivals = completionFirst
+      ? [completion, deletion]
+      : [deletion, completion];
+    // A busy Actions concurrency group replaces its sole pending delivery.
+    // Without that group, both independent webhook runs reach the router.
+    const pending = /^concurrency:/m.test(workflow)
+      ? arrivals.slice(-1)
+      : arrivals;
+    await Promise.all(pending.map(([payload, name]) => wake(payload, name)));
+    assert.equal(state.reruns, 1, "deletion must force a fresh gate attempt");
+    assert.equal(state.run.status, "queued");
+  }
+});
+
 test("active gate keeps polling and completion event recovers the finish/reply race", async () => {
   const { state, wake } = harness();
   state.run.status = "in_progress";

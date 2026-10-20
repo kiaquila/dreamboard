@@ -35,6 +35,10 @@ than treated as already evaluated or replayed indefinitely.
 When a same-second edit/dismissal tie has no observable order, fail explicitly
 and require fresh native evidence; never infer edit order from comment creation.
 Keep execution pinned to the trusted default branch.
+Each invalidation webhook must reach the router independently. A later gate
+completion must not replace a pending deletion or withdrawal in an Actions
+concurrency group. Guard overlapping mutations with the current HEAD and run
+attempt rather than a shared, lossy pending-event slot.
 
 Reviewer switching must reevaluate the new policy even when a previous backend
 is still active. Cancel and await that attempt before rerunning the latest
