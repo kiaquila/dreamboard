@@ -5,7 +5,7 @@
 - [x] Preserve unresolved finding and severity enforcement.
 - [x] Add trusted native-event wakeup and bounded requeue.
 - [x] Add actual gate, workflow-filter, and runtime-router regression coverage.
-- [x] Complete local preflight with locked dependencies (162 tests).
+- [x] Complete local preflight with locked dependencies (163 tests).
 - [x] Address native P1 on dismissed-review wakeups using persisted update times.
 - [x] Address native P2 on equal receipt/dismissal timestamps using timeline ordering.
 - [x] Address native P2 on timeline outages: bound receipts do not require timeline data.
@@ -23,6 +23,7 @@
 - [x] Invalidate native inline mutations and cover persisted inline edits at completion.
 - [x] Reproduce and accept the 2026-10-20 native "Bravo." suffix while rejecting appended conflicting verdicts.
 - [x] Reproduce the native P1 pending-event replacement race and preserve independent invalidation deliveries.
+- [x] Reproduce the native P2 workflow-run pagination gap through the real wakeup CLI and select only the target PR across pages.
 - [ ] Obtain native reviews for the final HEAD.
 - [ ] Verify required gates, resolved threads, and the stable 120-second window.
 - [ ] Merge and confirm trusted-main deployment of the new gate.

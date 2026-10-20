@@ -39,6 +39,8 @@ Each invalidation webhook must reach the router independently. A later gate
 completion must not replace a pending deletion or withdrawal in an Actions
 concurrency group. Guard overlapping mutations with the current HEAD and run
 attempt rather than a shared, lossy pending-event slot.
+The wakeup lookup must inspect all workflow-run pages before filtering by
+current HEAD and PR association; other PRs sharing a SHA must not hide its run.
 
 Reviewer switching must reevaluate the new policy even when a previous backend
 is still active. Cancel and await that attempt before rerunning the latest

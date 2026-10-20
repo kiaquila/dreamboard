@@ -61,11 +61,10 @@ export const wakeCodexGate = async ({
     return "stale-review";
   if (eventName === "workflow_run" && event.workflow_run.head_sha !== head)
     return "stale-run";
-  const runs = (
-    await api(
-      `/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=${head}&per_page=100`,
-    )
-  ).workflow_runs;
+  const runs = await api(
+    `/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=${head}&per_page=100`,
+    { paginate: true },
+  );
   const run = runs
     .filter(
       (entry) =>
@@ -213,7 +212,10 @@ if (
         return null;
       const data = await response.json();
       if (!paginate) return data;
-      items.push(...data);
+      const pageItems = Array.isArray(data) ? data : data.workflow_runs;
+      if (!Array.isArray(pageItems))
+        throw new Error(`Invalid paginated response from ${path}`);
+      items.push(...pageItems);
       url = response.headers.get("link")?.match(/<([^>]+)>;\s*rel="next"/)?.[1];
     } while (url);
     return items;

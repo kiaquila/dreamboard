@@ -148,6 +148,9 @@ starts after that evidence and cannot loop.
 Equal-second evidence is conservatively reevaluated after the same relative
 delay, so the following attempt starts later than the evidence and cannot loop.
 Independent wakeups recheck HEAD and run attempt before rerunning.
+Their workflow-run lookup follows every result page before selecting the latest
+run associated with the target PR and exact HEAD. Runs for another PR on the
+same commit cannot hide the target run or be cancelled in its place.
 Persisted GraphQL review `updatedAt`
 handles edits and dismissals whose REST `submitted_at` never changes, including
 the active-gate completion race. Receipts older than a dismissal cannot restore

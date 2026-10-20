@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import {
   routesCodexWakeup,
   wakeCodexGate,
@@ -100,7 +101,7 @@ const harness = (overrides = {}) => {
         head: { sha: (state.reads++ && state.nextHead) || state.head },
       };
     if (path.startsWith("/actions/workflows/"))
-      return { workflow_runs: [state.run] };
+      return options.paginate ? [state.run] : { workflow_runs: [state.run] };
     if (path === "/actions/runs/5/cancel" && options.method === "POST") {
       state.cancels++;
       if (!state.cancelStuck)
@@ -182,6 +183,87 @@ test("a gate completion cannot displace a queued deletion webhook", async () => 
     await Promise.all(pending.map(([payload, name]) => wake(payload, name)));
     assert.equal(state.reruns, 1, "deletion must force a fresh gate attempt");
     assert.equal(state.run.status, "queued");
+  }
+});
+
+test("wakeup CLI finds only the target PR across workflow-run pages", () => {
+  const directory = mkdtempSync(`${tmpdir()}/dreamboard-wakeup-pages-`);
+  try {
+    writeFileSync(
+      `${directory}/event.json`,
+      JSON.stringify(event(receipt, "deleted")),
+    );
+    writeFileSync(
+      `${directory}/api.mjs`,
+      `import { appendFileSync } from 'node:fs';
+const head = ${JSON.stringify(head)};
+const run = { id: 5, head_sha: head, event: 'pull_request',
+  pull_requests: [{ number: 1 }], status: 'completed', run_attempt: 1 };
+globalThis.setTimeout = (callback) => queueMicrotask(callback);
+globalThis.fetch = async (url, options) => {
+  const parsed = new URL(url);
+  appendFileSync(process.env.WAKEUP_CALLS, JSON.stringify({ url, method: options.method }) + '\\n');
+  let data;
+  let headers;
+  if (parsed.pathname.endsWith('/pulls/1')) data = { state: 'open', head: { sha: head } };
+  else if (parsed.pathname.endsWith('/actions/workflows/ai-review.yml/runs')) {
+    if (parsed.searchParams.get('page') === '2') {
+      data = { workflow_runs: process.env.WAKEUP_HAS_TARGET === 'true' ? [run] : [] };
+    } else {
+      data = { workflow_runs: Array.from({ length: 100 }, (_, index) => ({
+        ...run, id: 100 + index, pull_requests: [{ number: 2 }],
+      })) };
+      headers = { link: '<' + url + '&page=2>; rel="next"' };
+    }
+  } else if (parsed.pathname.endsWith('/actions/runs/5')) data = run;
+  else if (parsed.pathname.endsWith('/actions/runs/5/rerun') && options.method === 'POST') {
+    return new Response(null, { status: 201 });
+  } else throw new Error('Unexpected API route: ' + url);
+  return new Response(JSON.stringify(data), { status: 200, headers });
+};`,
+    );
+    for (const hasTarget of [true, false]) {
+      writeFileSync(`${directory}/calls.jsonl`, "");
+      const result = spawnSync(
+        process.execPath,
+        [
+          "--import",
+          `${directory}/api.mjs`,
+          fileURLToPath(
+            new URL("../scripts/ai-review-wakeup.mjs", import.meta.url),
+          ),
+        ],
+        {
+          encoding: "utf8",
+          env: {
+            GITHUB_REPOSITORY: "owner/repo",
+            GITHUB_TOKEN: "test-token",
+            GITHUB_EVENT_NAME: "issue_comment",
+            GITHUB_EVENT_PATH: `${directory}/event.json`,
+            WAKEUP_CALLS: `${directory}/calls.jsonl`,
+            WAKEUP_HAS_TARGET: String(hasTarget),
+          },
+        },
+      );
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(
+        result.stdout.trim(),
+        hasTarget ? "rerun:5" : "active-or-missing",
+      );
+      const calls = readFileSync(`${directory}/calls.jsonl`, "utf8")
+        .trim()
+        .split("\n")
+        .map(JSON.parse);
+      assert.ok(calls.some((call) => call.url.includes("page=2")));
+      assert.deepEqual(
+        calls
+          .filter((call) => call.method === "POST")
+          .map((call) => new URL(call.url).pathname),
+        hasTarget ? ["/repos/owner/repo/actions/runs/5/rerun"] : [],
+      );
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
   }
 });
 
