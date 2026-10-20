@@ -1,3 +1,7 @@
+import {
+  cleanStateBody,
+  presentationReceipt,
+} from "./fixtures/codex-state.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -800,4 +804,59 @@ test("untrusted tombstone text and another head cannot provide positive authorit
     });
     assert.equal(result.status, 0, result.stderr);
   }
+});
+
+for (const ordering of ["summary-first", "receipt-first"]) {
+  test(`actual gate accepts strict state with unseen closing (${ordering})`, () => {
+    const snapshot = comment(cleanStateBody(head), {
+      id: 41,
+      created_at: "2026-10-20T12:02:00Z",
+    });
+    const presentation = comment(presentationReceipt(head), {
+      id: 42,
+      created_at: "2026-10-20T12:03:00Z",
+    });
+    if (ordering === "receipt-first") {
+      snapshot.created_at = "2026-10-20T12:04:00Z";
+      snapshot.body = snapshot.body.replaceAll(
+        "2026-10-20T12:02:00Z",
+        "2026-10-20T12:04:00Z",
+      );
+    }
+    const events = [
+      activation,
+      ...(ordering === "summary-first"
+        ? [snapshot, presentation]
+        : [presentation, snapshot]),
+    ];
+    const result = runGate({ timeline: events, comments: events });
+    if (ordering === "receipt-first")
+      assert.equal(result.status, 0, result.stderr);
+    else assert.notEqual(result.status, 0);
+  });
+}
+
+test("security-only snapshot edit cannot supersede later formal dismissal", () => {
+  const snapshot = comment(cleanStateBody(head), {
+    id: 88,
+    created_at: "2026-10-20T12:02:00Z",
+    updated_at: "2026-10-20T12:04:00Z",
+  });
+  const result = runGate({
+    comments: [snapshot],
+    timeline: [activation, { ...snapshot, event: "commented" }],
+    reviewUpdatedAt: "2026-10-20T12:03:00Z",
+    reviews: [
+      {
+        id: 7,
+        node_id: "review-node",
+        commit_id: head,
+        body: "Codex Review",
+        state: "DISMISSED",
+        user: { login: bot },
+        submitted_at: "2026-10-20T12:01:00Z",
+      },
+    ],
+  });
+  assert.notEqual(result.status, 0, result.stdout);
 });
