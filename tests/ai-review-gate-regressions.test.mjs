@@ -1018,3 +1018,39 @@ for (const mode of [
     );
   });
 }
+
+for (const section of ["code_review", "security_review"])
+  test(`actual gate uses ${section} completion despite later shared edit`, () => {
+    const old = comment(
+      securityHistoryBody(false, "2026-10-20T12:01:00Z").replace(
+        `"${section}":{"commit_sha":"${head}","has_any_findings":false,"has_unresolved_findings":false`,
+        `"${section}":{"commit_sha":"${head}","has_any_findings":true,"has_unresolved_findings":true`,
+      ),
+      {
+        id: 940,
+        created_at: "2026-10-20T12:01:00Z",
+        updated_at: "2026-10-20T12:05:00Z",
+      },
+    );
+    const request = {
+      ...comment(`@codex review ${head}`, {
+        id: 941,
+        created_at: "2026-10-20T12:02:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const clean = comment(securityHistoryBody(false, "2026-10-20T12:04:00Z"), {
+      id: 942,
+      created_at: "2026-10-20T12:04:00Z",
+    });
+    const events = [
+      { ...activation, created_at: "2026-10-20T12:00:00Z" },
+      old,
+      request,
+      clean,
+    ];
+    const result = runGate({ timeline: events, comments: events });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+  });

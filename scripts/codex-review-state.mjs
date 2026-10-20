@@ -149,7 +149,13 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
       )
         sections[section].push({
           negative: true,
-          time: Math.floor(observed / 1000),
+          time: Math.floor(
+            (review.status === "completed" &&
+            Number.isFinite(parsed.times[section]) &&
+            parsed.times[section] < observed + 1000
+              ? parsed.times[section]
+              : observed) / 1000,
+          ),
         });
       else if (cleanReview(review, head)) {
         const completed = parsed.times[section];
@@ -181,4 +187,25 @@ export const codexCodeReviewCompletionTime = (body) => {
     /^\| 📝 \*\*Code Review\*\* \| ✅ \*\*Completed\*\* <relative-time datetime="([^"<>]+)">/m,
   );
   return Date.parse(match?.[1] || "");
+};
+
+export const codexNegativeCompletionTime = (entry, head) => {
+  const parsed = parseCodexState(entry.body || "", head);
+  const observed = Date.parse(entry.updated_at || entry.created_at || "");
+  if (!parsed) return NaN;
+  const negatives = Object.entries(parsed.state).filter(
+    ([, review]) =>
+      review.has_any_findings === true ||
+      review.has_unresolved_findings === true,
+  );
+  if (!negatives.length) return NaN;
+  return Math.max(
+    ...negatives.map(([section, review]) =>
+      review.status === "completed" &&
+      Number.isFinite(parsed.times[section]) &&
+      parsed.times[section] < observed + 1000
+        ? Math.floor(parsed.times[section] / 1000) * 1000
+        : observed,
+    ),
+  );
 };
