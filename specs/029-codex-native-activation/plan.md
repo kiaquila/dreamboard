@@ -11,3 +11,8 @@
 6. Verify all required checks and unresolved findings, observe a stable
    two-minute window, merge normally, and verify the trusted-main gate against
    the previously rejected PR #57 receipt. Keep PR #58's real P2 blocking.
+
+For PR #57's subsequent actions update, synchronize with strict protected main,
+accept the newly observed exact "Chef's kiss." and "Swish!" suffixes, and run local preflight.
+Request one native assessment of the resulting new full SHA and hand off for
+supervising review and merge; do not repeat an unchanged-SHA request for prose.

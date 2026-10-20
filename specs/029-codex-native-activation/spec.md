@@ -12,3 +12,8 @@ unresolved P0-P2 findings, trusted-main execution, and branch protection.
 
 Confirm both sides of the contract against real GitHub output: a clean Codex
 assessment can pass the gate, and a native P2 finding remains blocking.
+
+The synchronized actions update in PR #57 later received the exact additional
+suffixes "Chef's kiss." and "Swish!". Accept these harmless native suffixes with a conflicting
+verdict regression. Keep unknown text fail-closed and obtain a new native
+assessment when this actual gate code change advances the PR HEAD.
