@@ -1,0 +1,61 @@
+import { readFileSync } from "node:fs";
+const fixture = JSON.parse(readFileSync(process.env.REVIEW_FIXTURE, "utf8"));
+let pullReads = 0;
+globalThis.fetch = async (url, init = {}) => {
+  const path = new URL(url).pathname;
+  let data;
+  if (/\/pulls\/1$/.test(path)) {
+    data = {
+      state: "open",
+      head: { sha: fixture.heads?.[pullReads++] || fixture.head },
+    };
+  } else if (path.includes("/commits/"))
+    data = { sha: fixture.resolvedHead || fixture.head };
+  else if (path.endsWith("/reviews"))
+    data = (fixture.reviews || []).map((review) => ({
+      ...review,
+      node_id: review.node_id || `review-${review.id}`,
+    }));
+  else if (path.endsWith("/timeline")) {
+    if (fixture.timelineUnavailable)
+      return new Response("Timeline unavailable", { status: 503 });
+    data = fixture.timeline || [];
+  } else if (path.includes("/pulls/1/comments")) data = fixture.inline || [];
+  else if (path.endsWith("/comments")) data = fixture.comments || [];
+  else if (
+    path === "/graphql" &&
+    JSON.parse(init.body).query.includes("PullRequestReview")
+  )
+    data = {
+      data: {
+        nodes: JSON.parse(init.body).variables.ids.map((id) => ({
+          id,
+          updatedAt:
+            fixture.reviewUpdates?.[id] ||
+            fixture.reviewUpdatedAt ||
+            fixture.reviews?.find(
+              (review) => (review.node_id || `review-${review.id}`) === id,
+            )?.submitted_at ||
+            "2026-10-15T12:02:00Z",
+        })),
+      },
+    };
+  else if (path === "/graphql")
+    data = {
+      data: {
+        repository: {
+          pullRequest: {
+            reviewThreads: {
+              nodes: fixture.threads || [],
+              pageInfo: { hasNextPage: false, endCursor: null },
+            },
+          },
+        },
+      },
+    };
+  else throw new Error(`Unexpected API request: ${url}`);
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
+};
