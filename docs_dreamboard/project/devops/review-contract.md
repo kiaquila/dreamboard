@@ -261,3 +261,5 @@ Malformed envelopes, extra lines, duplicate metadata, unsupported footers and
 explicit negative/provisional findings retain their normal invalidating role.
 Native P0–P2 findings, unresolved threads, formal retractions, abbreviated receipt
 SHA resolution and final-head checks keep their existing blocking rules.
+
+Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
