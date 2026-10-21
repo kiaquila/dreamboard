@@ -287,16 +287,14 @@ history only; security findings still require a newer canonical clean security
 completion. Unknown, malformed, stale or running snapshots, formal findings,
 unresolved threads, invalidation records and final-head checks keep their vetoes.
 
-Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.
+Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining a unique leading protocol envelope, closed fields, duplicate-key rejection and exact affected-section head. Canonical visible rows provide section clocks; complete-body validation remains required for approval and clearing. This formatting tolerance never grants affirmative review authority.
 
 Protocol-marker uniqueness counts actual HTML comment markers, not bare marker words in the supported visible review-trigger text.
 
 Negative completion ordering considers only affected sections bound to the current full head. Protocol marker lines indented as Markdown code (four spaces or a tab) are examples, not live structured snapshots.
 
-A strict leading live snapshot may retain only explicit current-head negative facts when followed solely by trailing Markdown-indented protocol example blocks. Multiline blocks require four spaces or a tab on every line, including the closing marker; partially unindented blocks remain invalid. This fallback cannot approve, clear history, or retire the original body’s observed pending timestamp. Whole indented envelopes remain examples.
-
 Negative-only fallback snapshots cannot establish resolved-code recovery, even
 when their leading record says all findings are resolved and a later clean
 receipt exists. Recovery requires a complete canonical snapshot.
 
-A trailing fenced protocol example preserves strictly validated leading negative facts only; it cannot supply clean approval or historical clearing evidence. A leading BOM does not remove Markdown code indentation protection.
+Negative history uses a strict leading official summary marker, closed typed JSON and exact summary heading. Once that envelope proves an explicit current-head finding, later presentation cannot erase it, including quoted examples or trailing markers. Coherent canonical section rows retain their completion clocks; otherwise the observation time applies. Duplicate or malformed metadata before the heading remains invalid. Clean approval and historical clearing always require strict validation of the original complete body.

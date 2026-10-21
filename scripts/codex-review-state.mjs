@@ -37,11 +37,18 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 
 // A structured snapshot is authoritative only with one closed-schema machine
 // record and the matching native visible table. Prose and reactions are not proof.
-export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
+export const parseCodexState = (
+  body,
+  head,
+  { sectionHeads = false, negativeEnvelope = false } = {},
+) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
   if (
     /^(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
-      String(body || "").replace(/^\uFEFF/, ""),
+      (negativeEnvelope
+        ? String(body || "").split(/^## Codex Review Summary$/m)[0]
+        : String(body || "")
+      ).replace(/^\uFEFF/, ""),
     )
   )
     return false;
@@ -98,6 +105,26 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   )
     return false;
   let visible = match[2].trim();
+  if (negativeEnvelope) {
+    if (!/^## Codex Review Summary(?:\r?\n|$)/.test(visible)) return false;
+    // A strict leading envelope can establish findings even when later
+    // presentation is ambiguous. It never establishes clean or clearing facts.
+    const rows = Object.values(state).filter(
+      (review) => !inactiveReview(review),
+    ).length;
+    const canonicalVisible = visible
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 4 + rows)
+      .join("\n");
+    const canonical = parseCodexState(
+      source.slice(0, source.length - match[2].length) + canonicalVisible,
+      head,
+      { sectionHeads: true },
+    );
+    return { state, times: canonical ? canonical.times : {} };
+  }
   if (
     /<!--\s*(?:codex-review-state|codex-pull-request-review-summary|codex-review-receipt)/i.test(
       visible,
@@ -182,21 +209,11 @@ export const hasCodexNegativeHistory = (
     });
     let negativeOnly = false;
     if (!parsed) {
-      const original = String(entry.body || "");
-      // Every line of a trailing example must stay inside Markdown code
-      // indentation. Never consume a partly unindented live protocol block.
-      const withoutFence = original.replace(
-        /\r?\n(`{3}|~{3})(?:html)?[ \t]*\r?\n<!--[ \t]*codex-(?:review-state|pull-request-review-summary|review-receipt)[^\r\n]*-->[ \t]*\r?\n\1[ \t]*\s*$/i,
-        "",
-      );
-      const leading = withoutFence.replace(
-        /(?:\r?\n(?: {4}|[ \t]*\t)[ \t]*<!--[ \t]*codex-(?:review-state|pull-request-review-summary|review-receipt)(?:(?!-->)[^\r\n])*(?:\r?\n(?: {4}|[ \t]*\t)(?:(?!-->)[^\r\n])*)*-->[ \t]*)+\s*$/i,
-        "",
-      );
-      if (leading !== original) {
-        parsed = parseCodexState(leading, head, { sectionHeads: true });
-        negativeOnly = true;
-      }
+      parsed = parseCodexState(entry.body || "", head, {
+        sectionHeads: true,
+        negativeEnvelope: true,
+      });
+      negativeOnly = true;
     }
     if (!parsed) continue;
     const observed = Date.parse(entry.updated_at || entry.created_at || "");

@@ -59,3 +59,5 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
       security negatives with space/tab/CRLF indentation, reject partial blocks,
       and preserve clean-state and resolved-code recovery vetoes. Full preflight:
       322 tests passed.
+
+- [x] Preserve explicit findings from a strict leading envelope independently of trailing presentation; keep complete-body clean/clear validation strict.
