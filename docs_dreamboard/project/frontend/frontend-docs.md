@@ -45,6 +45,12 @@ To regenerate the dots from a new halftone artwork, put the PNG under `design/he
 
 Hero copy (title + CTA) is one block centred vertically on the slide with a small upward bias, `padding-bottom: clamp(24px, 8vh, 96px)` on desktop and `clamp(60px, 18vh, 160px)` below 900px, so on a portrait phone the button stays above the mountain skyline (the band takes 62% of the height there). The hero sections always reserve `--landing-header-h` on top, including the phone layout where other slides flatten their padding, so a short landscape viewport does not push the headline under the brand controls.
 
+On phone layouts the renderer keeps the full hero canvas geometry. Across the
+lowest 18% (clamped to 120–180px), a deterministic smoothstep profile removes
+progressively more dots and shrinks the survivors. The fade finishes 6px before
+the attribution text, so the transparent footer has no clipping edge and the
+label remains clear; desktop fields are unchanged.
+
 ## Landing slide tone
 
 Since spec `023-paper-slides-rail-buttons-editor-footer` (2026-09-02) all four slides and `.landing-view` paint `--landing-paper` (`#f4f2ee`), the tone the dotted-mountain heroes already used. The old `bg-1` / `bg-2` slide classes and the `--landing-bg` / `--landing-bg-2` tokens are gone, so scrolling never flips between greys; `.bg-hero` now only marks the two slides that carry the dot canvas.
@@ -76,11 +82,17 @@ Any new button starts from the tokens. A different size is a spec change, not a 
 
 ## Footer
 
-The footer is a single quiet line in the Ember style: transparent background, DM Sans 12px with 0.06em tracking, muted colour, and the `ks-design` link underlined with a hairline that turns gold on hover. The footer text is a brand line and is intentionally not localised. Since spec 023 the line exists in two places and shares its typography through `.site-footer`:
+The footer is a single quiet line in the Ember style: transparent background, DM Sans 12px with 0.06em tracking, muted colour, and the `ks-design` link underlined with a hairline that turns gold on hover. The footer text is a brand line and is intentionally not localised. Its placements share typography through `.site-footer`:
 
-- on the landing, `#appFooter` (`.site-footer.sticky-footer`) is pinned to the viewport bottom in its fixed 45px slot, which every slide reserves as `padding-bottom`; it is hidden as soon as the editor is active
+- on the desktop landing, `#appFooter` (`.site-footer.sticky-footer`) is pinned to the viewport bottom in its fixed 45px slot, which every slide reserves as `padding-bottom`; it is hidden as soon as the editor is active
+- below 900px the global landing footer is hidden, and slides 1 and 4 each own a transparent `.hero-footer` in the same 45px slot; the photo and rules slides therefore carry no attribution, while the hero renderer dissolves the lowest dots before each label
 - in the desktop editor, a second `<footer class="site-footer editor-footer">` sits at the bottom of the `.canvas-stage` column, under `.canvas-area`, so it centres on the canvas rather than on the whole shell and the sidebar rail keeps its full height; the footer takes its 45px from the column, so the `.canvas-area` box shrinks by that height and the `ResizeObserver` resizes the Fabric canvas, with no JavaScript change; the stage has no bottom padding on desktop, so the canvas ends where the slot begins and the line sits centred between the canvas edge and the screen bottom, the same geometry as a landing slide; the column, not the stage, is the scroll container, because a clip on `.canvas-area` would cut the canvas shadow at the footer line and draw a seam on the backdrop; on desktop `.canvas-area` keeps a floor of `--editor-canvas-min-height` (520px, the same minimum `getCanvasTargetSize()` clamps to) plus `--top-gap`, so a window shorter than that scrolls stage and footer together instead of painting the footer over the canvas
 - below 900px the editor footer is `display: none`; the phone editor stays a full-bleed shell
+
+The mobile rules slide keeps the production rhythm: 12px between items, 15px
+text at a 24px line height, and the existing 30px list inset. Removing the
+global mobile attribution leaves the English title and all eight rules inside a
+430x932 iPhone 15 Pro Max viewport without stretching the list down the page.
 
 ## Repository Memory and Feature Loop
 

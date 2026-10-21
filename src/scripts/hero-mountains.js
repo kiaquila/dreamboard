@@ -43,6 +43,10 @@ const ASSEMBLE_DURATION_MS = 2600;
 const ALPHA_BUCKETS = 12;
 const REGENERATE_DELAY_MS = 200;
 const PLAY_VISIBILITY = 0.5;
+const MOBILE_FADE_MIN_HEIGHT = 120;
+const MOBILE_FADE_MAX_HEIGHT = 180;
+const MOBILE_FADE_HEIGHT_RATIO = 0.18;
+const MOBILE_FADE_TEXT_CLEARANCE = 6;
 
 const clamp = (value, min, max) =>
   value < min ? min : value > max ? max : value;
@@ -50,6 +54,13 @@ const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 const alphaBuckets = () => Array.from({ length: ALPHA_BUCKETS + 1 }, () => []);
 const bucketOf = (alpha) =>
   Math.min(ALPHA_BUCKETS, Math.max(1, Math.round(alpha * ALPHA_BUCKETS)));
+
+/** Density and radius multipliers for a smooth, deterministic bottom fade. */
+export function bottomFadeScale(y, startY, endY) {
+  const t = clamp((y - startY) / Math.max(1, endY - startY), 0, 1);
+  const density = 1 - t * t * (3 - 2 * t);
+  return { density, radius: Math.pow(density, 0.6) };
+}
 
 /**
  * Snowcap timing for one dot, in fractions of the whole timeline.
@@ -133,7 +144,8 @@ export function coverTransform(asset, width, height) {
  * Skyline and timing use the extracted radii; only the drawn radius goes
  * through dotRadiusScale.
  */
-export function buildField(asset, width, height) {
+export function buildField(asset, width, height, options = {}) {
+  const bottomFade = options.bottomFade || null;
   const { scale, offsetX, offsetY } = coverTransform(asset, width, height);
   const pitch = asset.pitch * scale;
   const thin = pitch < MIN_PITCH;
@@ -225,10 +237,20 @@ export function buildField(asset, width, height) {
       depth,
       hash(Math.round(xs[i] * 4), Math.round(ys[i] * 4)),
     );
+    let radius = rs[i] * dotRadiusScale(rs[i] / pitch);
+    if (bottomFade) {
+      const fade = bottomFadeScale(ys[i], bottomFade.startY, bottomFade.endY);
+      const keep = hash(
+        Math.round(xs[i] * 8) + 811,
+        Math.round(ys[i] * 8) + 2909,
+      );
+      if (keep >= fade.density) continue;
+      radius *= fade.radius;
+    }
     dots.push({
       x: xs[i],
       y: ys[i],
-      radius: rs[i] * dotRadiusScale(rs[i] / pitch),
+      radius,
       alpha: as[i],
       delay: timing.delay,
       duration: timing.duration,
@@ -238,7 +260,7 @@ export function buildField(asset, width, height) {
   // Ordered by the moment each dot settles; the renderer relies on it.
   dots.sort((p, q) => p.delay + p.duration - (q.delay + q.duration));
 
-  return { dots, spacing, thinned: thin, width, height };
+  return { dots, spacing, thinned: thin, width, height, bottomFade };
 }
 
 class HeroDots {
@@ -272,11 +294,16 @@ class HeroDots {
     const height = Math.round(rect.height);
     if (width < 2 || height < 2) return false;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const bottomFade = this.mobileBottomFade(rect, height);
+    const sameFade =
+      this.field?.bottomFade?.startY === bottomFade?.startY &&
+      this.field?.bottomFade?.endY === bottomFade?.endY;
     if (
       this.field &&
       this.field.width === width &&
       this.field.height === height &&
-      dpr === this.dpr
+      dpr === this.dpr &&
+      sameFade
     ) {
       return true;
     }
@@ -284,10 +311,30 @@ class HeroDots {
     this.dpr = dpr;
     this.canvas.width = Math.round(width * dpr);
     this.canvas.height = Math.round(height * dpr);
-    this.field = buildField(this.asset, width, height);
+    this.field = buildField(this.asset, width, height, { bottomFade });
     this.layer = null;
     this.render(this.progress);
     return true;
+  }
+
+  mobileBottomFade(canvasRect, height) {
+    if (!window.matchMedia("(max-width: 900px)").matches) return null;
+    const label = this.canvas
+      .closest(".landing-section.bg-hero")
+      ?.querySelector(".hero-footer p");
+    if (!label) return null;
+    const labelTop = label.getBoundingClientRect().top - canvasRect.top;
+    const endY = Math.round(
+      clamp(labelTop - MOBILE_FADE_TEXT_CLEARANCE, 0, height),
+    );
+    const fadeHeight = Math.round(
+      clamp(
+        height * MOBILE_FADE_HEIGHT_RATIO,
+        MOBILE_FADE_MIN_HEIGHT,
+        MOBILE_FADE_MAX_HEIGHT,
+      ),
+    );
+    return { startY: Math.max(0, endY - fadeHeight), endY };
   }
 
   play() {

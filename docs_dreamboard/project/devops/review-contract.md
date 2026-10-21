@@ -266,13 +266,26 @@ Static clean receipts use immutable creation time for approval ordering and curr
 
 A fresh unedited static receipt at the same timestamp second as a request or head activation may use observed timeline order after that boundary. Edited or unordered equal-second receipts remain pending.
 
-Strict valid same-head structured finding flags persist per section across repeated review requests. Only a strictly newer canonical completed false/false result for the affected section clears them. Security null and later code-only/formal/static approvals cannot clear security findings; equal-second evidence stays blocked. Malformed and untrusted historical snapshots cannot create a permanent latch.
+Strict valid same-head structured finding flags persist per section across repeated review requests. A strictly newer canonical completed false/false result clears the affected section; the resolved-code recovery below is the only additional path. Security null and later code-only/formal/static approvals cannot clear security findings; equal-second evidence stays blocked. Malformed and untrusted historical snapshots cannot create a permanent latch.
 
 Completed negative state uses the affected section’s canonical completion clock for ordering and clearing. Edits to another section cannot renew that negative verdict; running or invalid completion clocks retain the observed comment timestamp fallback.
 
 The history guard covers strict snapshots present in the current REST issue-comment/timeline response. GitHub exposes only the current body of a mutable comment; this contract does not retain unseen prior revisions. Lifecycle fixtures use distinct persisted comment IDs. Native inline findings and unresolved review-thread guards remain authoritative. Durable webhook revision capture is outside this change.
 
 Historical negative latching and clearing match the affected section’s exact head and canonical row independently of the other section’s head. This partial historical evidence never grants whole-PR approval or suppresses current pending signals.
+
+Native summaries can retain `has_any_findings=true` after all code threads are
+resolved, even when a new current-head review reports no issues
+([PR #63](https://github.com/kiaquila/dreamboard/pull/63#issuecomment-6304811853)).
+This is not clean structured proof. Recovery requires a strict completed code
+snapshot explicitly reporting `has_unresolved_findings=false`, followed in a
+strictly later timestamp second by a separately created, SHA-bound native clean
+assessment eligible under the current request and head boundaries. An edit to
+an old receipt cannot qualify. That assessment must follow the latest observed
+negative code snapshot, not just its embedded completion clock. It clears code
+history only; security findings still require a newer canonical clean security
+completion. Unknown, malformed, stale or running snapshots, formal findings,
+unresolved threads, invalidation records and final-head checks keep their vetoes.
 
 Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.
 

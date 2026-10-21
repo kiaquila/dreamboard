@@ -1265,6 +1265,10 @@ body.is-editor-restoring .object-menu {
   z-index: 100;
 }
 
+.hero-footer {
+  display: none;
+}
+
 body.is-editor-active .sticky-footer {
   display: none;
 }
@@ -1792,6 +1796,26 @@ body.is-editor-active .app-container {
   #landingView #slide3 .rules-list-landing {
     margin-left: 30px !important;
     width: calc(100% - 30px);
+  }
+}
+
+/* The phone landing treats the attribution as part of the two hero slides,
+   not as global chrome. The renderer thins and shrinks the lowest dots before
+   the text, so the transparent footer never creates a hard clipping edge. */
+@media (max-width: 900px) {
+  #appFooter {
+    display: none;
+  }
+
+  .landing-section.bg-hero .hero-footer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    height: calc(var(--footer-height) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
