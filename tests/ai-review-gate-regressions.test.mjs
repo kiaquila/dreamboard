@@ -936,6 +936,10 @@ for (const mode of [
   "quoted-fence-old",
   "spaced-heading-old",
   "contradictory-trigger-clear",
+  "code-heading-space-clear",
+  "code-heading-tab-clear",
+  "markdown-trigger-clear",
+  "entity-trigger-clear",
   "trailing-marker-old",
   "duplicate-leading-old",
   "whole-fenced-old",
@@ -1056,6 +1060,16 @@ for (const mode of [
       );
     if (mode === "trailing-marker-clear")
       newer.body += "\n<!-- codex-review-state:v1 {} -->";
+    if (["code-heading-space-clear", "code-heading-tab-clear"].includes(mode))
+      newer.body = newer.body.replace(
+        "## Codex Review Summary",
+        (mode === "code-heading-tab-clear" ? "\t" : "    ") +
+          "## Codex Review Summary",
+      );
+    if (mode === "markdown-trigger-clear")
+      newer.body = newer.body.replaceAll("Manual request", "Do **not** merge");
+    if (mode === "entity-trigger-clear")
+      newer.body = newer.body.replaceAll("Manual request", "Do not&nbsp;merge");
     if (mode === "contradictory-trigger-clear")
       newer.body = newer.body.replaceAll("Manual request", "Do not merge");
     if (mode === "quoted-fence-clear")
@@ -1097,6 +1111,10 @@ for (const mode of [
         "fenced-example-clear",
         "quoted-fence-clear",
         "contradictory-trigger-clear",
+        "code-heading-space-clear",
+        "code-heading-tab-clear",
+        "markdown-trigger-clear",
+        "entity-trigger-clear",
         "trailing-marker-clear",
         "bom-space-clear",
         "bom-tab-clear",

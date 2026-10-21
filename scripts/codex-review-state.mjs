@@ -34,6 +34,17 @@ const summaryHelp = `[Your team has set up Codex to review pull requests in this
 
 Codex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.`;
 const normalize = (text) => text.replace(/\s+/g, " ").trim();
+const renderedTrigger = (text) =>
+  text
+    .replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (entity, hex, decimal) => {
+      const point = Number.parseInt(hex || decimal, hex ? 16 : 10);
+      return point > 0 && point <= 0x10ffff
+        ? String.fromCodePoint(point)
+        : entity;
+    })
+    .replace(/&(?:nbsp|ensp|emsp|thinsp|Tab|NewLine);/gi, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[*_~]/g, "");
 
 // A structured snapshot is authoritative only with one closed-schema machine
 // record and the matching native visible table. Prose and reactions are not proof.
@@ -43,10 +54,21 @@ export const parseCodexState = (
   { sectionHeads = false, negativeEnvelope = false } = {},
 ) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
+  const rawHeading = String(body || "").match(
+    /^[ \t]*## Codex Review Summary[ \t]*\r?$/m,
+  )?.[0];
+  if (
+    rawHeading &&
+    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading)
+  )
+    return false;
+
   if (
     /^(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
       (negativeEnvelope
-        ? String(body || "").split(/^ {0,3}## Codex Review Summary$/m)[0]
+        ? String(body || "").split(
+            /^ {0,3}## Codex Review Summary[ \t]*\r?$/m,
+          )[0]
         : String(body || "")
       ).replace(/^\uFEFF/, ""),
     )
@@ -166,7 +188,7 @@ export const parseCodexState = (
     const section = label === "Code Review" ? "code_review" : "security_review";
     if (
       !row ||
-      /\bdo\s+not\s+merge\b/i.test(row[5]) ||
+      /\bdo\s+not\s+merge\b/i.test(renderedTrigger(row[5])) ||
       !lines[4 + index].includes(
         state[section].status === "completed"
           ? "✅ **Completed**"

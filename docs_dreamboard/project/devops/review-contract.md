@@ -300,3 +300,5 @@ receipt exists. Recovery requires a complete canonical snapshot.
 Negative history uses a strict leading official summary marker, closed typed JSON and exact summary heading. Once that envelope proves an explicit current-head finding, later presentation cannot erase it, including quoted examples or trailing markers. Coherent canonical section rows retain their completion clocks; otherwise the observation time applies. Duplicate or malformed metadata before the heading remains invalid. Clean approval and historical clearing always require strict validation of the original complete body.
 
 The leading negative boundary recognizes the supported one-to-three-space Markdown heading indentation. An explicit “Do not merge” in the visible trigger cell is contradictory and cannot supply canonical approval or historical clearing evidence; ordinary scheduled and security trigger text remains supported.
+
+Canonical summary headings allow zero to three leading spaces; four spaces or a tab cannot supply authority. Trigger contradiction checks normalize inline Markdown emphasis/links and character entities, so rendered “Do not merge” remains contradictory.
