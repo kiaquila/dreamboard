@@ -39,11 +39,18 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 // record and the matching native visible table. Prose and reactions are not proof.
 export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
-  const match = String(body || "")
-    .trim()
-    .match(
-      /^<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 (\{[^\r\n]+\}) -->\n([\s\S]*)$/,
-    );
+  const source = sectionHeads
+    ? String(body || "")
+        .replace(/<!--[\s\S]*?-->/g, (comment) =>
+          /^<!--\s*codex-/.test(comment) ? comment : "",
+        )
+        .trim()
+    : String(body || "").trim();
+  const match = source.match(
+    sectionHeads
+      ? /^<!-- codex-pull-request-review-summary -->\s*<!-- codex-review-state:v1 (\{[\s\S]*?\}) -->\s*([\s\S]*)$/
+      : /^<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 (\{[^\r\n]+\}) -->\n([\s\S]*)$/,
+  );
   if (!match) return false;
   const raw = match[1];
   let state;
@@ -55,7 +62,13 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   // Native compact JSON round-trips exactly. Duplicate or escaped keys and
   // alternate scalar encodings cannot be silently normalized into valid proof.
   if (
-    JSON.stringify(state) !== raw ||
+    JSON.stringify(state) !==
+      (sectionHeads
+        ? raw.replace(
+            /("(?:\\.|[^"\\])*")|\s+/g,
+            (match, quoted) => quoted || "",
+          )
+        : raw) ||
     !cleanKeys(state, "code_review,security_review") ||
     !(
       (sectionHeads && inactiveReview(state.code_review)) ||

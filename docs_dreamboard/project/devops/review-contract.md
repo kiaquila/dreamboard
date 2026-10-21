@@ -273,3 +273,5 @@ Completed negative state uses the affected section’s canonical completion cloc
 The history guard covers strict snapshots present in the current REST issue-comment/timeline response. GitHub exposes only the current body of a mutable comment; this contract does not retain unseen prior revisions. Lifecycle fixtures use distinct persisted comment IDs. Native inline findings and unresolved review-thread guards remain authoritative. Durable webhook revision capture is outside this change.
 
 Historical negative latching and clearing match the affected section’s exact head and canonical row independently of the other section’s head. This partial historical evidence never grants whole-PR approval or suppresses current pending signals.
+
+Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.

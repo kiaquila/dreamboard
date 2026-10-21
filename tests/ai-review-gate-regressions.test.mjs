@@ -925,6 +925,7 @@ for (const mode of [
   "old-security-clock",
   "missing-security-clock",
   "malformed-old",
+  "multiline-old",
   "wrong-actor",
 ]) {
   test(`actual gate retains section-specific security history: ${mode}`, () => {
@@ -932,6 +933,14 @@ for (const mode of [
       id: 930,
       created_at: "2026-10-20T12:02:00Z",
     });
+    if (mode === "multiline-old")
+      old.body =
+        "<!-- presentation-only metadata -->\n" +
+        old.body.replace(
+          /(codex-review-state:v1 )(\{[^\n]+\})( -->)/,
+          (_, prefix, json, suffix) =>
+            prefix + JSON.stringify(JSON.parse(json), null, 2) + suffix,
+        );
     if (mode === "malformed-old")
       old.body = old.body.replace("state:v1", "state:v2");
     if (mode === "wrong-actor") old.user = { login: "attacker" };
