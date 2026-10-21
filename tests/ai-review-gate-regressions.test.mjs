@@ -945,6 +945,10 @@ for (const mode of [
   "variation-priority-clear",
   "balanced-link-clear",
   "malformed-link-clear",
+  "title-double-clear",
+  "title-single-clear",
+  "title-paren-clear",
+  "escaped-space-clear",
   "inactive-numeric-row-clock",
   "inactive-nbsp-row-clock",
   "inactive-html-row-clock",
@@ -1128,6 +1132,30 @@ for (const mode of [
         "Manual request",
         "[safe](P1 blocker)",
       );
+    if (
+      [
+        "title-double-clear",
+        "title-single-clear",
+        "title-paren-clear",
+        "escaped-space-clear",
+      ].includes(mode)
+    ) {
+      const title =
+        mode === "title-double-clear"
+          ? '\"title\"'
+          : mode === "title-single-clear"
+            ? "'title'"
+            : "(title)";
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        `Do [not](https://example.com ${title}) merge`,
+      );
+    }
+    if (mode === "escaped-space-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "[safe](P1\\ blocker)",
+      );
     if (mode === "balanced-link-clear")
       newer.body = newer.body.replaceAll(
         "Manual request",
@@ -1260,6 +1288,10 @@ for (const mode of [
         "variation-priority-clear",
         "balanced-link-clear",
         "malformed-link-clear",
+        "title-double-clear",
+        "title-single-clear",
+        "title-paren-clear",
+        "escaped-space-clear",
         "inactive-numeric-row-clock",
         "inactive-nbsp-row-clock",
         "inactive-html-row-clock",

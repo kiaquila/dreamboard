@@ -34,23 +34,61 @@ const summaryHelp = `[Your team has set up Codex to review pull requests in this
 
 Codex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.`;
 const normalize = (text) => text.replace(/\s+/g, " ").trim();
+const escapedMarkdownPunctuation = (text, index) =>
+  text[index] === "\\" &&
+  /[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/.test(text[index + 1] || "");
 const visibleLinkLabels = (text) => {
   const opening = /\[([^\]]+)\]\(/g;
   let result = "";
   let cursor = 0;
   let match;
   while ((match = opening.exec(text))) {
-    let depth = 1;
-    let unescapedWhitespace = false;
     let end = opening.lastIndex;
-    for (; end < text.length && depth; end++) {
-      if (text[end] === "\\") end++;
-      else if (/\s/.test(text[end])) unescapedWhitespace = true;
-      else if (text[end] === "(") depth++;
-      else if (text[end] === ")") depth--;
+    let depth = 0;
+    let valid = true;
+    // Destinations and optional titles have separate Markdown grammar. A title
+    // may contain whitespace, but malformed destination text stays literal.
+    if (text[end] === "<") {
+      end++;
+      while (end < text.length && text[end] !== ">") {
+        if (escapedMarkdownPunctuation(text, end)) end++;
+        else if (/[<\r\n]/.test(text[end])) valid = false;
+        end++;
+      }
+      if (text[end] !== ">") valid = false;
+      end++;
+    } else {
+      for (; end < text.length; end++) {
+        if (escapedMarkdownPunctuation(text, end)) end++;
+        else if (/\s/.test(text[end])) break;
+        else if (text[end] === "(") depth++;
+        else if (text[end] === ")") {
+          if (depth === 0) break;
+          depth--;
+        } else if (text[end] === "<") valid = false;
+      }
+      if (depth) valid = false;
     }
-    // Unproven destination grammar remains literal blocker-bearing text.
-    if (depth || unescapedWhitespace) continue;
+    if (/\s/.test(text[end] || "")) {
+      while (/\s/.test(text[end] || "")) end++;
+      if (text[end] !== ")") {
+        const delimiter = text[end];
+        const closing = delimiter === "(" ? ")" : delimiter;
+        if (!['"', "'", "("].includes(delimiter)) valid = false;
+        else {
+          end++;
+          for (; end < text.length && text[end] !== closing; end++) {
+            if (escapedMarkdownPunctuation(text, end)) end++;
+            else if (delimiter === "(" && text[end] === "(") valid = false;
+          }
+          if (text[end] !== closing) valid = false;
+          end++;
+          while (/\s/.test(text[end] || "")) end++;
+        }
+      }
+    }
+    if (!valid || text[end] !== ")") continue;
+    end++;
     result += text.slice(cursor, match.index) + match[1];
     cursor = end;
     opening.lastIndex = end;

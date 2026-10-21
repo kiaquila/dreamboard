@@ -322,3 +322,7 @@ The original summary-marker and heading lines must have canonical ASCII indentat
 Link projection only hides a balanced compact destination with no unescaped whitespace; unproven/malformed link-looking text remains literal for known blocker checks. This presentation projection never changes the raw machine record or supplies approval.
 
 Negative clock coherence counts all pipe-bearing presentation lines, including optional-leading-pipe GFM rows and quoted/container rows. Unexpected rows force observation-time fallback; they never supply completion, clearing, or approval authority.
+
+Visible warning link projection separates a balanced destination from an optional Markdown title (double quoted, single quoted, or parenthesized). Titles cannot conceal the existing blocking label; malformed destination text remains literal. This presentation-only check does not alter protocol, review clocks, or canonical row authority.
+
+Markdown backslash escapes apply only to ASCII punctuation during visible link projection. A backslash before whitespace cannot turn a malformed destination into a hidden label-only link.
