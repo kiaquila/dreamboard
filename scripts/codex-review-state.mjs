@@ -43,9 +43,24 @@ const visibleLinkLabels = (text) => {
   let cursor = 0;
   let match;
   while ((match = opening.exec(text))) {
+    let escapes = 0;
+    for (let index = match.index - 1; text[index] === "\\"; index--) escapes++;
+    if (escapes % 2) continue;
     let end = opening.lastIndex;
     let depth = 0;
     let valid = true;
+    const skipWhitespace = () => {
+      let lineEndings = 0;
+      while (/[ \t\r\n]/.test(text[end] || "")) {
+        if (text[end] === "\r" || text[end] === "\n") {
+          lineEndings++;
+          if (text[end] === "\r" && text[end + 1] === "\n") end++;
+        }
+        end++;
+      }
+      if (lineEndings > 1) valid = false;
+    };
+    skipWhitespace();
     // Destinations and optional titles have separate Markdown grammar. A title
     // may contain whitespace, but malformed destination text stays literal.
     if (text[end] === "<") {
@@ -60,7 +75,8 @@ const visibleLinkLabels = (text) => {
     } else {
       for (; end < text.length; end++) {
         if (escapedMarkdownPunctuation(text, end)) end++;
-        else if (/\s/.test(text[end])) break;
+        else if (/[ \t\r\n]/.test(text[end])) break;
+        else if (/[\x00-\x1f\x7f]/.test(text[end])) valid = false;
         else if (text[end] === "(") depth++;
         else if (text[end] === ")") {
           if (depth === 0) break;
@@ -69,21 +85,24 @@ const visibleLinkLabels = (text) => {
       }
       if (depth) valid = false;
     }
-    if (/\s/.test(text[end] || "")) {
-      while (/\s/.test(text[end] || "")) end++;
+    if (/[ \t\r\n]/.test(text[end] || "")) {
+      skipWhitespace();
       if (text[end] !== ")") {
         const delimiter = text[end];
         const closing = delimiter === "(" ? ")" : delimiter;
         if (!['"', "'", "("].includes(delimiter)) valid = false;
         else {
           end++;
+          const titleStart = end;
           for (; end < text.length && text[end] !== closing; end++) {
             if (escapedMarkdownPunctuation(text, end)) end++;
             else if (delimiter === "(" && text[end] === "(") valid = false;
           }
+          if (/\r?\n[ \t]*\r?\n/.test(text.slice(titleStart, end)))
+            valid = false;
           if (text[end] !== closing) valid = false;
           end++;
-          while (/\s/.test(text[end] || "")) end++;
+          skipWhitespace();
         }
       }
     }

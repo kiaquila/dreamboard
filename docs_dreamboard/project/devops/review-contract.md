@@ -326,3 +326,7 @@ Negative clock coherence counts all pipe-bearing presentation lines, including o
 Visible warning link projection separates a balanced destination from an optional Markdown title (double quoted, single quoted, or parenthesized). Titles cannot conceal the existing blocking label; malformed destination text remains literal. This presentation-only check does not alter protocol, review clocks, or canonical row authority.
 
 Markdown backslash escapes apply only to ASCII punctuation during visible link projection. A backslash before whitespace cannot turn a malformed destination into a hidden label-only link.
+
+Visible inline-link labels remain visible with standard surrounding destination whitespace or an empty destination. These forms cannot hide an existing blocking warning.
+
+A Markdown-escaped opening bracket remains literal warning text; link projection respects odd/even backslash escaping rather than treating an escaped opener as a link.
