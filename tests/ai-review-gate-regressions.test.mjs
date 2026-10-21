@@ -927,6 +927,8 @@ for (const mode of [
   "malformed-old",
   "multiline-old",
   "marker-prose-old",
+  "indented-old",
+  "tabbed-old",
   "wrong-actor",
 ]) {
   test(`actual gate retains section-specific security history: ${mode}`, () => {
@@ -946,6 +948,11 @@ for (const mode of [
       old.body = old.body.replaceAll(
         "Manual request",
         "codex-review-state: parser review",
+      );
+    if (["indented-old", "tabbed-old"].includes(mode))
+      old.body = old.body.replace(
+        /^(<!-- codex-(?:pull-request-review-summary|review-state)[^\n]*)/gm,
+        (mode === "tabbed-old" ? "\t" : "    ") + "$1",
       );
     if (mode === "malformed-old")
       old.body = old.body.replace("state:v1", "state:v2");
@@ -1028,7 +1035,13 @@ for (const mode of [
     });
     assert.equal(
       result.status === 0,
-      ["newer-clear", "malformed-old", "wrong-actor"].includes(mode),
+      [
+        "newer-clear",
+        "malformed-old",
+        "wrong-actor",
+        "indented-old",
+        "tabbed-old",
+      ].includes(mode),
       result.stderr || result.stdout,
     );
   });
@@ -1169,3 +1182,28 @@ for (const clear of [false, true, "inactive-code", "edited-mixed"])
       result.stderr || result.stdout,
     );
   });
+
+test("actual gate preserves latest foreign negative observation", () => {
+  const foreign = "b".repeat(40);
+  const stale = comment(
+    securityHistoryBody(true, "2026-10-20T12:01:00Z")
+      .replaceAll(head, foreign)
+      .replaceAll(head.slice(0, 7), foreign.slice(0, 7)),
+    {
+      id: 970,
+      created_at: "2026-10-20T12:01:00Z",
+      updated_at: "2026-10-20T12:05:00Z",
+    },
+  );
+  const clean = comment(securityHistoryBody(false, "2026-10-20T12:04:00Z"), {
+    id: 971,
+    created_at: "2026-10-20T12:04:00Z",
+  });
+  const events = [
+    { event: "committed", sha: head, created_at: "2026-10-20T12:00:00Z" },
+    clean,
+    stale,
+  ];
+  const result = runGate({ timeline: events, comments: events });
+  assert.notEqual(result.status, 0, result.stdout);
+});

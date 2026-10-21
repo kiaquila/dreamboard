@@ -86,3 +86,5 @@ Historical negative latching and clearing match the affected section’s exact h
 Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.
 
 Protocol-marker uniqueness counts actual HTML comment markers, not bare marker words in the supported visible review-trigger text.
+
+Negative completion ordering considers only affected sections bound to the current full head. Protocol marker lines indented as Markdown code (four spaces or a tab) are examples, not live structured snapshots.

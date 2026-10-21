@@ -39,6 +39,12 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 // record and the matching native visible table. Prose and reactions are not proof.
 export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
+  if (
+    /^(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
+      String(body || ""),
+    )
+  )
+    return false;
   const source = sectionHeads
     ? String(body || "")
         .replace(/<!--[\s\S]*?-->/g, (comment) =>
@@ -227,8 +233,9 @@ export const codexNegativeCompletionTime = (entry, head) => {
     return NaN;
   const negatives = Object.entries(parsed.state).filter(
     ([, review]) =>
-      review.has_any_findings === true ||
-      review.has_unresolved_findings === true,
+      review.commit_sha === head &&
+      (review.has_any_findings === true ||
+        review.has_unresolved_findings === true),
   );
   if (!negatives.length) return NaN;
   return Math.max(
