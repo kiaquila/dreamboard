@@ -330,3 +330,5 @@ Markdown backslash escapes apply only to ASCII punctuation during visible link p
 Visible inline-link labels remain visible with standard surrounding destination whitespace or an empty destination. These forms cannot hide an existing blocking warning.
 
 A Markdown-escaped opening bracket remains literal warning text; link projection respects odd/even backslash escaping rather than treating an escaped opener as a link.
+
+Inline link projection balances label brackets and respects escaped closing delimiters before identifying any destination. An escaped label closer cannot hide blocker text as a destination.

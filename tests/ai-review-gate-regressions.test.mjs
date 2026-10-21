@@ -952,6 +952,7 @@ for (const mode of [
   "space-destination-clear",
   "empty-destination-clear",
   "escaped-opener-clear",
+  "escaped-label-closer-clear",
   "inactive-numeric-row-clock",
   "inactive-nbsp-row-clock",
   "inactive-html-row-clock",
@@ -1144,6 +1145,7 @@ for (const mode of [
         "space-destination-clear",
         "empty-destination-clear",
         "escaped-opener-clear",
+        "escaped-label-closer-clear",
       ].includes(mode)
     ) {
       const title =
@@ -1171,6 +1173,8 @@ for (const mode of [
       );
     if (mode === "escaped-opener-clear")
       newer.body = newer.body.replaceAll("Manual request", "\\[safe](P1)");
+    if (mode === "escaped-label-closer-clear")
+      newer.body = newer.body.replaceAll("Manual request", "[safe\\]( P1)");
     if (mode === "balanced-link-clear")
       newer.body = newer.body.replaceAll(
         "Manual request",
@@ -1310,6 +1314,7 @@ for (const mode of [
         "space-destination-clear",
         "empty-destination-clear",
         "escaped-opener-clear",
+        "escaped-label-closer-clear",
         "inactive-numeric-row-clock",
         "inactive-nbsp-row-clock",
         "inactive-html-row-clock",

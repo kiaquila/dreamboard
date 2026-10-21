@@ -38,7 +38,7 @@ const escapedMarkdownPunctuation = (text, index) =>
   text[index] === "\\" &&
   /[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/.test(text[index + 1] || "");
 const visibleLinkLabels = (text) => {
-  const opening = /\[([^\]]+)\]\(/g;
+  const opening = /\[/g;
   let result = "";
   let cursor = 0;
   let match;
@@ -46,7 +46,16 @@ const visibleLinkLabels = (text) => {
     let escapes = 0;
     for (let index = match.index - 1; text[index] === "\\"; index--) escapes++;
     if (escapes % 2) continue;
-    let end = opening.lastIndex;
+    let labelEnd = opening.lastIndex;
+    let labelDepth = 1;
+    for (; labelEnd < text.length; labelEnd++) {
+      if (escapedMarkdownPunctuation(text, labelEnd)) labelEnd++;
+      else if (text[labelEnd] === "[") labelDepth++;
+      else if (text[labelEnd] === "]" && --labelDepth === 0) break;
+    }
+    if (labelDepth || text[labelEnd + 1] !== "(") continue;
+    const label = text.slice(opening.lastIndex, labelEnd);
+    let end = labelEnd + 2;
     let depth = 0;
     let valid = true;
     const skipWhitespace = () => {
@@ -108,7 +117,7 @@ const visibleLinkLabels = (text) => {
     }
     if (!valid || text[end] !== ")") continue;
     end++;
-    result += text.slice(cursor, match.index) + match[1];
+    result += text.slice(cursor, match.index) + label;
     cursor = end;
     opening.lastIndex = end;
   }
