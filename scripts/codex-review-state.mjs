@@ -46,7 +46,7 @@ export const parseCodexState = (
   if (
     /^(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
       (negativeEnvelope
-        ? String(body || "").split(/^## Codex Review Summary$/m)[0]
+        ? String(body || "").split(/^ {0,3}## Codex Review Summary$/m)[0]
         : String(body || "")
       ).replace(/^\uFEFF/, ""),
     )
@@ -166,6 +166,7 @@ export const parseCodexState = (
     const section = label === "Code Review" ? "code_review" : "security_review";
     if (
       !row ||
+      /\bdo\s+not\s+merge\b/i.test(row[5]) ||
       !lines[4 + index].includes(
         state[section].status === "completed"
           ? "✅ **Completed**"
