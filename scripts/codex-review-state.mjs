@@ -137,10 +137,255 @@ const visibleLinkLabels = (text, activeLinkOnly = false) => {
   }
   return activeLinkOnly ? false : result + text.slice(cursor);
 };
-// Standard HTML5 whitespace/format entity categories; visible checks only.
-const renderedVisibleText = (text, formatSeparator = "") =>
-  visibleLinkLabels(text)
-    .replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (entity, hex, decimal) => {
+// Complete GFM inline HTML tags; malformed tag-like text remains visible.
+const completeHtmlTag =
+  /^(?:<\/[A-Za-z][A-Za-z0-9-]*\s*>|<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*\s*\/?>)$/;
+
+function htmlTagText(text, separator) {
+  let result = "";
+  const rawCode = [];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "<" && /^<\/?[a-z]/i.test(text.slice(i))) {
+      let quote = null;
+      let end = i + 1;
+      for (; end < text.length; end++) {
+        const char = text[end];
+        if (quote) {
+          if (char === quote) quote = null;
+        } else if (char === '"' || char === "'") quote = char;
+        else if (char === ">") break;
+      }
+      if (end < text.length) {
+        const tag = text.slice(i, end + 1);
+        if (!completeHtmlTag.test(tag)) {
+          result += text[i];
+          continue;
+        }
+        const codeTag = tag.match(/^<(\/?)(code|pre)\b/i);
+        if (codeTag) {
+          const name = codeTag[2].toLowerCase();
+          if (!codeTag[1]) rawCode.push(name);
+          else if (rawCode.at(-1) === name) rawCode.pop();
+        }
+        const alt = /^<img\b/i.test(tag)
+          ? tag.match(/\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i)
+          : null;
+        result +=
+          separator + (alt ? (alt[1] ?? alt[2] ?? alt[3]) : "") + separator;
+        i = end;
+        continue;
+      }
+    }
+    result += rawCode.length && text[i] === "[" ? "&#91;" : text[i];
+  }
+  return result;
+}
+
+function rawHtmlBlockEnd(line) {
+  const start = line.replace(/^ {0,3}/, "");
+  const special = start.match(/^<(script|pre|style|textarea)(?:\s|>|$)/i);
+  const blockTag =
+    /^(?:<\/?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|section|source|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|\/?>|$))/i;
+  // Complete other open/close tags are GFM type 7 blocks.
+  const completeTag =
+    /^<\/?[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\s*=\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s"'=<>`]+))?)*\s*\/?>\s*$/;
+  if (start.startsWith("<!--")) return /-->/;
+  if (special) return new RegExp("</" + special[1] + "\\s*>", "i");
+  else if (start.startsWith("<?")) return /\?>/;
+  else if (start.startsWith("<![CDATA[")) return /\]\]>/;
+  else if (/^<![A-Z]/.test(start)) return />/;
+  else if (blockTag.test(start) || completeTag.test(start)) return "blank";
+  return null;
+}
+
+function protectLiteralCode(source) {
+  const literals = [];
+  const save = (value) => "\uE000" + (literals.push(value) - 1) + "\uE001";
+  let fence = null;
+  let comment = false;
+  // Code spans may contain newlines. Shield their raw contents before any
+  // HTML, entity or link interpretation, including spans adjacent to HTML.
+  let spans = "";
+  let htmlBlock = null;
+  const raw = String(source)
+    .split(/(\r?\n)/)
+    .map((line) => {
+      if (/^\r?\n$/.test(line)) return line;
+      if (htmlBlock === "blank" && !line.trim()) {
+        htmlBlock = null;
+        return line;
+      }
+      if (!htmlBlock) htmlBlock = rawHtmlBlockEnd(line);
+      if (!htmlBlock) return line;
+      const literal = line.replace(/[\[`]/g, save);
+      if (htmlBlock !== "blank" && htmlBlock.test(line)) htmlBlock = null;
+      return literal;
+    })
+    .join("");
+  for (let i = 0; i < raw.length; i++) {
+    if (raw.startsWith("<!--", i)) {
+      const end = raw.indexOf("-->", i + 4);
+      const stop = end < 0 ? raw.length : end + 3;
+      spans += raw.slice(i, stop);
+      i = stop - 1;
+      continue;
+    }
+    if (raw[i] === "`") {
+      let escapes = 0;
+      for (let before = i - 1; before >= 0 && raw[before] === "\\"; before--)
+        escapes++;
+      if (escapes % 2) {
+        spans += raw[i];
+        continue;
+      }
+      let run = 1;
+      while (raw[i + run] === "`") run++;
+      let end = i + run;
+      while ((end = raw.indexOf("`".repeat(run), end)) >= 0) {
+        if (raw[end - 1] !== "`" && raw[end + run] !== "`") break;
+        end += run;
+      }
+      if (end >= 0) {
+        spans += save(raw.slice(i + run, end));
+        i = end + run - 1;
+        continue;
+      }
+      spans += "`".repeat(run);
+      i += run - 1;
+      continue;
+    }
+    spans += raw[i];
+  }
+  const text = spans
+    .split(/(\r?\n)/)
+    .map((originalLine) => {
+      // Block quotes are Markdown containers; code inside them remains literal.
+      let line = originalLine;
+      // Peel Markdown block containers before recognizing their literal code.
+      while (true) {
+        const next = line
+          .replace(/^ {0,3}>[ \t]?/, "")
+          .replace(/^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])[ \t]+/, "");
+        if (next === line) break;
+        line = next;
+      }
+      if (/^\r?\n$/.test(line)) return line;
+      if (fence) {
+        const close = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+        if (
+          close &&
+          close[1][0] === fence[0] &&
+          close[1].length >= fence.length &&
+          !close[2].trim()
+        ) {
+          fence = null;
+          return "";
+        }
+        return save(line);
+      }
+      // A fence in an HTML comment is presentation comment text, not code context.
+      const open = !comment && line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+      if (open) {
+        fence = open[1];
+        return "";
+      }
+      if (!comment && /^(?: {4}|\t)/.test(line)) return save(line);
+      let result = "";
+      for (let i = 0; i < line.length; i++) {
+        if (comment) {
+          if (line.startsWith("-->", i)) {
+            result += "-->";
+            i += 2;
+            comment = false;
+          } else result += line[i];
+          continue;
+        }
+        if (line.startsWith("<!--", i)) {
+          result += "<!--";
+          i += 3;
+          comment = true;
+          continue;
+        }
+        if (line[i] === "`") {
+          let escapes = 0;
+          for (
+            let before = i - 1;
+            before >= 0 && line[before] === "\\";
+            before--
+          )
+            escapes++;
+          if (escapes % 2) {
+            result += line[i];
+            continue;
+          }
+          let run = 1;
+          while (line[i + run] === "`") run++;
+          let end = i + run;
+          while ((end = line.indexOf("`".repeat(run), end)) >= 0) {
+            if (line[end - 1] !== "`" && line[end + run] !== "`") break;
+            end += run;
+          }
+          if (end >= 0) {
+            result += save(line.slice(i + run, end));
+            i = end + run - 1;
+            continue;
+          }
+        }
+        result += line[i];
+      }
+      return result;
+    })
+    .join("");
+  return {
+    text,
+    restore: (value) => {
+      for (let depth = 0; depth < literals.length; depth++) {
+        const next = value.replace(
+          /\uE000([0-9]+)\uE001/g,
+          (marker, index) => literals[Number(index)] ?? marker,
+        );
+        if (next === value) break;
+        value = next;
+      }
+      return value;
+    },
+  };
+}
+
+// HTML raw blocks accept semicolonless numeric references; Markdown does not.
+// Add the terminator only after literal code is shielded and before structural
+// HTML/link tokenization, so decoded entities can never create source markers.
+const htmlNumericReferences = (source) => {
+  let block = null;
+  return source
+    .split(/(\r?\n)/)
+    .map((line) => {
+      if (/^\r?\n$/.test(line)) return line;
+      if (block === "blank" && !line.trim()) {
+        block = null;
+        return line;
+      }
+      if (!block) block = rawHtmlBlockEnd(line);
+      if (!block) return line;
+      const text = line.replace(/&#(?:x[0-9a-f]+|[0-9]+);?/gi, (entity) =>
+        entity.endsWith(";") ? entity : entity + ";",
+      );
+      if (block !== "blank" && block.test(line)) block = null;
+      return text;
+    })
+    .join("");
+};
+
+// Visible warnings use one literal-code-aware projection. Structure is read
+// before entities; raw protocol, JSON, SHA and completion clocks are untouched.
+const renderedVisibleText = (text, formatSeparator = "") => {
+  const literal = protectLiteralCode(text);
+  const raw = htmlNumericReferences(literal.text).replace(
+    /<!--[\s\S]*?(?:-->|$)/g,
+    (comment) => comment.replace(/[^\r\n]/g, ""),
+  );
+  const projected = visibleLinkLabels(htmlTagText(raw, formatSeparator))
+    .replace(/&#(?:x([0-9a-f]+)|([0-9]+));/gi, (entity, hex, decimal) => {
       const point = Number.parseInt(hex || decimal, hex ? 16 : 10);
       return point > 0 && point <= 0x10ffff
         ? String.fromCodePoint(point)
@@ -158,23 +403,25 @@ const renderedVisibleText = (text, formatSeparator = "") =>
     .replace(/&shy;?/gi, "\u00ad")
     .replace(/\p{Default_Ignorable_Code_Point}/gu, formatSeparator)
     .replace(/[*_~]/g, "");
-
-// Tokenize raw HTML before entity decoding; quoted attribute delimiters do not
-// terminate a tag. Keep the original projection as well so literal code text
-// cannot lose an already-visible warning through HTML interpretation.
-const visibleHtmlText = (text) =>
-  text.replace(
-    /<\/[A-Za-z][A-Za-z0-9-]*[ \t\n\f\r]*>|<[A-Za-z][A-Za-z0-9-]*(?:[ \t\n\f\r]+[A-Za-z_:][A-Za-z0-9_.:-]*(?:[ \t\n\f\r]*=[ \t\n\f\r]*(?:"[^"]*"|'[^']*'|[^ \t\n\f\r"'=<>`]+))?)*[ \t\n\f\r]*\/?>/g,
-    "",
-  );
+  return literal.restore(projected);
+};
+const hasPositiveFindingStatement = (text) =>
+  [
+    ...text
+      .replace(/\r\n?/g, "\n")
+      .split(/\n[ \t]*\n/)
+      .map((paragraph) => paragraph.replace(/\n/g, " "))
+      .join("\n\n")
+      .matchAll(/\bfound[ \t]+([^.!?\r\n]*?)\bissues?\b/gi),
+  ].some((match) => !/^(?:no|zero|0)\b/i.test(match[1].trim()));
 const hasVisibleContradiction = (text) =>
-  [text, visibleHtmlText(text)].some((projection) =>
-    ["", " "].some((separator) =>
-      /\b(?:P[0-2]|do\s+not\s+merge|found\s+(?:(?!no\b|zero\b|0\b)[^\r\n.!?]*\s+issues?|issues))\b/i.test(
-        renderedVisibleText(projection, separator),
-      ),
-    ),
-  );
+  ["", " "].some((separator) => {
+    const visible = renderedVisibleText(text, separator);
+    return (
+      /\b(?:P[0-2]|do\s+not\s+merge)\b/i.test(visible) ||
+      hasPositiveFindingStatement(visible)
+    );
+  });
 
 // A structured snapshot is authoritative only with one closed-schema machine
 // record and the matching native visible table. Prose and reactions are not proof.

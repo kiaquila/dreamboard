@@ -958,6 +958,17 @@ for (const mode of [
   "found-html-article-repeat-clock",
   "found-word-count-repeat-clock",
   "blank-label-repeat-clock",
+  "html-break-repeat-clock",
+  "code-priority-repeat-clock",
+  "code-warning-repeat-clock",
+  "raw-html-link-repeat-clock",
+  "finding-softbreak-repeat-clock",
+  "raw-html-numeric-repeat-clock",
+  "markdown-numeric-repeat-clock",
+  "code-numeric-repeat-clock",
+  "finding-blankline-repeat-clock",
+  "found-html-no-repeat-clock",
+  "found-html-zero-repeat-clock",
   "comment-pipe-clear",
   "inactive-numeric-row-clock",
   "inactive-nbsp-row-clock",
@@ -1147,17 +1158,6 @@ for (const mode of [
         "title-double-clear",
         "title-single-clear",
         "title-paren-clear",
-        "escaped-space-clear",
-        "space-destination-clear",
-        "empty-destination-clear",
-        "escaped-opener-clear",
-        "escaped-label-closer-clear",
-        "nested-link-clear",
-        "found-article-repeat-clock",
-        "found-html-article-repeat-clock",
-        "found-word-count-repeat-clock",
-        "blank-label-repeat-clock",
-        "comment-pipe-clear",
       ].includes(mode)
     ) {
       const title =
@@ -1203,16 +1203,49 @@ for (const mode of [
         "found-html-article-repeat-clock",
         "found-word-count-repeat-clock",
         "blank-label-repeat-clock",
+        "html-break-repeat-clock",
+        "code-priority-repeat-clock",
+        "code-warning-repeat-clock",
+        "raw-html-link-repeat-clock",
+        "finding-softbreak-repeat-clock",
+        "raw-html-numeric-repeat-clock",
+        "markdown-numeric-repeat-clock",
+        "code-numeric-repeat-clock",
+        "finding-blankline-repeat-clock",
+        "found-html-no-repeat-clock",
+        "found-html-zero-repeat-clock",
       ].includes(mode)
     ) {
       old.body +=
-        mode === "blank-label-repeat-clock"
-          ? "\n[safe\n\nlabel](P1)"
-          : mode === "found-word-count-repeat-clock"
-            ? "\nFound one issue"
-            : mode === "found-html-article-repeat-clock"
-              ? "\nFound <em>an</em> issue"
-              : "\nFound an issue";
+        mode === "raw-html-numeric-repeat-clock"
+          ? "\n<div>\nP&#49 blocker\n</div>"
+          : mode === "markdown-numeric-repeat-clock"
+            ? "\n<span>P&#49</span> blocker"
+            : mode === "code-numeric-repeat-clock"
+              ? "\n`P&#49` blocker"
+              : mode === "finding-softbreak-repeat-clock"
+                ? "\nFound\nan issue."
+                : mode === "finding-blankline-repeat-clock"
+                  ? "\nFound\n\nan issue."
+                  : mode === "raw-html-link-repeat-clock"
+                    ? "\n<div>\n[safe](P1)\n</div>"
+                    : mode === "found-html-no-repeat-clock"
+                      ? "\nFound <em>no</em> issues"
+                      : mode === "found-html-zero-repeat-clock"
+                        ? "\nFound <code>0</code> issues"
+                        : mode === "html-break-repeat-clock"
+                          ? "\nDo<br>not<br>merge"
+                          : mode === "code-priority-repeat-clock"
+                            ? "\nP`1`"
+                            : mode === "code-warning-repeat-clock"
+                              ? "\nDo `not` merge"
+                              : mode === "blank-label-repeat-clock"
+                                ? "\n[safe\n\nlabel](P1)"
+                                : mode === "found-word-count-repeat-clock"
+                                  ? "\nFound one issue"
+                                  : mode === "found-html-article-repeat-clock"
+                                    ? "\nFound <em>an</em> issue"
+                                    : "\nFound an issue";
       old.updated_at = "2026-10-20T12:05:00Z";
       request.created_at = "2026-10-20T12:06:00Z";
       receipt.created_at = "2026-10-20T12:07:00Z";
@@ -1362,6 +1395,17 @@ for (const mode of [
         "found-html-article-repeat-clock",
         "found-word-count-repeat-clock",
         "blank-label-repeat-clock",
+        "html-break-repeat-clock",
+        "code-priority-repeat-clock",
+        "code-warning-repeat-clock",
+        "raw-html-link-repeat-clock",
+        "finding-softbreak-repeat-clock",
+        "raw-html-numeric-repeat-clock",
+        "markdown-numeric-repeat-clock",
+        "code-numeric-repeat-clock",
+        "finding-blankline-repeat-clock",
+        "found-html-no-repeat-clock",
+        "found-html-zero-repeat-clock",
         "comment-pipe-clear",
         "inactive-numeric-row-clock",
         "inactive-nbsp-row-clock",
@@ -1423,6 +1467,11 @@ for (const mode of [
       result.status === 0,
       [
         "newer-clear",
+        "markdown-numeric-repeat-clock",
+        "code-numeric-repeat-clock",
+        "finding-blankline-repeat-clock",
+        "found-html-no-repeat-clock",
+        "found-html-zero-repeat-clock",
         "ordinary-comment-clear",
         "malformed-old",
         "duplicate-leading-old",

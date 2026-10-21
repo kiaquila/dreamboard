@@ -337,8 +337,16 @@ An active inner Markdown link takes precedence over an enclosing link. The inval
 
 A rendered existing finding-count contradiction, including “Found an issue”, makes the historical prefix clock incoherent. The leading typed TRUE fact remains negative evidence at server observation time across repeated same-head requests; the contradictory snapshot cannot approve or clear findings.
 
-Rendered finding contradictions also project grammatical raw HTML tags before entity decoding while retaining the original warning projection. Nonprotocol HTML comments containing table pipes remain in raw table validation, so comment removal cannot repair a malformed row into clearing evidence.
+Rendered finding contradictions also project grammatical raw HTML tags before entity decoding while preserving literal code content. Nonprotocol HTML comments containing table pipes remain in raw table validation, so comment removal cannot repair a malformed row into clearing evidence.
 
 The existing finding-statement contradiction covers positive worded counts as well as articles and digits, without requiring a finite count-word list. Such edited statements retain the negative fact at its observation time.
 
 Markdown link labels cannot cross a blank line; invalid labels preserve their literal destinations for warning detection, while a single label line break remains valid.
+
+Warning projection protects Markdown code literals before HTML, link, and entity interpretation. It restores literal code text without delimiters and checks HTML separators in both joined and spaced forms, so rendered inline-code and break-element warnings invalidate a borrowed completion clock. This affects warning detection only.
+
+Standard raw HTML blocks disable Markdown-link/code-span interpretation until their GFM terminator; their HTML and entities still render normally. Finding-count negation is applied to the trimmed rendered count, so formatted no/zero statements do not renew an old negative.
+
+Finding-statement checks normalize soft line breaks within a paragraph while preserving blank-line clause boundaries.
+
+Numeric character references require semicolons in Markdown warning text. Standard raw HTML block text also accepts semicolonless numeric references; literal Markdown code is shielded from either decoding path. This follows the verified GitHub renderer contexts.
