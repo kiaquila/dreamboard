@@ -356,3 +356,5 @@ Raw HTML context detection first peels the same standard Markdown quote/list con
 Visible finding statements also retain existential issue reports (such as “There is an issue”) at observation time. Bare Markdown link destinations follow the renderer’s 32-level balanced-parenthesis limit; deeper destinations remain visible literal text.
 
 Within already accepted presentation, referenced footnotes retain their visible contents; unused footnote definitions do not create a warning. Literal code and raw HTML contexts remain shielded before Markdown footnote projection.
+
+Affirmative numeric counts before issue, finding, or problem nouns are visible negative statements independently of their leading verb. Zero/no-only reports preserve clean recovery; this projection does not alter canonical review authority.

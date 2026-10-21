@@ -450,12 +450,24 @@ const hasPositiveFindingStatement = (text) => {
     .split(/\n[ \t]*\n/)
     .map((paragraph) => paragraph.replace(/\n/g, " "))
     .join("\n\n");
+  if (
+    [
+      ...paragraphs.matchAll(
+        /\b([0-9]+)[ \t]+(?:[\p{L}-]+[ \t]+)*?(?:issues?|findings?|problems?)\b/giu,
+      ),
+    ].some(
+      (match) => !/^0+$/.test(match[1]) && !/\b(?:no|zero)\b/i.test(match[0]),
+    )
+  )
+    return true;
   return [
     ...paragraphs.matchAll(
       /\b(?:found|there[ \t]+(?:is|are))[ \t]+([^.!?\r\n]*)/gi,
     ),
   ].some((statement) =>
-    [...statement[1].matchAll(/(.*?)\bissues?\b/gi)].some((clause) => {
+    [
+      ...statement[1].matchAll(/(.*?)\b(?:issues?|findings?|problems?)\b/gi),
+    ].some((clause) => {
       const count = clause[1]
         .trim()
         .replace(/^(?:[,;:]\s*)?(?:and|but|or)\b\s*/i, "");
