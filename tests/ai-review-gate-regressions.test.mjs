@@ -1087,3 +1087,66 @@ test("actual gate preserves concurrent running section observed clock", () => {
   const result = runGate({ timeline: events, comments: events });
   assert.notEqual(result.status, 0, result.stdout);
 });
+
+for (const clear of [false, true, "inactive-code"])
+  test(`actual gate section head history ignores foreign other head: ${clear}`, () => {
+    const foreign = "b".repeat(40);
+    const mixed = (negative, time) =>
+      securityHistoryBody(negative, time)
+        .replace(
+          `"code_review":{"commit_sha":"${head}"`,
+          `"code_review":{"commit_sha":"${foreign}"`,
+        )
+        .split("\n")
+        .map((line) =>
+          line.includes("**Code Review**")
+            ? line.replace(head.slice(0, 7), foreign.slice(0, 7))
+            : line,
+        )
+        .join("\n");
+    const old = comment(
+      clear
+        ? securityHistoryBody(true, "2026-10-20T12:01:00Z")
+        : mixed(true, "2026-10-20T12:01:00Z"),
+      { id: 960, created_at: "2026-10-20T12:01:00Z" },
+    );
+    const cleared = comment(mixed(false, "2026-10-20T12:02:00Z"), {
+      id: 961,
+      created_at: "2026-10-20T12:02:00Z",
+    });
+    if (clear === "inactive-code")
+      cleared.body = cleared.body
+        .replace(
+          /"code_review":\{[^}]+\}/,
+          '"code_review":{"commit_sha":null,"has_any_findings":null,"has_unresolved_findings":null,"status":null}',
+        )
+        .split("\n")
+        .filter((line) => !line.includes("**Code Review**"))
+        .join("\n");
+    const request = {
+      ...comment(`@codex review ${head}`, {
+        id: 962,
+        created_at: "2026-10-20T12:03:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const receipt = comment(presentationReceipt(head, ":rocket:"), {
+      id: 963,
+      created_at: "2026-10-20T12:04:00Z",
+    });
+    const events = [
+      { event: "committed", sha: head, created_at: "2026-10-20T12:00:00Z" },
+      old,
+      ...(clear ? [cleared] : []),
+      request,
+      receipt,
+    ];
+    const result = runGate({ timeline: events, comments: events });
+    assert.equal(
+      result.status === 0,
+      Boolean(clear),
+      result.stderr || result.stdout,
+    );
+  });

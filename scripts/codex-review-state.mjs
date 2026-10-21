@@ -14,6 +14,7 @@ const cleanReview = (review, head) =>
   review.status === "completed";
 const validReview = (review, head) =>
   cleanKeys(review, fields) &&
+  /^[a-f0-9]{40}$/.test(review.commit_sha || "") &&
   review.commit_sha === head &&
   ["completed", "running"].includes(review.status) &&
   [review.has_any_findings, review.has_unresolved_findings].every(
@@ -36,7 +37,7 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 
 // A structured snapshot is authoritative only with one closed-schema machine
 // record and the matching native visible table. Prose and reactions are not proof.
-export const parseCodexState = (body, head) => {
+export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
   const match = String(body || "")
     .trim()
@@ -56,10 +57,19 @@ export const parseCodexState = (body, head) => {
   if (
     JSON.stringify(state) !== raw ||
     !cleanKeys(state, "code_review,security_review") ||
-    !validReview(state.code_review, head) ||
+    !(
+      (sectionHeads && inactiveReview(state.code_review)) ||
+      validReview(
+        state.code_review,
+        sectionHeads ? state.code_review?.commit_sha : head,
+      )
+    ) ||
     !(
       inactiveReview(state.security_review) ||
-      validReview(state.security_review, head)
+      validReview(
+        state.security_review,
+        sectionHeads ? state.security_review?.commit_sha : head,
+      )
     )
   )
     return false;
@@ -92,17 +102,17 @@ export const parseCodexState = (body, head) => {
     !/^\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|\s*-+\s*\|$/.test(lines[3] || "")
   )
     return false;
-  const activeSecurity = !inactiveReview(state.security_review);
-  if (lines.length !== (activeSecurity ? 6 : 5)) return false;
-  const expected = activeSecurity
-    ? ["Code Review", "Security Review"]
-    : ["Code Review"];
+  const expected = [
+    ...(!inactiveReview(state.code_review) ? ["Code Review"] : []),
+    ...(!inactiveReview(state.security_review) ? ["Security Review"] : []),
+  ];
+  if (lines.length !== 4 + expected.length) return false;
   const times = {};
   for (const [index, label] of expected.entries()) {
     const row = lines[4 + index].match(
       /^\| (?:📝|🔒|🛡️) \*\*(Code Review|Security Review)\*\* \| (?:✅ \*\*Completed\*\*|🔄 \*\*Running\*\* since)(?: <relative-time datetime="([^"<>]+)">([^<>]+)<\/relative-time>)? \| `([a-f0-9]{7,40})` \| ([^|<>`]+) \|$/,
     );
-    const section = index === 0 ? "code_review" : "security_review";
+    const section = label === "Code Review" ? "code_review" : "security_review";
     if (
       !row ||
       !lines[4 + index].includes(
@@ -112,7 +122,7 @@ export const parseCodexState = (body, head) => {
       ) ||
       !row[2] ||
       row[1] !== label ||
-      !head.startsWith(row[4]) ||
+      !(sectionHeads ? state[section].commit_sha : head).startsWith(row[4]) ||
       (row[2] && (row[2] !== row[3] || !Number.isFinite(Date.parse(row[2]))))
     )
       return false;
@@ -137,12 +147,15 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
   const sections = { code_review: [], security_review: [] };
   for (const entry of comments) {
     if (!isTrusted(entry)) continue;
-    const parsed = parseCodexState(entry.body || "", head);
+    const parsed = parseCodexState(entry.body || "", head, {
+      sectionHeads: true,
+    });
     if (!parsed) continue;
     const observed = Date.parse(entry.updated_at || entry.created_at || "");
     if (!Number.isFinite(observed)) continue;
     for (const section of Object.keys(sections)) {
       const review = parsed.state[section];
+      if (review.commit_sha !== head) continue;
       if (
         review.has_any_findings === true ||
         review.has_unresolved_findings === true

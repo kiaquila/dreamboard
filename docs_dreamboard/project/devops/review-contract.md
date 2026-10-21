@@ -271,3 +271,5 @@ Strict valid same-head structured finding flags persist per section across repea
 Completed negative state uses the affected section’s canonical completion clock for ordering and clearing. Edits to another section cannot renew that negative verdict; running or invalid completion clocks retain the observed comment timestamp fallback.
 
 The history guard covers strict snapshots present in the current REST issue-comment/timeline response. GitHub exposes only the current body of a mutable comment; this contract does not retain unseen prior revisions. Lifecycle fixtures use distinct persisted comment IDs. Native inline findings and unresolved review-thread guards remain authoritative. Durable webhook revision capture is outside this change.
+
+Historical negative latching and clearing match the affected section’s exact head and canonical row independently of the other section’s head. This partial historical evidence never grants whole-PR approval or suppresses current pending signals.
