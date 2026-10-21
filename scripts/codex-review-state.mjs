@@ -61,7 +61,14 @@ const visibleLinkLabels = (
       ),
     ];
     const references = (source) => {
-      const content = visibleLinkLabels(source, false, true);
+      const usage = source.replace(
+        /^ {0,3}\[([^\]\r\n]+)\]:[ \t]*([^\r\n]+)$/gm,
+        (definition, label, destination) =>
+          visibleLinkLabels("[" + label + "](" + destination + ")", true)
+            ? definition.replace(/[^\r\n]/g, "")
+            : definition,
+      );
+      const content = visibleLinkLabels(usage, false, true);
       return [...content.matchAll(/\[\^([^\[\]\x00-\x20]+)\]/g)]
         .filter((match) => {
           let escapes = 0;
@@ -247,23 +254,34 @@ function htmlTagText(text, separator) {
 }
 
 function markdownContainerContext(line) {
-  let quoteDepth = 0;
-  let listIndent = 0;
+  const frames = [];
   while (true) {
     const quote = line.match(/^ {0,3}>[ \t]?/);
     if (quote) {
-      quoteDepth++;
+      frames.push({ kind: "quote" });
       line = line.slice(quote[0].length);
       continue;
     }
     const list = line.match(/^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])[ \t]+/);
     if (list) {
-      listIndent += list[0].length;
+      frames.push({ kind: "list", width: list[0].length });
       line = line.slice(list[0].length);
       continue;
     }
-    return { content: line, quoteDepth, listIndent };
+    return { content: line, frames };
   }
+}
+
+function markdownContainerContinuation(line, frames) {
+  for (const frame of frames) {
+    const prefix =
+      frame.kind === "quote"
+        ? line.match(/^ {0,3}>[ \t]?/)
+        : line.match(new RegExp("^(?: {" + frame.width + "}|\\t)"));
+    if (!prefix) return null;
+    line = line.slice(prefix[0].length);
+  }
+  return line;
 }
 
 function markdownContainerContent(line) {
@@ -302,24 +320,14 @@ function protectLiteralCode(source) {
     .map((line) => {
       if (/^\r?\n$/.test(line)) return line;
       const context = markdownContainerContext(line);
-      let content = context.content;
-      if (
-        htmlBlock &&
-        (context.quoteDepth < htmlContainer.quoteDepth ||
-          (htmlContainer.listIndent &&
-            !context.listIndent &&
-            !new RegExp("^ {" + htmlContainer.listIndent + "}|^\\t").test(
-              content,
-            )))
-      ) {
+      let content = htmlBlock
+        ? markdownContainerContinuation(line, htmlContainer.frames)
+        : context.content;
+      if (content === null) {
         htmlBlock = null;
         htmlContainer = null;
+        content = context.content;
       }
-      if (htmlBlock && htmlContainer.listIndent && !context.listIndent)
-        content = content.replace(
-          new RegExp("^ {" + htmlContainer.listIndent + "}|^\\t"),
-          "",
-        );
       if (htmlBlock === "blank" && !content.trim()) {
         htmlBlock = null;
         return line;
@@ -470,24 +478,14 @@ const htmlNumericReferences = (source) => {
     .map((line) => {
       if (/^\r?\n$/.test(line)) return line;
       const context = markdownContainerContext(line);
-      let content = context.content;
-      if (
-        block &&
-        (context.quoteDepth < htmlContainer.quoteDepth ||
-          (htmlContainer.listIndent &&
-            !context.listIndent &&
-            !new RegExp("^ {" + htmlContainer.listIndent + "}|^\\t").test(
-              content,
-            )))
-      ) {
+      let content = block
+        ? markdownContainerContinuation(line, htmlContainer.frames)
+        : context.content;
+      if (content === null) {
         block = null;
         htmlContainer = null;
+        content = context.content;
       }
-      if (block && htmlContainer.listIndent && !context.listIndent)
-        content = content.replace(
-          new RegExp("^ {" + htmlContainer.listIndent + "}|^\\t"),
-          "",
-        );
       if (block === "blank" && !content.trim()) {
         block = null;
         return line;
@@ -544,10 +542,12 @@ const hasPositiveFindingStatement = (text) => {
   if (
     [
       ...paragraphs.matchAll(
-        /\b([0-9]+)[ \t]+(?:[\p{L}-]+[ \t]+)*?(?:issues?|findings?|problems?)\b/giu,
+        /\b([0-9]+|[\p{L}-]+[ \t]+an?)[ \t]+(?:[\p{L}-]+[ \t]+)*?(?:issues?|findings?|problems?)\b/giu,
       ),
     ].some(
-      (match) => !/^0+$/.test(match[1]) && !/\b(?:no|zero)\b/i.test(match[0]),
+      (match) =>
+        !/^0+$/.test(match[1]) &&
+        !/\b(?:no|zero|not|without)\b/i.test(match[0]),
     )
   )
     return true;

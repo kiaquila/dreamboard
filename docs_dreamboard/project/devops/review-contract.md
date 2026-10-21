@@ -362,3 +362,5 @@ Affirmative numeric counts before issue, finding, or problem nouns are visible n
 Footnote usage follows referenced definitions transitively; unused lazy continuation content remains hidden. Invalid footnote identifiers can still form valid ordinary link-reference definitions, while malformed destinations remain literal. Raw HTML warning context ends when its containing Markdown quote or list ends.
 
 Footnote use is determined from the existing visible inline projection for both initial text and referenced definition contents; hidden link destinations and HTML attributes do not activate a footnote.
+
+Raw HTML context follows ordered quote/list frames on each continuation line. Footnote usage excludes validated ordinary-reference destinations as well as inline destinations. Affirmative article findings require a preceding word in the same paragraph, preserving blank-line boundaries without a reporting-verb allowlist.
