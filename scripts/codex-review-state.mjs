@@ -55,6 +55,8 @@ const visibleLinkLabels = (text, activeLinkOnly = false) => {
     }
     if (labelDepth || text[labelEnd + 1] !== "(") continue;
     const label = text.slice(opening.lastIndex, labelEnd);
+    // Blank lines terminate a Markdown link label; keep its destination literal.
+    if (/\r?\n[ \t]*\r?\n/.test(label)) continue;
     let end = labelEnd + 2;
     let depth = 0;
     let valid = true;
@@ -157,10 +159,20 @@ const renderedVisibleText = (text, formatSeparator = "") =>
     .replace(/\p{Default_Ignorable_Code_Point}/gu, formatSeparator)
     .replace(/[*_~]/g, "");
 
+// Tokenize raw HTML before entity decoding; quoted attribute delimiters do not
+// terminate a tag. Keep the original projection as well so literal code text
+// cannot lose an already-visible warning through HTML interpretation.
+const visibleHtmlText = (text) =>
+  text.replace(
+    /<\/[A-Za-z][A-Za-z0-9-]*[ \t\n\f\r]*>|<[A-Za-z][A-Za-z0-9-]*(?:[ \t\n\f\r]+[A-Za-z_:][A-Za-z0-9_.:-]*(?:[ \t\n\f\r]*=[ \t\n\f\r]*(?:"[^"]*"|'[^']*'|[^ \t\n\f\r"'=<>`]+))?)*[ \t\n\f\r]*\/?>/g,
+    "",
+  );
 const hasVisibleContradiction = (text) =>
-  ["", " "].some((separator) =>
-    /\b(?:P[0-2]|do\s+not\s+merge|found\s+(?:an?\s+issue|[1-9]\d*\s+issues?|issues))\b/i.test(
-      renderedVisibleText(text, separator),
+  [text, visibleHtmlText(text)].some((projection) =>
+    ["", " "].some((separator) =>
+      /\b(?:P[0-2]|do\s+not\s+merge|found\s+(?:(?!no\b|zero\b|0\b)[^\r\n.!?]*\s+issues?|issues))\b/i.test(
+        renderedVisibleText(projection, separator),
+      ),
     ),
   );
 
@@ -206,7 +218,9 @@ export const parseCodexState = (
             offset,
           );
           const indentedCode = /^(?: {4}|[ \t]*\t)/.test(linePrefix);
-          return /^<!--\s*codex-/i.test(comment) || indentedCode
+          return /^<!--\s*codex-/i.test(comment) ||
+            indentedCode ||
+            /(?:^|[^\\])(?:\\\\)*\|/.test(comment)
             ? comment
             : comment.replace(/[^\r\n]/g, "");
         })

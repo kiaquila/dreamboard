@@ -955,6 +955,10 @@ for (const mode of [
   "escaped-label-closer-clear",
   "nested-link-clear",
   "found-article-repeat-clock",
+  "found-html-article-repeat-clock",
+  "found-word-count-repeat-clock",
+  "blank-label-repeat-clock",
+  "comment-pipe-clear",
   "inactive-numeric-row-clock",
   "inactive-nbsp-row-clock",
   "inactive-html-row-clock",
@@ -1150,6 +1154,10 @@ for (const mode of [
         "escaped-label-closer-clear",
         "nested-link-clear",
         "found-article-repeat-clock",
+        "found-html-article-repeat-clock",
+        "found-word-count-repeat-clock",
+        "blank-label-repeat-clock",
+        "comment-pipe-clear",
       ].includes(mode)
     ) {
       const title =
@@ -1179,13 +1187,32 @@ for (const mode of [
       newer.body = newer.body.replaceAll("Manual request", "\\[safe](P1)");
     if (mode === "escaped-label-closer-clear")
       newer.body = newer.body.replaceAll("Manual request", "[safe\\]( P1)");
+    if (mode === "comment-pipe-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "Manual <!-- | --> request",
+      );
     if (mode === "nested-link-clear")
       newer.body = newer.body.replaceAll(
         "Manual request",
         "[safe [inner](url)](P1)",
       );
-    if (mode === "found-article-repeat-clock") {
-      old.body += "\nFound an issue";
+    if (
+      [
+        "found-article-repeat-clock",
+        "found-html-article-repeat-clock",
+        "found-word-count-repeat-clock",
+        "blank-label-repeat-clock",
+      ].includes(mode)
+    ) {
+      old.body +=
+        mode === "blank-label-repeat-clock"
+          ? "\n[safe\n\nlabel](P1)"
+          : mode === "found-word-count-repeat-clock"
+            ? "\nFound one issue"
+            : mode === "found-html-article-repeat-clock"
+              ? "\nFound <em>an</em> issue"
+              : "\nFound an issue";
       old.updated_at = "2026-10-20T12:05:00Z";
       request.created_at = "2026-10-20T12:06:00Z";
       receipt.created_at = "2026-10-20T12:07:00Z";
@@ -1332,6 +1359,10 @@ for (const mode of [
         "escaped-label-closer-clear",
         "nested-link-clear",
         "found-article-repeat-clock",
+        "found-html-article-repeat-clock",
+        "found-word-count-repeat-clock",
+        "blank-label-repeat-clock",
+        "comment-pipe-clear",
         "inactive-numeric-row-clock",
         "inactive-nbsp-row-clock",
         "inactive-html-row-clock",

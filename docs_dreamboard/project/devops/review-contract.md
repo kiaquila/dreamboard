@@ -336,3 +336,9 @@ Inline link projection balances label brackets and respects escaped closing deli
 An active inner Markdown link takes precedence over an enclosing link. The invalid outer destination remains literal warning text; balanced plain brackets remain supported, and image syntax is not treated as an active nested link.
 
 A rendered existing finding-count contradiction, including “Found an issue”, makes the historical prefix clock incoherent. The leading typed TRUE fact remains negative evidence at server observation time across repeated same-head requests; the contradictory snapshot cannot approve or clear findings.
+
+Rendered finding contradictions also project grammatical raw HTML tags before entity decoding while retaining the original warning projection. Nonprotocol HTML comments containing table pipes remain in raw table validation, so comment removal cannot repair a malformed row into clearing evidence.
+
+The existing finding-statement contradiction covers positive worded counts as well as articles and digits, without requiring a finite count-word list. Such edited statements retain the negative fact at its observation time.
+
+Markdown link labels cannot cross a blank line; invalid labels preserve their literal destinations for warning detection, while a single label line break remains valid.
