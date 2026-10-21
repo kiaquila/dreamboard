@@ -41,13 +41,16 @@ const visibleLinkLabels = (text) => {
   let match;
   while ((match = opening.exec(text))) {
     let depth = 1;
+    let unescapedWhitespace = false;
     let end = opening.lastIndex;
     for (; end < text.length && depth; end++) {
       if (text[end] === "\\") end++;
+      else if (/\s/.test(text[end])) unescapedWhitespace = true;
       else if (text[end] === "(") depth++;
       else if (text[end] === ")") depth--;
     }
-    if (depth) continue;
+    // Unproven destination grammar remains literal blocker-bearing text.
+    if (depth || unescapedWhitespace) continue;
     result += text.slice(cursor, match.index) + match[1];
     cursor = end;
     opening.lastIndex = end;
@@ -189,7 +192,7 @@ export const parseCodexState = (
     const canonicalVisible = visibleLines.slice(0, 4 + rows).join("\n");
     const canonical =
       sectionRows.length === rows &&
-      visibleLines.filter((line) => line.startsWith("|")).length === rows + 2 &&
+      visibleLines.filter((line) => line.includes("|")).length === rows + 2 &&
       parseCodexState(
         source.slice(0, source.length - match[2].length) + canonicalVisible,
         head,

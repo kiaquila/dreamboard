@@ -318,3 +318,7 @@ Visible contradiction projection uses the Unicode Default_Ignorable_Code_Point c
 Visible link labels are projected with balanced destination parentheses before known contradiction checks. Negative completion-clock reuse requires the complete visible table row count to match the active sections; an extra rendered inactive-companion row retains the typed finding at observation time rather than borrowing an older completion.
 
 The original summary-marker and heading lines must have canonical ASCII indentation (zero to three spaces) before any trimming or presentation-comment removal. Other raw prefix characters cannot be normalized into protocol or Markdown authority.
+
+Link projection only hides a balanced compact destination with no unescaped whitespace; unproven/malformed link-looking text remains literal for known blocker checks. This presentation projection never changes the raw machine record or supplies approval.
+
+Negative clock coherence counts all pipe-bearing presentation lines, including optional-leading-pipe GFM rows and quoted/container rows. Unexpected rows force observation-time fallback; they never supply completion, clearing, or approval authority.

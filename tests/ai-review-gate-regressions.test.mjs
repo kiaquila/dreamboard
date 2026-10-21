@@ -944,9 +944,12 @@ for (const mode of [
   "zerowidth-priority-clear",
   "variation-priority-clear",
   "balanced-link-clear",
+  "malformed-link-clear",
   "inactive-numeric-row-clock",
   "inactive-nbsp-row-clock",
   "inactive-html-row-clock",
+  "inactive-optional-pipe-row-clock",
+  "inactive-quoted-row-clock",
   "marker-bom-clear",
   "marker-nbsp-clear",
   "zerowidth-trigger-clear",
@@ -1120,6 +1123,11 @@ for (const mode of [
           ? "Do&#8203;not&#8203;merge"
           : "Do&ZeroWidthSpace;not&ZeroWidthSpace;merge",
       );
+    if (mode === "malformed-link-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "[safe](P1 blocker)",
+      );
     if (mode === "balanced-link-clear")
       newer.body = newer.body.replaceAll(
         "Manual request",
@@ -1130,6 +1138,8 @@ for (const mode of [
         "inactive-numeric-row-clock",
         "inactive-nbsp-row-clock",
         "inactive-html-row-clock",
+        "inactive-optional-pipe-row-clock",
+        "inactive-quoted-row-clock",
       ].includes(mode)
     ) {
       const codeBody = (negative, time) =>
@@ -1146,10 +1156,21 @@ for (const mode of [
           ? "Security&#32;Review"
           : mode === "inactive-nbsp-row-clock"
             ? "Security&nbsp;Review"
-            : "Security<em> Review</em>";
+            : mode === "inactive-html-row-clock"
+              ? "Security<em> Review</em>"
+              : mode === "inactive-quoted-row-clock"
+                ? "Security&#32;Review"
+                : "Security Review";
       old.body =
         codeBody(true, "2026-10-20T12:01:00Z") +
         `\n| 🔒 **${label}** | ✅ **Completed** <relative-time datetime="2026-10-20T12:01:00Z">2026-10-20T12:01:00Z</relative-time> | \`${head.slice(0, 7)}\` | Manual request |`;
+      if (mode === "inactive-optional-pipe-row-clock")
+        old.body = old.body.replace("\n| 🔒", "\n🔒");
+      if (mode === "inactive-quoted-row-clock")
+        old.body = old.body.replace(
+          /\n(\| 🔒[^\n]+)$/,
+          "\n<details><summary>ℹ️ About Codex in GitHub</summary>\n> $1\n</details>",
+        );
       old.updated_at = "2026-10-20T12:05:00Z";
       newer.body = codeBody(false, "2026-10-20T12:02:00Z");
       newer.created_at = "2026-10-20T12:02:00Z";
@@ -1238,9 +1259,12 @@ for (const mode of [
         "zerowidth-priority-clear",
         "variation-priority-clear",
         "balanced-link-clear",
+        "malformed-link-clear",
         "inactive-numeric-row-clock",
         "inactive-nbsp-row-clock",
         "inactive-html-row-clock",
+        "inactive-optional-pipe-row-clock",
+        "inactive-quoted-row-clock",
         "marker-bom-clear",
         "marker-nbsp-clear",
         "zerowidth-trigger-clear",
