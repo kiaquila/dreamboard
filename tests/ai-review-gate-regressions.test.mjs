@@ -962,6 +962,14 @@ for (const mode of [
   "code-priority-repeat-clock",
   "code-warning-repeat-clock",
   "raw-html-link-repeat-clock",
+  "quoted-raw-html-repeat-clock",
+  "list-raw-html-repeat-clock",
+  "mixed-finding-count-repeat-clock",
+  "existential-finding-repeat-clock",
+  "used-footnote-repeat-clock",
+  "unused-footnote-repeat-clock",
+  "deep-destination-repeat-clock",
+  "allzero-finding-count-repeat-clock",
   "finding-softbreak-repeat-clock",
   "raw-html-numeric-repeat-clock",
   "markdown-numeric-repeat-clock",
@@ -1207,6 +1215,14 @@ for (const mode of [
         "code-priority-repeat-clock",
         "code-warning-repeat-clock",
         "raw-html-link-repeat-clock",
+        "quoted-raw-html-repeat-clock",
+        "list-raw-html-repeat-clock",
+        "mixed-finding-count-repeat-clock",
+        "existential-finding-repeat-clock",
+        "used-footnote-repeat-clock",
+        "unused-footnote-repeat-clock",
+        "deep-destination-repeat-clock",
+        "allzero-finding-count-repeat-clock",
         "finding-softbreak-repeat-clock",
         "raw-html-numeric-repeat-clock",
         "markdown-numeric-repeat-clock",
@@ -1227,25 +1243,50 @@ for (const mode of [
                 ? "\nFound\nan issue."
                 : mode === "finding-blankline-repeat-clock"
                   ? "\nFound\n\nan issue."
-                  : mode === "raw-html-link-repeat-clock"
-                    ? "\n<div>\n[safe](P1)\n</div>"
-                    : mode === "found-html-no-repeat-clock"
-                      ? "\nFound <em>no</em> issues"
-                      : mode === "found-html-zero-repeat-clock"
-                        ? "\nFound <code>0</code> issues"
-                        : mode === "html-break-repeat-clock"
-                          ? "\nDo<br>not<br>merge"
-                          : mode === "code-priority-repeat-clock"
-                            ? "\nP`1`"
-                            : mode === "code-warning-repeat-clock"
-                              ? "\nDo `not` merge"
-                              : mode === "blank-label-repeat-clock"
-                                ? "\n[safe\n\nlabel](P1)"
-                                : mode === "found-word-count-repeat-clock"
-                                  ? "\nFound one issue"
-                                  : mode === "found-html-article-repeat-clock"
-                                    ? "\nFound <em>an</em> issue"
-                                    : "\nFound an issue";
+                  : mode === "quoted-raw-html-repeat-clock"
+                    ? "\n> <div>\n> [safe](P1)\n> </div>"
+                    : mode === "list-raw-html-repeat-clock"
+                      ? "\n- <div>\n  [safe](P1)\n  </div>"
+                      : mode === "mixed-finding-count-repeat-clock"
+                        ? "\nFound 0 code issues and 1 security issue."
+                        : mode === "existential-finding-repeat-clock"
+                          ? "\nThere is an issue."
+                          : mode === "used-footnote-repeat-clock"
+                            ? "\nnote[^doc]\n\n[^doc]: P1"
+                            : mode === "unused-footnote-repeat-clock"
+                              ? "\n[^doc]: P1"
+                              : mode === "deep-destination-repeat-clock"
+                                ? "\n[safe](" +
+                                  "(".repeat(33) +
+                                  "P1" +
+                                  ")".repeat(33) +
+                                  ")"
+                                : mode === "allzero-finding-count-repeat-clock"
+                                  ? "\nFound 0 code issues and 0 security issues."
+                                  : mode === "raw-html-link-repeat-clock"
+                                    ? "\n<div>\n[safe](P1)\n</div>"
+                                    : mode === "found-html-no-repeat-clock"
+                                      ? "\nFound <em>no</em> issues"
+                                      : mode === "found-html-zero-repeat-clock"
+                                        ? "\nFound <code>0</code> issues"
+                                        : mode === "html-break-repeat-clock"
+                                          ? "\nDo<br>not<br>merge"
+                                          : mode ===
+                                              "code-priority-repeat-clock"
+                                            ? "\nP`1`"
+                                            : mode ===
+                                                "code-warning-repeat-clock"
+                                              ? "\nDo `not` merge"
+                                              : mode ===
+                                                  "blank-label-repeat-clock"
+                                                ? "\n[safe\n\nlabel](P1)"
+                                                : mode ===
+                                                    "found-word-count-repeat-clock"
+                                                  ? "\nFound one issue"
+                                                  : mode ===
+                                                      "found-html-article-repeat-clock"
+                                                    ? "\nFound <em>an</em> issue"
+                                                    : "\nFound an issue";
       old.updated_at = "2026-10-20T12:05:00Z";
       request.created_at = "2026-10-20T12:06:00Z";
       receipt.created_at = "2026-10-20T12:07:00Z";
@@ -1399,6 +1440,14 @@ for (const mode of [
         "code-priority-repeat-clock",
         "code-warning-repeat-clock",
         "raw-html-link-repeat-clock",
+        "quoted-raw-html-repeat-clock",
+        "list-raw-html-repeat-clock",
+        "mixed-finding-count-repeat-clock",
+        "existential-finding-repeat-clock",
+        "used-footnote-repeat-clock",
+        "unused-footnote-repeat-clock",
+        "deep-destination-repeat-clock",
+        "allzero-finding-count-repeat-clock",
         "finding-softbreak-repeat-clock",
         "raw-html-numeric-repeat-clock",
         "markdown-numeric-repeat-clock",
@@ -1467,6 +1516,8 @@ for (const mode of [
       result.status === 0,
       [
         "newer-clear",
+        "allzero-finding-count-repeat-clock",
+        "unused-footnote-repeat-clock",
         "markdown-numeric-repeat-clock",
         "code-numeric-repeat-clock",
         "finding-blankline-repeat-clock",

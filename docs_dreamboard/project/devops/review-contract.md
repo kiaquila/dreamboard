@@ -350,3 +350,9 @@ Standard raw HTML blocks disable Markdown-link/code-span interpretation until th
 Finding-statement checks normalize soft line breaks within a paragraph while preserving blank-line clause boundaries.
 
 Numeric character references require semicolons in Markdown warning text. Standard raw HTML block text also accepts semicolonless numeric references; literal Markdown code is shielded from either decoding path. This follows the verified GitHub renderer contexts.
+
+Raw HTML context detection first peels the same standard Markdown quote/list container prefixes as literal-code detection. Finding statements inspect every issue-count clause, so an initial zero count cannot hide a later positive count; entirely zero/no counts retain clean recovery behavior.
+
+Visible finding statements also retain existential issue reports (such as “There is an issue”) at observation time. Bare Markdown link destinations follow the renderer’s 32-level balanced-parenthesis limit; deeper destinations remain visible literal text.
+
+Within already accepted presentation, referenced footnotes retain their visible contents; unused footnote definitions do not create a warning. Literal code and raw HTML contexts remain shielded before Markdown footnote projection.

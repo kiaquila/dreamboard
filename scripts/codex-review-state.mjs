@@ -38,6 +38,40 @@ const escapedMarkdownPunctuation = (text, index) =>
   text[index] === "\\" &&
   /[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/.test(text[index + 1] || "");
 const visibleLinkLabels = (text, activeLinkOnly = false) => {
+  const footnoteKey = (label) =>
+    label.trim().replace(/\s+/g, " ").toLowerCase();
+  if (!activeLinkOnly) {
+    const footnotes = [
+      ...text.matchAll(
+        /^ {0,3}\[\^([^\]\r\n]+)\]:[^\r\n]*(?:(?:\r\n|\r|\n)(?: {2,}|\t)[^\r\n]*)*/gm,
+      ),
+    ];
+    let usage = text;
+    for (const match of [...footnotes].reverse())
+      usage =
+        usage.slice(0, match.index) +
+        "\n" +
+        usage.slice(match.index + match[0].length);
+    const used = new Set(
+      [...usage.matchAll(/\[\^([^\]\r\n]+)\]/g)]
+        .filter((match) => {
+          let escapes = 0;
+          for (let i = match.index - 1; i >= 0 && usage[i] === "\\"; i--)
+            escapes++;
+          return escapes % 2 === 0;
+        })
+        .map((match) => footnoteKey(match[1])),
+    );
+    for (const match of [...footnotes].reverse()) {
+      const replacement = used.has(footnoteKey(match[1]))
+        ? match[0].replace(/^ {0,3}\[\^[^\]\r\n]+\]:/, "")
+        : match[0].replace(/[^\r\n]/g, "");
+      text =
+        text.slice(0, match.index) +
+        replacement +
+        text.slice(match.index + match[0].length);
+    }
+  }
   const opening = /\[/g;
   let result = "";
   let cursor = 0;
@@ -88,8 +122,10 @@ const visibleLinkLabels = (text, activeLinkOnly = false) => {
         if (escapedMarkdownPunctuation(text, end)) end++;
         else if (/[ \t\r\n]/.test(text[end])) break;
         else if (/[\x00-\x1f\x7f]/.test(text[end])) valid = false;
-        else if (text[end] === "(") depth++;
-        else if (text[end] === ")") {
+        else if (text[end] === "(") {
+          depth++;
+          if (depth > 32) valid = false;
+        } else if (text[end] === ")") {
           if (depth === 0) break;
           depth--;
         } else if (text[end] === "<") valid = false;
@@ -181,8 +217,19 @@ function htmlTagText(text, separator) {
   return result;
 }
 
+const markdownContainerContent = (original) => {
+  let line = original;
+  while (true) {
+    const next = line
+      .replace(/^ {0,3}>[ \t]?/, "")
+      .replace(/^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])[ \t]+/, "");
+    if (next === line) return line;
+    line = next;
+  }
+};
+
 function rawHtmlBlockEnd(line) {
-  const start = line.replace(/^ {0,3}/, "");
+  const start = markdownContainerContent(line).replace(/^ {0,3}/, "");
   const special = start.match(/^<(script|pre|style|textarea)(?:\s|>|$)/i);
   const blockTag =
     /^(?:<\/?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|section|source|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|\/?>|$))/i;
@@ -211,7 +258,7 @@ function protectLiteralCode(source) {
     .split(/(\r?\n)/)
     .map((line) => {
       if (/^\r?\n$/.test(line)) return line;
-      if (htmlBlock === "blank" && !line.trim()) {
+      if (htmlBlock === "blank" && !markdownContainerContent(line).trim()) {
         htmlBlock = null;
         return line;
       }
@@ -260,15 +307,7 @@ function protectLiteralCode(source) {
     .split(/(\r?\n)/)
     .map((originalLine) => {
       // Block quotes are Markdown containers; code inside them remains literal.
-      let line = originalLine;
-      // Peel Markdown block containers before recognizing their literal code.
-      while (true) {
-        const next = line
-          .replace(/^ {0,3}>[ \t]?/, "")
-          .replace(/^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])[ \t]+/, "");
-        if (next === line) break;
-        line = next;
-      }
+      const line = markdownContainerContent(originalLine);
       if (/^\r?\n$/.test(line)) return line;
       if (fence) {
         const close = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
@@ -361,7 +400,7 @@ const htmlNumericReferences = (source) => {
     .split(/(\r?\n)/)
     .map((line) => {
       if (/^\r?\n$/.test(line)) return line;
-      if (block === "blank" && !line.trim()) {
+      if (block === "blank" && !markdownContainerContent(line).trim()) {
         block = null;
         return line;
       }
@@ -405,15 +444,25 @@ const renderedVisibleText = (text, formatSeparator = "") => {
     .replace(/[*_~]/g, "");
   return literal.restore(projected);
 };
-const hasPositiveFindingStatement = (text) =>
-  [
-    ...text
-      .replace(/\r\n?/g, "\n")
-      .split(/\n[ \t]*\n/)
-      .map((paragraph) => paragraph.replace(/\n/g, " "))
-      .join("\n\n")
-      .matchAll(/\bfound[ \t]+([^.!?\r\n]*?)\bissues?\b/gi),
-  ].some((match) => !/^(?:no|zero|0)\b/i.test(match[1].trim()));
+const hasPositiveFindingStatement = (text) => {
+  const paragraphs = text
+    .replace(/\r\n?/g, "\n")
+    .split(/\n[ \t]*\n/)
+    .map((paragraph) => paragraph.replace(/\n/g, " "))
+    .join("\n\n");
+  return [
+    ...paragraphs.matchAll(
+      /\b(?:found|there[ \t]+(?:is|are))[ \t]+([^.!?\r\n]*)/gi,
+    ),
+  ].some((statement) =>
+    [...statement[1].matchAll(/(.*?)\bissues?\b/gi)].some((clause) => {
+      const count = clause[1]
+        .trim()
+        .replace(/^(?:[,;:]\s*)?(?:and|but|or)\b\s*/i, "");
+      return !/^(?:no|zero|0)\b/i.test(count);
+    }),
+  );
+};
 const hasVisibleContradiction = (text) =>
   ["", " "].some((separator) => {
     const visible = renderedVisibleText(text, separator);
