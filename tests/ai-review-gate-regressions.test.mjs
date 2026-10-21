@@ -1212,6 +1212,7 @@ for (const mode of [
   "wrong-head",
   "wrong-actor",
   "unknown-receipt",
+  "noncanonical-resolved-example",
   "open-thread",
   "newer-unresolved-observation",
   "formal-only",
@@ -1232,11 +1233,16 @@ for (const mode of [
               has_unresolved_findings: mode === "unresolved-code",
             },
           }));
-    const resolved = comment(resolvedBody, {
-      id: 970,
-      created_at: completed,
-      updated_at: "2026-10-20T12:03:00Z",
-    });
+    const resolved = comment(
+      mode === "noncanonical-resolved-example"
+        ? `${resolvedBody}\n\n    <!-- codex-review-state:v1 {} -->`
+        : resolvedBody,
+      {
+        id: 970,
+        created_at: completed,
+        updated_at: "2026-10-20T12:03:00Z",
+      },
+    );
     const request = {
       ...comment(`@codex review ${head}`, {
         id: 971,

@@ -53,3 +53,5 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 
 - [x] Verify resolved code history can recover only after a separate fresh native
       assessment, without allowing code receipts to clear security findings.
+- [x] Reject resolved-code recovery from negative-only trailing-example snapshots;
+      reproduce the unsafe pass and verify the fix with full preflight (312 tests).

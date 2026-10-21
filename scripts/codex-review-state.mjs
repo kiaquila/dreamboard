@@ -201,6 +201,7 @@ export const hasCodexNegativeHistory = (
           negative: true,
           observed: Math.floor(observed / 1000),
           resolved:
+            !negativeOnly &&
             review.status === "completed" &&
             review.has_unresolved_findings === false &&
             Number.isFinite(parsed.times[section]) &&
