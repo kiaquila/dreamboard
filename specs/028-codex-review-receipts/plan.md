@@ -52,3 +52,5 @@ Reproduce the native resolved-history flag with actual CLI fixtures. Recover cod
 history only after a canonical completed resolved code snapshot and a separate
 strict current-request SHA-bound clean receipt created after that observation.
 Retain security latching, unresolved-thread vetoes and immutable receipt clocks.
+
+Reject embedded-BOM/comment-prefixed code headings and rendered whitespace-entity warnings; preserve comment line breaks so split completion fields cannot clear historical findings. Exact actual-gate regressions cover each case.

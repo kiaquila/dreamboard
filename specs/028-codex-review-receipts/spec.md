@@ -100,3 +100,5 @@ A strict leading live snapshot may retain only explicit current-head negative fa
 Negative-only fallback snapshots cannot establish resolved-code recovery, even
 when their leading record says all findings are resolved and a later clean
 receipt exists. Recovery requires a complete canonical snapshot.
+
+Reject embedded-BOM/comment-prefixed code headings and rendered whitespace-entity warnings; preserve comment line breaks so split completion fields cannot clear historical findings. Exact actual-gate regressions cover each case.
