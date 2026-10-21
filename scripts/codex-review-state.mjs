@@ -39,10 +39,16 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 // record and the matching native visible table. Prose and reactions are not proof.
 export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
+  if (
+    /^(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
+      String(body || ""),
+    )
+  )
+    return false;
   const source = sectionHeads
     ? String(body || "")
         .replace(/<!--[\s\S]*?-->/g, (comment) =>
-          /^<!--\s*codex-/.test(comment) ? comment : "",
+          /^<!--\s*codex-/i.test(comment) ? comment : "",
         )
         .trim()
     : String(body || "").trim();
@@ -88,7 +94,7 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
     return false;
   let visible = match[2].trim();
   if (
-    /codex-review-state|codex-pull-request-review-summary|codex-review-receipt/i.test(
+    /<!--\s*(?:codex-review-state|codex-pull-request-review-summary|codex-review-receipt)/i.test(
       visible,
     )
   )
@@ -248,7 +254,9 @@ export const codexCodeReviewCompletionTime = (body) => {
 };
 
 export const codexNegativeCompletionTime = (entry, head) => {
-  const parsed = parseCodexState(entry.body || "", head);
+  const parsed = parseCodexState(entry.body || "", head, {
+    sectionHeads: true,
+  });
   const observed = Date.parse(entry.updated_at || entry.created_at || "");
   if (
     !parsed ||
@@ -257,8 +265,9 @@ export const codexNegativeCompletionTime = (entry, head) => {
     return NaN;
   const negatives = Object.entries(parsed.state).filter(
     ([, review]) =>
-      review.has_any_findings === true ||
-      review.has_unresolved_findings === true,
+      review.commit_sha === head &&
+      (review.has_any_findings === true ||
+        review.has_unresolved_findings === true),
   );
   if (!negatives.length) return NaN;
   return Math.max(

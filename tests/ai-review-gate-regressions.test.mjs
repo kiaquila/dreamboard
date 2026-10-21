@@ -921,11 +921,16 @@ for (const mode of [
   "static",
   "security-null",
   "newer-clear",
+  "ordinary-comment-clear",
+  "uppercase-clear",
   "equal-clear",
   "old-security-clock",
   "missing-security-clock",
   "malformed-old",
   "multiline-old",
+  "marker-prose-old",
+  "indented-old",
+  "tabbed-old",
   "wrong-actor",
 ]) {
   test(`actual gate retains section-specific security history: ${mode}`, () => {
@@ -941,6 +946,16 @@ for (const mode of [
           (_, prefix, json, suffix) =>
             prefix + JSON.stringify(JSON.parse(json), null, 2) + suffix,
         );
+    if (mode === "marker-prose-old")
+      old.body = old.body.replaceAll(
+        "Manual request",
+        "codex-review-state: parser review",
+      );
+    if (["indented-old", "tabbed-old"].includes(mode))
+      old.body = old.body.replace(
+        /^(<!-- codex-(?:pull-request-review-summary|review-state)[^\n]*)/gm,
+        (mode === "tabbed-old" ? "\t" : "    ") + "$1",
+      );
     if (mode === "malformed-old")
       old.body = old.body.replace("state:v1", "state:v2");
     if (mode === "wrong-actor") old.user = { login: "attacker" };
@@ -971,6 +986,12 @@ for (const mode of [
           ),
       { id: 933, created_at: "2026-10-20T12:05:00Z" },
     );
+    if (["ordinary-comment-clear", "uppercase-clear"].includes(mode))
+      receipt.created_at = "2026-10-20T12:06:00Z";
+    if (mode === "ordinary-comment-clear")
+      newer.body += "\n<!-- TODO: presentation metadata -->";
+    if (mode === "uppercase-clear")
+      newer.body += "\n<!-- CODEX-review-state:v1 {} -->";
     if (mode === "old-security-clock")
       newer.body = newer.body
         .split("\n")
@@ -993,6 +1014,8 @@ for (const mode of [
       ...([
         "security-null",
         "newer-clear",
+        "ordinary-comment-clear",
+        "uppercase-clear",
         "equal-clear",
         "old-security-clock",
         "missing-security-clock",
@@ -1022,7 +1045,14 @@ for (const mode of [
     });
     assert.equal(
       result.status === 0,
-      ["newer-clear", "malformed-old", "wrong-actor"].includes(mode),
+      [
+        "newer-clear",
+        "ordinary-comment-clear",
+        "malformed-old",
+        "wrong-actor",
+        "indented-old",
+        "tabbed-old",
+      ].includes(mode),
       result.stderr || result.stdout,
     );
   });
@@ -1097,7 +1127,7 @@ test("actual gate preserves concurrent running section observed clock", () => {
   assert.notEqual(result.status, 0, result.stdout);
 });
 
-for (const clear of [false, true, "inactive-code"])
+for (const clear of [false, true, "inactive-code", "edited-mixed"])
   test(`actual gate section head history ignores foreign other head: ${clear}`, () => {
     const foreign = "b".repeat(40);
     const mixed = (negative, time) =>
@@ -1119,6 +1149,10 @@ for (const clear of [false, true, "inactive-code"])
         : mixed(true, "2026-10-20T12:01:00Z"),
       { id: 960, created_at: "2026-10-20T12:01:00Z" },
     );
+    if (clear === "edited-mixed") {
+      old.body = mixed(true, "2026-10-20T12:01:00Z");
+      old.updated_at = "2026-10-20T12:05:00Z";
+    }
     const cleared = comment(mixed(false, "2026-10-20T12:02:00Z"), {
       id: 961,
       created_at: "2026-10-20T12:02:00Z",
@@ -1289,3 +1323,28 @@ for (const mode of [
     );
   });
 }
+
+test("actual gate preserves latest foreign negative observation", () => {
+  const foreign = "b".repeat(40);
+  const stale = comment(
+    securityHistoryBody(true, "2026-10-20T12:01:00Z")
+      .replaceAll(head, foreign)
+      .replaceAll(head.slice(0, 7), foreign.slice(0, 7)),
+    {
+      id: 970,
+      created_at: "2026-10-20T12:01:00Z",
+      updated_at: "2026-10-20T12:05:00Z",
+    },
+  );
+  const clean = comment(securityHistoryBody(false, "2026-10-20T12:04:00Z"), {
+    id: 971,
+    created_at: "2026-10-20T12:04:00Z",
+  });
+  const events = [
+    { event: "committed", sha: head, created_at: "2026-10-20T12:00:00Z" },
+    clean,
+    stale,
+  ];
+  const result = runGate({ timeline: events, comments: events });
+  assert.notEqual(result.status, 0, result.stdout);
+});
