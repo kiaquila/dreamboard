@@ -192,7 +192,11 @@ export const codexCodeReviewCompletionTime = (body) => {
 export const codexNegativeCompletionTime = (entry, head) => {
   const parsed = parseCodexState(entry.body || "", head);
   const observed = Date.parse(entry.updated_at || entry.created_at || "");
-  if (!parsed) return NaN;
+  if (
+    !parsed ||
+    Object.values(parsed.state).some((review) => review.status === "running")
+  )
+    return NaN;
   const negatives = Object.entries(parsed.state).filter(
     ([, review]) =>
       review.has_any_findings === true ||

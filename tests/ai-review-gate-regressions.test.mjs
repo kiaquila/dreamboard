@@ -1054,3 +1054,36 @@ for (const section of ["code_review", "security_review"])
     const result = runGate({ timeline: events, comments: events });
     assert.equal(result.status, 0, result.stderr || result.stdout);
   });
+
+test("actual gate preserves concurrent running section observed clock", () => {
+  const clean = comment(securityHistoryBody(false, "2026-10-20T12:04:00Z"), {
+    id: 950,
+    created_at: "2026-10-20T12:04:00Z",
+  });
+  let pendingBody = securityHistoryBody(true, "2026-10-20T12:01:00Z").replace(
+    /"security_review":\{[^}]+\}/,
+    `"security_review":{"commit_sha":"${head}","has_any_findings":null,"has_unresolved_findings":null,"status":"running"}`,
+  );
+  pendingBody = pendingBody
+    .split("\n")
+    .map((line) =>
+      line.includes("**Security Review**")
+        ? line
+            .replace("✅ **Completed**", "🔄 **Running** since")
+            .replaceAll("2026-10-20T12:01:00Z", "2026-10-20T12:05:00Z")
+        : line,
+    )
+    .join("\n");
+  const pending = comment(pendingBody, {
+    id: 951,
+    created_at: "2026-10-20T12:01:00Z",
+    updated_at: "2026-10-20T12:05:00Z",
+  });
+  const events = [
+    { event: "committed", sha: head, created_at: "2026-10-20T12:00:00Z" },
+    clean,
+    pending,
+  ];
+  const result = runGate({ timeline: events, comments: events });
+  assert.notEqual(result.status, 0, result.stdout);
+});
