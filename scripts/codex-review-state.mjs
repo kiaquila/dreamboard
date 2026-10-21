@@ -34,9 +34,29 @@ const summaryHelp = `[Your team has set up Codex to review pull requests in this
 
 Codex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.`;
 const normalize = (text) => text.replace(/\s+/g, " ").trim();
+const visibleLinkLabels = (text) => {
+  const opening = /\[([^\]]+)\]\(/g;
+  let result = "";
+  let cursor = 0;
+  let match;
+  while ((match = opening.exec(text))) {
+    let depth = 1;
+    let end = opening.lastIndex;
+    for (; end < text.length && depth; end++) {
+      if (text[end] === "\\") end++;
+      else if (text[end] === "(") depth++;
+      else if (text[end] === ")") depth--;
+    }
+    if (depth) continue;
+    result += text.slice(cursor, match.index) + match[1];
+    cursor = end;
+    opening.lastIndex = end;
+  }
+  return result + text.slice(cursor);
+};
 // Standard HTML5 whitespace/format entity categories; visible checks only.
 const renderedVisibleText = (text, formatSeparator = "") =>
-  text
+  visibleLinkLabels(text)
     .replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (entity, hex, decimal) => {
       const point = Number.parseInt(hex || decimal, hex ? 16 : 10);
       return point > 0 && point <= 0x10ffff
@@ -54,7 +74,6 @@ const renderedVisibleText = (text, formatSeparator = "") =>
     .replace(/&nbsp;?/gi, " ")
     .replace(/&shy;?/gi, "\u00ad")
     .replace(/\p{Default_Ignorable_Code_Point}/gu, formatSeparator)
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/[*_~]/g, "");
 
 // A structured snapshot is authoritative only with one closed-schema machine
@@ -65,13 +84,19 @@ export const parseCodexState = (
   { sectionHeads = false, negativeEnvelope = false } = {},
 ) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
-  const rawHeading = String(body || "").match(
-    /^[ \t]*## Codex Review Summary[ \t]*\r?$/m,
+  const rawMarkerLine = String(body || "").match(
+    /^[^\r\n]*<!-- codex-pull-request-review-summary -->[^\r\n]*$/m,
   )?.[0];
   if (
-    rawHeading &&
-    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading)
+    !/^ {0,3}<!-- codex-pull-request-review-summary -->[ \t]*$/.test(
+      rawMarkerLine || "",
+    )
   )
+    return false;
+  const rawHeading = String(body || "").match(
+    /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
+  )?.[0];
+  if (!/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading || ""))
     return false;
 
   if (
@@ -164,6 +189,7 @@ export const parseCodexState = (
     const canonicalVisible = visibleLines.slice(0, 4 + rows).join("\n");
     const canonical =
       sectionRows.length === rows &&
+      visibleLines.filter((line) => line.startsWith("|")).length === rows + 2 &&
       parseCodexState(
         source.slice(0, source.length - match[2].length) + canonicalVisible,
         head,

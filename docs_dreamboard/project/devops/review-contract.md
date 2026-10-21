@@ -314,3 +314,7 @@ Decoded Unicode format characters are removed only for visible contradiction che
 Raw protocol indentation detection includes a BOM between indentation and the marker. Visible format characters are checked both as removed characters and word separators, including standard named zero-width entities, preserving existing priority and merge-warning detection without normalizing machine evidence.
 
 Visible contradiction projection uses the Unicode Default_Ignorable_Code_Point category, covering variation selectors as well as format characters. A rendered priority warning cannot be hidden by these characters; raw machine evidence remains unchanged.
+
+Visible link labels are projected with balanced destination parentheses before known contradiction checks. Negative completion-clock reuse requires the complete visible table row count to match the active sections; an extra rendered inactive-companion row retains the typed finding at observation time rather than borrowing an older completion.
+
+The original summary-marker and heading lines must have canonical ASCII indentation (zero to three spaces) before any trimming or presentation-comment removal. Other raw prefix characters cannot be normalized into protocol or Markdown authority.

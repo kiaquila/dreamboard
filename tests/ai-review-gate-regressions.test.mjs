@@ -943,7 +943,12 @@ for (const mode of [
   "multiline-comment-clear",
   "zerowidth-priority-clear",
   "variation-priority-clear",
+  "balanced-link-clear",
+  "inactive-numeric-row-clock",
+  "inactive-nbsp-row-clock",
+  "inactive-html-row-clock",
   "marker-bom-clear",
+  "marker-nbsp-clear",
   "zerowidth-trigger-clear",
   "namedzero-trigger-clear",
   "code-heading-space-clear",
@@ -1098,6 +1103,11 @@ for (const mode of [
           ? "Do&MediumSpace;not&MediumSpace;merge"
           : "Do&hairsp;not&hairsp;merge",
       );
+    if (mode === "marker-nbsp-clear")
+      newer.body = newer.body.replace(
+        /^<!-- codex-pull-request-review-summary/,
+        "    \u00A0<!-- codex-pull-request-review-summary",
+      );
     if (mode === "marker-bom-clear")
       newer.body = newer.body.replace(
         /^<!-- codex-pull-request-review-summary/,
@@ -1110,6 +1120,42 @@ for (const mode of [
           ? "Do&#8203;not&#8203;merge"
           : "Do&ZeroWidthSpace;not&ZeroWidthSpace;merge",
       );
+    if (mode === "balanced-link-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "Do [not](https://example.com/(x)) merge",
+      );
+    if (
+      [
+        "inactive-numeric-row-clock",
+        "inactive-nbsp-row-clock",
+        "inactive-html-row-clock",
+      ].includes(mode)
+    ) {
+      const codeBody = (negative, time) =>
+        cleanStateBody(head, (state) => ({
+          ...state,
+          code_review: {
+            ...state.code_review,
+            has_any_findings: negative,
+            has_unresolved_findings: negative,
+          },
+        })).replaceAll("2026-10-20T12:02:00Z", time);
+      const label =
+        mode === "inactive-numeric-row-clock"
+          ? "Security&#32;Review"
+          : mode === "inactive-nbsp-row-clock"
+            ? "Security&nbsp;Review"
+            : "Security<em> Review</em>";
+      old.body =
+        codeBody(true, "2026-10-20T12:01:00Z") +
+        `\n| 🔒 **${label}** | ✅ **Completed** <relative-time datetime="2026-10-20T12:01:00Z">2026-10-20T12:01:00Z</relative-time> | \`${head.slice(0, 7)}\` | Manual request |`;
+      old.updated_at = "2026-10-20T12:05:00Z";
+      newer.body = codeBody(false, "2026-10-20T12:02:00Z");
+      newer.created_at = "2026-10-20T12:02:00Z";
+      request.created_at = "2026-10-20T12:06:00Z";
+      receipt.created_at = "2026-10-20T12:07:00Z";
+    }
     if (mode === "variation-priority-clear")
       newer.body = newer.body.replaceAll("Manual request", "P\uFE0F1 blocker");
     if (mode === "zerowidth-priority-clear")
@@ -1191,7 +1237,12 @@ for (const mode of [
         "multiline-comment-clear",
         "zerowidth-priority-clear",
         "variation-priority-clear",
+        "balanced-link-clear",
+        "inactive-numeric-row-clock",
+        "inactive-nbsp-row-clock",
+        "inactive-html-row-clock",
         "marker-bom-clear",
+        "marker-nbsp-clear",
         "zerowidth-trigger-clear",
         "namedzero-trigger-clear",
         "code-heading-space-clear",
