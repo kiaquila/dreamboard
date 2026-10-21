@@ -48,7 +48,7 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   const source = sectionHeads
     ? String(body || "")
         .replace(/<!--[\s\S]*?-->/g, (comment) =>
-          /^<!--\s*codex-/.test(comment) ? comment : "",
+          /^<!--\s*codex-/i.test(comment) ? comment : "",
         )
         .trim()
     : String(body || "").trim();
