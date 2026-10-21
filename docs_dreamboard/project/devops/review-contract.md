@@ -312,3 +312,5 @@ Heading validation also checks the effective line after presentation-comment rem
 Decoded Unicode format characters are removed only for visible contradiction checks, so zero-width formatting cannot hide a rendered P0–P2 warning. Machine data and completion-row parsing are unchanged.
 
 Raw protocol indentation detection includes a BOM between indentation and the marker. Visible format characters are checked both as removed characters and word separators, including standard named zero-width entities, preserving existing priority and merge-warning detection without normalizing machine evidence.
+
+Visible contradiction projection uses the Unicode Default_Ignorable_Code_Point category, covering variation selectors as well as format characters. A rendered priority warning cannot be hidden by these characters; raw machine evidence remains unchanged.

@@ -942,6 +942,7 @@ for (const mode of [
   "hairspace-clear",
   "multiline-comment-clear",
   "zerowidth-priority-clear",
+  "variation-priority-clear",
   "marker-bom-clear",
   "zerowidth-trigger-clear",
   "namedzero-trigger-clear",
@@ -1109,6 +1110,8 @@ for (const mode of [
           ? "Do&#8203;not&#8203;merge"
           : "Do&ZeroWidthSpace;not&ZeroWidthSpace;merge",
       );
+    if (mode === "variation-priority-clear")
+      newer.body = newer.body.replaceAll("Manual request", "P\uFE0F1 blocker");
     if (mode === "zerowidth-priority-clear")
       newer.body = newer.body.replaceAll("Manual request", "P&#8203;1 blocker");
     if (mode === "multiline-comment-clear")
@@ -1187,6 +1190,7 @@ for (const mode of [
         "hairspace-clear",
         "multiline-comment-clear",
         "zerowidth-priority-clear",
+        "variation-priority-clear",
         "marker-bom-clear",
         "zerowidth-trigger-clear",
         "namedzero-trigger-clear",

@@ -53,7 +53,7 @@ const renderedVisibleText = (text, formatSeparator = "") =>
     )
     .replace(/&nbsp;?/gi, " ")
     .replace(/&shy;?/gi, "\u00ad")
-    .replace(/\p{Cf}/gu, formatSeparator)
+    .replace(/\p{Default_Ignorable_Code_Point}/gu, formatSeparator)
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/[*_~]/g, "");
 
