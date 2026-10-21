@@ -929,6 +929,8 @@ for (const mode of [
   "malformed-old",
   "multiline-old",
   "marker-prose-old",
+  "trailing-example-old",
+  "example-clear",
   "indented-old",
   "tabbed-old",
   "wrong-actor",
@@ -956,6 +958,8 @@ for (const mode of [
         /^(<!-- codex-(?:pull-request-review-summary|review-state)[^\n]*)/gm,
         (mode === "tabbed-old" ? "\t" : "    ") + "$1",
       );
+    if (mode === "trailing-example-old")
+      old.body += "\n    <!-- codex-review-state:v1 example -->";
     if (mode === "malformed-old")
       old.body = old.body.replace("state:v1", "state:v2");
     if (mode === "wrong-actor") old.user = { login: "attacker" };
@@ -990,6 +994,8 @@ for (const mode of [
       receipt.created_at = "2026-10-20T12:06:00Z";
     if (mode === "ordinary-comment-clear")
       newer.body += "\n<!-- TODO: presentation metadata -->";
+    if (mode === "example-clear")
+      newer.body += "\n\t<!-- codex-pull-request-review-summary -->";
     if (mode === "uppercase-clear")
       newer.body += "\n<!-- CODEX-review-state:v1 {} -->";
     if (mode === "old-security-clock")
@@ -1013,6 +1019,7 @@ for (const mode of [
       ...(mode === "formal" ? [] : [receipt]),
       ...([
         "security-null",
+        "example-clear",
         "newer-clear",
         "ordinary-comment-clear",
         "uppercase-clear",

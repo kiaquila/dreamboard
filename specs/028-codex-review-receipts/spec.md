@@ -88,3 +88,5 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 Protocol-marker uniqueness counts actual HTML comment markers, not bare marker words in the supported visible review-trigger text.
 
 Negative completion ordering considers only affected sections bound to the current full head. Protocol marker lines indented as Markdown code (four spaces or a tab) are examples, not live structured snapshots.
+
+A strict leading live snapshot may retain only explicit current-head negative facts when followed solely by trailing Markdown-indented protocol example lines. This fallback cannot approve, clear history, or retire the original body’s observed pending timestamp. Whole indented envelopes remain examples.

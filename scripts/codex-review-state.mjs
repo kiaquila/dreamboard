@@ -166,9 +166,21 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
   const sections = { code_review: [], security_review: [] };
   for (const entry of comments) {
     if (!isTrusted(entry)) continue;
-    const parsed = parseCodexState(entry.body || "", head, {
+    let parsed = parseCodexState(entry.body || "", head, {
       sectionHeads: true,
     });
+    let negativeOnly = false;
+    if (!parsed) {
+      const original = String(entry.body || "");
+      const leading = original.replace(
+        /(?:\r?\n(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:review-state|pull-request-review-summary|review-receipt)[^\r\n]*-->[ \t]*)+\s*$/i,
+        "",
+      );
+      if (leading !== original) {
+        parsed = parseCodexState(leading, head, { sectionHeads: true });
+        negativeOnly = true;
+      }
+    }
     if (!parsed) continue;
     const observed = Date.parse(entry.updated_at || entry.created_at || "");
     if (!Number.isFinite(observed)) continue;
@@ -189,7 +201,7 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
               : observed) / 1000,
           ),
         });
-      else if (cleanReview(review, head)) {
+      else if (!negativeOnly && cleanReview(review, head)) {
         const completed = parsed.times[section];
         if (Number.isFinite(completed) && completed < observed + 1000)
           sections[section].push({
