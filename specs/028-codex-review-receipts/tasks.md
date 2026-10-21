@@ -55,3 +55,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
       assessment, without allowing code receipts to clear security findings.
 - [x] Reject resolved-code recovery from negative-only trailing-example snapshots;
       reproduce the unsafe pass and verify the fix with full preflight (312 tests).
+- [x] Reproduce native P1 on trailing multiline protocol examples: retain code and
+      security negatives with space/tab/CRLF indentation, reject partial blocks,
+      and preserve clean-state and resolved-code recovery vetoes. Full preflight:
+      322 tests passed.

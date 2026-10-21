@@ -44,6 +44,10 @@ Strict valid same-head structured finding flags latch per review section across 
 
 Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.
 
+Consume trailing multiline protocol examples only when every line keeps Markdown
+code indentation. Retain leading code/security negatives without granting clean
+or resolved-code recovery authority; reject partially unindented blocks.
+
 Reproduce the native resolved-history flag with actual CLI fixtures. Recover code
 history only after a canonical completed resolved code snapshot and a separate
 strict current-request SHA-bound clean receipt created after that observation.

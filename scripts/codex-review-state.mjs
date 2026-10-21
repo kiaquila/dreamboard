@@ -178,8 +178,10 @@ export const hasCodexNegativeHistory = (
     let negativeOnly = false;
     if (!parsed) {
       const original = String(entry.body || "");
+      // Every line of a trailing example must stay inside Markdown code
+      // indentation. Never consume a partly unindented live protocol block.
       const leading = original.replace(
-        /(?:\r?\n(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:review-state|pull-request-review-summary|review-receipt)[^\r\n]*-->[ \t]*)+\s*$/i,
+        /(?:\r?\n(?: {4}|[ \t]*\t)[ \t]*<!--[ \t]*codex-(?:review-state|pull-request-review-summary|review-receipt)(?:(?!-->)[^\r\n])*(?:\r?\n(?: {4}|[ \t]*\t)(?:(?!-->)[^\r\n])*)*-->[ \t]*)+\s*$/i,
         "",
       );
       if (leading !== original) {

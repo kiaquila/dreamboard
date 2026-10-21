@@ -931,6 +931,7 @@ for (const mode of [
   "marker-prose-old",
   "trailing-example-old",
   "example-clear",
+  "multiline-example-clear",
   "indented-old",
   "tabbed-old",
   "wrong-actor",
@@ -996,6 +997,8 @@ for (const mode of [
       newer.body += "\n<!-- TODO: presentation metadata -->";
     if (mode === "example-clear")
       newer.body += "\n\t<!-- codex-pull-request-review-summary -->";
+    if (mode === "multiline-example-clear")
+      newer.body += "\n    <!-- codex-review-state:v1 {\n    } -->";
     if (mode === "uppercase-clear")
       newer.body += "\n<!-- CODEX-review-state:v1 {} -->";
     if (mode === "old-security-clock")
@@ -1020,6 +1023,7 @@ for (const mode of [
       ...([
         "security-null",
         "example-clear",
+        "multiline-example-clear",
         "newer-clear",
         "ordinary-comment-clear",
         "uppercase-clear",
@@ -1064,6 +1068,67 @@ for (const mode of [
     );
   });
 }
+
+for (const section of ["code_review", "security_review"])
+  for (const indentation of ["spaces", "tabs", "mixed-crlf", "partial"])
+    test(`actual gate retains ${section} before multiline ${indentation} examples`, () => {
+      const negative =
+        section === "security_review"
+          ? securityHistoryBody(true, "2026-10-20T12:02:00Z")
+          : cleanStateBody(head, (state) => ({
+              ...state,
+              code_review: {
+                ...state.code_review,
+                has_any_findings: true,
+                has_unresolved_findings: true,
+              },
+            }));
+      const example = [
+        "<!-- codex-review-state:v1 {",
+        '  "code_review": {}',
+        "} -->",
+      ]
+        .map((line, index) => {
+          const indent =
+            indentation === "partial" && index === 1
+              ? ""
+              : indentation === "tabs" ||
+                  (indentation === "mixed-crlf" && index === 1)
+                ? "\t"
+                : "    ";
+          return indent + line;
+        })
+        .join(indentation === "mixed-crlf" ? "\r\n" : "\n");
+      const old = comment(`${negative}\n${example}`, {
+        id: 980,
+        created_at: "2026-10-20T12:02:00Z",
+      });
+      const request = {
+        ...comment(`@codex review ${head}`, {
+          id: 981,
+          created_at: "2026-10-20T12:03:00Z",
+        }),
+        event: "commented",
+        user: { login: "kiaquila" },
+        author_association: "OWNER",
+      };
+      const receipt = comment(presentationReceipt(head, ":rocket:"), {
+        id: 982,
+        created_at: "2026-10-20T12:04:00Z",
+      });
+      const events = [
+        { ...activation, created_at: "2026-10-20T12:00:00Z" },
+        old,
+        request,
+        receipt,
+      ];
+      const result = runGate({ timeline: events, comments: events });
+      assert.equal(
+        result.status === 0,
+        indentation === "partial",
+        result.stderr || result.stdout,
+      );
+    });
 
 for (const section of ["code_review", "security_review"])
   test(`actual gate uses ${section} completion despite later shared edit`, () => {
@@ -1213,6 +1278,7 @@ for (const mode of [
   "wrong-actor",
   "unknown-receipt",
   "noncanonical-resolved-example",
+  "noncanonical-resolved-multiline-example",
   "open-thread",
   "newer-unresolved-observation",
   "formal-only",
@@ -1236,7 +1302,9 @@ for (const mode of [
     const resolved = comment(
       mode === "noncanonical-resolved-example"
         ? `${resolvedBody}\n\n    <!-- codex-review-state:v1 {} -->`
-        : resolvedBody,
+        : mode === "noncanonical-resolved-multiline-example"
+          ? `${resolvedBody}\n    <!-- codex-review-state:v1 {\n    } -->`
+          : resolvedBody,
       {
         id: 970,
         created_at: completed,
