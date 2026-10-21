@@ -41,27 +41,50 @@ const visibleLinkLabels = (text, activeLinkOnly = false) => {
   const footnoteKey = (label) =>
     label.trim().replace(/\s+/g, " ").toLowerCase();
   if (!activeLinkOnly) {
+    // Invalid footnote labels can still be valid ordinary link definitions.
+    text = text.replace(
+      /^ {0,3}\[\^([^\]\r\n]+)\]:[ \t]*([^\r\n]+)$/gm,
+      (definition, label, destination) => {
+        if (!/[\x00-\x20]/.test(label)) return definition;
+        return visibleLinkLabels("[^" + label + "](" + destination + ")", true)
+          ? definition.replace(/[^\r\n]/g, "")
+          : definition;
+      },
+    );
     const footnotes = [
       ...text.matchAll(
-        /^ {0,3}\[\^([^\]\r\n]+)\]:[^\r\n]*(?:(?:\r\n|\r|\n)(?: {2,}|\t)[^\r\n]*)*/gm,
+        /^ {0,3}\[\^([^\[\]\x00-\x20]+)\]:[^\r\n]*(?:(?:\r\n|\r|\n)(?: {2,}|\t)[^\r\n]*)*/gm,
       ),
     ];
+    const references = (content) =>
+      [...content.matchAll(/\[\^([^\[\]\x00-\x20]+)\]/g)]
+        .filter((match) => {
+          let escapes = 0;
+          for (let i = match.index - 1; i >= 0 && content[i] === "\\"; i--)
+            escapes++;
+          return escapes % 2 === 0;
+        })
+        .map((match) => footnoteKey(match[1]));
     let usage = text;
     for (const match of [...footnotes].reverse())
       usage =
         usage.slice(0, match.index) +
         "\n" +
         usage.slice(match.index + match[0].length);
-    const used = new Set(
-      [...usage.matchAll(/\[\^([^\]\r\n]+)\]/g)]
-        .filter((match) => {
-          let escapes = 0;
-          for (let i = match.index - 1; i >= 0 && usage[i] === "\\"; i--)
-            escapes++;
-          return escapes % 2 === 0;
-        })
-        .map((match) => footnoteKey(match[1])),
-    );
+    const used = new Set(references(usage));
+    const visited = new Set();
+    for (const label of used) {
+      if (visited.has(label)) continue;
+      visited.add(label);
+      const definition = footnotes.find(
+        (match) => footnoteKey(match[1]) === label,
+      );
+      if (definition)
+        for (const reference of references(
+          definition[0].replace(/^ {0,3}\[\^[^\]\r\n]+\]:/, ""),
+        ))
+          used.add(reference);
+    }
     for (const match of [...footnotes].reverse()) {
       const replacement = used.has(footnoteKey(match[1]))
         ? match[0].replace(/^ {0,3}\[\^[^\]\r\n]+\]:/, "")
@@ -217,16 +240,29 @@ function htmlTagText(text, separator) {
   return result;
 }
 
-const markdownContainerContent = (original) => {
-  let line = original;
+function markdownContainerContext(line) {
+  let quoteDepth = 0;
+  let listIndent = 0;
   while (true) {
-    const next = line
-      .replace(/^ {0,3}>[ \t]?/, "")
-      .replace(/^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])[ \t]+/, "");
-    if (next === line) return line;
-    line = next;
+    const quote = line.match(/^ {0,3}>[ \t]?/);
+    if (quote) {
+      quoteDepth++;
+      line = line.slice(quote[0].length);
+      continue;
+    }
+    const list = line.match(/^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])[ \t]+/);
+    if (list) {
+      listIndent += list[0].length;
+      line = line.slice(list[0].length);
+      continue;
+    }
+    return { content: line, quoteDepth, listIndent };
   }
-};
+}
+
+function markdownContainerContent(line) {
+  return markdownContainerContext(line).content;
+}
 
 function rawHtmlBlockEnd(line) {
   const start = markdownContainerContent(line).replace(/^ {0,3}/, "");
@@ -254,18 +290,41 @@ function protectLiteralCode(source) {
   // HTML, entity or link interpretation, including spans adjacent to HTML.
   let spans = "";
   let htmlBlock = null;
+  let htmlContainer = null;
   const raw = String(source)
     .split(/(\r?\n)/)
     .map((line) => {
       if (/^\r?\n$/.test(line)) return line;
-      if (htmlBlock === "blank" && !markdownContainerContent(line).trim()) {
+      const context = markdownContainerContext(line);
+      let content = context.content;
+      if (
+        htmlBlock &&
+        (context.quoteDepth < htmlContainer.quoteDepth ||
+          (htmlContainer.listIndent &&
+            !context.listIndent &&
+            !new RegExp("^ {" + htmlContainer.listIndent + "}|^\\t").test(
+              content,
+            )))
+      ) {
+        htmlBlock = null;
+        htmlContainer = null;
+      }
+      if (htmlBlock && htmlContainer.listIndent && !context.listIndent)
+        content = content.replace(
+          new RegExp("^ {" + htmlContainer.listIndent + "}|^\\t"),
+          "",
+        );
+      if (htmlBlock === "blank" && !content.trim()) {
         htmlBlock = null;
         return line;
       }
-      if (!htmlBlock) htmlBlock = rawHtmlBlockEnd(line);
+      if (!htmlBlock) {
+        htmlBlock = rawHtmlBlockEnd(content);
+        if (htmlBlock) htmlContainer = context;
+      }
       if (!htmlBlock) return line;
       const literal = line.replace(/[\[`]/g, save);
-      if (htmlBlock !== "blank" && htmlBlock.test(line)) htmlBlock = null;
+      if (htmlBlock !== "blank" && htmlBlock.test(content)) htmlBlock = null;
       return literal;
     })
     .join("");
@@ -328,7 +387,10 @@ function protectLiteralCode(source) {
         fence = open[1];
         return "";
       }
-      if (!comment && /^(?: {4}|\t)/.test(line)) return save(line);
+      if (!comment && /^(?: {4}|\t)/.test(line)) {
+        const indent = line.match(/^[ \t]+/)[0];
+        return indent + save(line.slice(indent.length));
+      }
       let result = "";
       for (let i = 0; i < line.length; i++) {
         if (comment) {
@@ -396,20 +458,43 @@ function protectLiteralCode(source) {
 // HTML/link tokenization, so decoded entities can never create source markers.
 const htmlNumericReferences = (source) => {
   let block = null;
+  let htmlContainer = null;
   return source
     .split(/(\r?\n)/)
     .map((line) => {
       if (/^\r?\n$/.test(line)) return line;
-      if (block === "blank" && !markdownContainerContent(line).trim()) {
+      const context = markdownContainerContext(line);
+      let content = context.content;
+      if (
+        block &&
+        (context.quoteDepth < htmlContainer.quoteDepth ||
+          (htmlContainer.listIndent &&
+            !context.listIndent &&
+            !new RegExp("^ {" + htmlContainer.listIndent + "}|^\\t").test(
+              content,
+            )))
+      ) {
+        block = null;
+        htmlContainer = null;
+      }
+      if (block && htmlContainer.listIndent && !context.listIndent)
+        content = content.replace(
+          new RegExp("^ {" + htmlContainer.listIndent + "}|^\\t"),
+          "",
+        );
+      if (block === "blank" && !content.trim()) {
         block = null;
         return line;
       }
-      if (!block) block = rawHtmlBlockEnd(line);
+      if (!block) {
+        block = rawHtmlBlockEnd(content);
+        if (block) htmlContainer = context;
+      }
       if (!block) return line;
       const text = line.replace(/&#(?:x[0-9a-f]+|[0-9]+);?/gi, (entity) =>
         entity.endsWith(";") ? entity : entity + ";",
       );
-      if (block !== "blank" && block.test(line)) block = null;
+      if (block !== "blank" && block.test(content)) block = null;
       return text;
     })
     .join("");

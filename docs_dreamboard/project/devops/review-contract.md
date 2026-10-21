@@ -358,3 +358,5 @@ Visible finding statements also retain existential issue reports (such as “The
 Within already accepted presentation, referenced footnotes retain their visible contents; unused footnote definitions do not create a warning. Literal code and raw HTML contexts remain shielded before Markdown footnote projection.
 
 Affirmative numeric counts before issue, finding, or problem nouns are visible negative statements independently of their leading verb. Zero/no-only reports preserve clean recovery; this projection does not alter canonical review authority.
+
+Footnote usage follows referenced definitions transitively; unused lazy continuation content remains hidden. Invalid footnote identifiers can still form valid ordinary link-reference definitions, while malformed destinations remain literal. Raw HTML warning context ends when its containing Markdown quote or list ends.
