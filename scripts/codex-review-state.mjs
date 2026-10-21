@@ -216,7 +216,9 @@ export const codexCodeReviewCompletionTime = (body) => {
 };
 
 export const codexNegativeCompletionTime = (entry, head) => {
-  const parsed = parseCodexState(entry.body || "", head);
+  const parsed = parseCodexState(entry.body || "", head, {
+    sectionHeads: true,
+  });
   const observed = Date.parse(entry.updated_at || entry.created_at || "");
   if (
     !parsed ||
