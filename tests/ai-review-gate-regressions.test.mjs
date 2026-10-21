@@ -977,6 +977,8 @@ for (const mode of [
   "footnote-four-space-repeat-clock",
   "used-footnote-four-space-repeat-clock",
   "transitive-footnote-repeat-clock",
+  "footnote-destination-repeat-clock",
+  "footnote-transitive-destination-repeat-clock",
   "unused-footnote-repeat-clock",
   "deep-destination-repeat-clock",
   "allzero-finding-count-repeat-clock",
@@ -1240,6 +1242,8 @@ for (const mode of [
         "footnote-four-space-repeat-clock",
         "used-footnote-four-space-repeat-clock",
         "transitive-footnote-repeat-clock",
+        "footnote-destination-repeat-clock",
+        "footnote-transitive-destination-repeat-clock",
         "unused-footnote-repeat-clock",
         "deep-destination-repeat-clock",
         "allzero-finding-count-repeat-clock",
@@ -1300,46 +1304,52 @@ for (const mode of [
                                                   "transitive-footnote-repeat-clock"
                                                 ? "\nroot[^a]\n\n[^a]: safe [^b]\n[^b]: P1"
                                                 : mode ===
-                                                    "unused-footnote-repeat-clock"
-                                                  ? "\n[^doc]: P1"
+                                                    "footnote-destination-repeat-clock"
+                                                  ? "\n[safe](https://example.test/[^note])\n\n[^note]: P1 example"
                                                   : mode ===
-                                                      "deep-destination-repeat-clock"
-                                                    ? "\n[safe](" +
-                                                      "(".repeat(33) +
-                                                      "P1" +
-                                                      ")".repeat(33) +
-                                                      ")"
+                                                      "footnote-transitive-destination-repeat-clock"
+                                                    ? "\nroot[^a]\n\n[^a]: [safe](https://example.test/[^note])\n[^note]: P1 example"
                                                     : mode ===
-                                                        "allzero-finding-count-repeat-clock"
-                                                      ? "\nFound 0 code issues and 0 security issues."
+                                                        "unused-footnote-repeat-clock"
+                                                      ? "\n[^doc]: P1"
                                                       : mode ===
-                                                          "raw-html-link-repeat-clock"
-                                                        ? "\n<div>\n[safe](P1)\n</div>"
+                                                          "deep-destination-repeat-clock"
+                                                        ? "\n[safe](" +
+                                                          "(".repeat(33) +
+                                                          "P1" +
+                                                          ")".repeat(33) +
+                                                          ")"
                                                         : mode ===
-                                                            "found-html-no-repeat-clock"
-                                                          ? "\nFound <em>no</em> issues"
+                                                            "allzero-finding-count-repeat-clock"
+                                                          ? "\nFound 0 code issues and 0 security issues."
                                                           : mode ===
-                                                              "found-html-zero-repeat-clock"
-                                                            ? "\nFound <code>0</code> issues"
+                                                              "raw-html-link-repeat-clock"
+                                                            ? "\n<div>\n[safe](P1)\n</div>"
                                                             : mode ===
-                                                                "html-break-repeat-clock"
-                                                              ? "\nDo<br>not<br>merge"
+                                                                "found-html-no-repeat-clock"
+                                                              ? "\nFound <em>no</em> issues"
                                                               : mode ===
-                                                                  "code-priority-repeat-clock"
-                                                                ? "\nP`1`"
+                                                                  "found-html-zero-repeat-clock"
+                                                                ? "\nFound <code>0</code> issues"
                                                                 : mode ===
-                                                                    "code-warning-repeat-clock"
-                                                                  ? "\nDo `not` merge"
+                                                                    "html-break-repeat-clock"
+                                                                  ? "\nDo<br>not<br>merge"
                                                                   : mode ===
-                                                                      "blank-label-repeat-clock"
-                                                                    ? "\n[safe\n\nlabel](P1)"
+                                                                      "code-priority-repeat-clock"
+                                                                    ? "\nP`1`"
                                                                     : mode ===
-                                                                        "found-word-count-repeat-clock"
-                                                                      ? "\nFound one issue"
+                                                                        "code-warning-repeat-clock"
+                                                                      ? "\nDo `not` merge"
                                                                       : mode ===
-                                                                          "found-html-article-repeat-clock"
-                                                                        ? "\nFound <em>an</em> issue"
-                                                                        : "\nFound an issue";
+                                                                          "blank-label-repeat-clock"
+                                                                        ? "\n[safe\n\nlabel](P1)"
+                                                                        : mode ===
+                                                                            "found-word-count-repeat-clock"
+                                                                          ? "\nFound one issue"
+                                                                          : mode ===
+                                                                              "found-html-article-repeat-clock"
+                                                                            ? "\nFound <em>an</em> issue"
+                                                                            : "\nFound an issue";
       old.updated_at = "2026-10-20T12:05:00Z";
       request.created_at = "2026-10-20T12:06:00Z";
       receipt.created_at = "2026-10-20T12:07:00Z";
@@ -1508,6 +1518,8 @@ for (const mode of [
         "footnote-four-space-repeat-clock",
         "used-footnote-four-space-repeat-clock",
         "transitive-footnote-repeat-clock",
+        "footnote-destination-repeat-clock",
+        "footnote-transitive-destination-repeat-clock",
         "unused-footnote-repeat-clock",
         "deep-destination-repeat-clock",
         "allzero-finding-count-repeat-clock",
@@ -1580,6 +1592,8 @@ for (const mode of [
       [
         "newer-clear",
         "allzero-finding-count-repeat-clock",
+        "footnote-destination-repeat-clock",
+        "footnote-transitive-destination-repeat-clock",
         "invalid-footnote-reference-repeat-clock",
         "footnote-two-space-repeat-clock",
         "footnote-four-space-repeat-clock",

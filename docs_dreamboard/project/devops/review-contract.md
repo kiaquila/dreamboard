@@ -360,3 +360,5 @@ Within already accepted presentation, referenced footnotes retain their visible 
 Affirmative numeric counts before issue, finding, or problem nouns are visible negative statements independently of their leading verb. Zero/no-only reports preserve clean recovery; this projection does not alter canonical review authority.
 
 Footnote usage follows referenced definitions transitively; unused lazy continuation content remains hidden. Invalid footnote identifiers can still form valid ordinary link-reference definitions, while malformed destinations remain literal. Raw HTML warning context ends when its containing Markdown quote or list ends.
+
+Footnote use is determined from the existing visible inline projection for both initial text and referenced definition contents; hidden link destinations and HTML attributes do not activate a footnote.

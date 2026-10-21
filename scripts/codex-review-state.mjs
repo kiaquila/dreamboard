@@ -37,10 +37,14 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 const escapedMarkdownPunctuation = (text, index) =>
   text[index] === "\\" &&
   /[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/.test(text[index + 1] || "");
-const visibleLinkLabels = (text, activeLinkOnly = false) => {
+const visibleLinkLabels = (
+  text,
+  activeLinkOnly = false,
+  skipFootnotes = false,
+) => {
   const footnoteKey = (label) =>
     label.trim().replace(/\s+/g, " ").toLowerCase();
-  if (!activeLinkOnly) {
+  if (!activeLinkOnly && !skipFootnotes) {
     // Invalid footnote labels can still be valid ordinary link definitions.
     text = text.replace(
       /^ {0,3}\[\^([^\]\r\n]+)\]:[ \t]*([^\r\n]+)$/gm,
@@ -56,8 +60,9 @@ const visibleLinkLabels = (text, activeLinkOnly = false) => {
         /^ {0,3}\[\^([^\[\]\x00-\x20]+)\]:[^\r\n]*(?:(?:\r\n|\r|\n)(?: {2,}|\t)[^\r\n]*)*/gm,
       ),
     ];
-    const references = (content) =>
-      [...content.matchAll(/\[\^([^\[\]\x00-\x20]+)\]/g)]
+    const references = (source) => {
+      const content = visibleLinkLabels(source, false, true);
+      return [...content.matchAll(/\[\^([^\[\]\x00-\x20]+)\]/g)]
         .filter((match) => {
           let escapes = 0;
           for (let i = match.index - 1; i >= 0 && content[i] === "\\"; i--)
@@ -65,6 +70,7 @@ const visibleLinkLabels = (text, activeLinkOnly = false) => {
           return escapes % 2 === 0;
         })
         .map((match) => footnoteKey(match[1]));
+    };
     let usage = text;
     for (const match of [...footnotes].reverse())
       usage =
