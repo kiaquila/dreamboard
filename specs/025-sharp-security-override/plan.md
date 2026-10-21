@@ -33,3 +33,32 @@ same security and repository verification without broadening the exception.
 Update the selector again to `miniflare@5.20260911.0-alpha>sharp`, regenerate
 the lockfile, and verify that the resolved graph contains only `sharp@0.35.4`.
 Keep the exception narrow and document the active protected dependency edge.
+
+## PR #50 Refresh
+
+Retarget the override to `miniflare@5.20260918.0-alpha>sharp` alongside the
+Wrangler update, regenerate the lockfile, and verify that the resolved graph
+still contains only `sharp@0.35.4`. The refreshed OSV scan also requires
+`fast-uri@3.1.7` and a targeted `miniflare@5.20260918.0-alpha>undici@7.29.1`
+override; exempt only those fixed versions from the release-age hold.
+
+## PR #52 Refresh
+
+Advance the existing `fast-uri` override to the fixed `3.1.8` release,
+remove the stale release-age exception for `3.1.7`, regenerate the lockfile,
+and verify that the vulnerable version is absent before rerunning the
+repository and GitHub security checks. Advance the targeted Miniflare-to-sharp
+override and release-age exception from `sharp@0.35.4` to `sharp@0.35.5` after
+the refreshed scan reports GHSA-wq5f-xc86-pv6w.
+
+## PR #53 Refresh
+
+Retarget the sharp and undici overrides to
+`miniflare@5.20260926.1-alpha`, regenerate the lockfile, and verify that the
+fixed versions remain selected alongside the Dependabot toolchain updates.
+
+## PR #55 Refresh
+
+Retarget both overrides to `miniflare@5.20261001.0-alpha`, regenerate the
+lockfile, and verify that the resolved graph contains `sharp@0.35.5` and
+`undici@7.29.1` before rerunning the repository and GitHub security checks.

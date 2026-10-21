@@ -57,11 +57,13 @@ compromised versions being pulled in immediately.
 
 Version-specific entries under `minimumReleaseAgeExclude` are reserved for
 reviewed security remediations when waiting seven days would keep a known
-vulnerability in the lockfile. The current `sharp@0.35.4` exception replaces
-the vulnerable transitive `sharp@0.35.2` required by the pinned Miniflare
-release. When Wrangler advances its exact Miniflare dependency, the targeted
-override selector must advance with it until upstream resolves `sharp@0.35.4`
-or newer directly.
+vulnerability in the lockfile. The exact `sharp@0.35.5` and `undici@7.29.1`
+exceptions retain the reviewed security fixes. Wrangler 4.149.0 selects
+Miniflare 5.20261006.1-alpha, which already requests both patched versions
+upstream; parent-qualified overrides keep those explicit security pins active.
+When Wrangler advances its exact Miniflare dependency, re-evaluate these pins
+and retarget or retire the selectors with corresponding security documentation
+in the same pull request.
 
 See [pnpm docs on `minimumReleaseAge`](https://pnpm.io/settings#minimumreleaseage)
 for details.

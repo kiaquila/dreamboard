@@ -38,3 +38,19 @@ instead of reintroducing the vulnerable `sharp@0.35.2` release.
 PR #48 advances that dependency again to `5.20260911.0-alpha`. The override
 selector and lockfile must advance in the same PR so future dependency
 resolution cannot bypass the security remediation.
+
+PR #52 refreshes the separate `fast-uri` security override from `3.1.7` to
+`3.1.8` after OSV reported GHSA-hrr3-gc8f-f4qj against the former version.
+The lockfile must resolve only the fixed version without changing application
+runtime behavior. The refreshed scan also reports GHSA-wq5f-xc86-pv6w against
+`sharp@0.35.4`, so the existing Miniflare override and its version-specific
+release-age exception advance to the fixed `sharp@0.35.5` release.
+
+PR #53 advances Wrangler's exact Miniflare dependency to
+`5.20260926.1-alpha`. Both targeted Miniflare override selectors must advance
+with it so the lockfile continues to resolve `sharp@0.35.5` and `undici@7.29.1`.
+
+PR #55 advances Wrangler's exact Miniflare dependency to
+`5.20261001.0-alpha`. Both targeted selectors must advance again so the
+lockfile does not regress to vulnerable `sharp@0.35.4` and continues to retain
+`undici@7.29.1`.

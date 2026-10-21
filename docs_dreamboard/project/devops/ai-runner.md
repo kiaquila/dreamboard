@@ -60,8 +60,9 @@ Consequences for orchestration design:
 - The `pnpm run review:switch` helper is the canonical one-shot
   recovery path: it flips `AI_REVIEW_AGENT`, posts the correct native
   trigger comment on behalf of the current user (via `gh` CLI, so the
-  comment is human-authored and trusted), and reruns the most recent
-  failed `AI Review` job on the current head SHA.
+  comment is human-authored and trusted), and reruns the latest
+  PR-linked `AI Review` run on the current head SHA. Active attempts are cancelled
+  and awaited before requeue under the new policy; HEAD/attempt changes abort.
 
 ## Review Gate
 
@@ -139,8 +140,14 @@ or scope-wide exceptions are not part of the normal dependency workflow.
 When a direct dependency update changes the exact transitive parent selected by
 an existing targeted override, update that selector and regenerate the lockfile
 in the same pull request so the security remediation remains effective.
-The current protected edge is
-`miniflare@5.20260911.0-alpha>sharp`, pinned to `sharp@0.35.4`.
+Wrangler 4.149.0 selects Miniflare 5.20261006.1-alpha, which directly requests
+the patched sharp and undici versions. The explicit protected edges remain
+`miniflare@5.20261006.1-alpha>sharp`, pinned to `sharp@0.35.5`, and
+`miniflare@5.20261006.1-alpha>undici`, pinned to `undici@7.29.1`.
+Re-evaluate these pins whenever Wrangler changes its exact Miniflare parent;
+retarget them or document their retirement in the same PR.
+The repository-wide `fast-uri` override is pinned to `3.1.8` to remediate
+GHSA-hrr3-gc8f-f4qj in the transitive dependency graph.
 
 ## Gemini Operational Note
 

@@ -75,6 +75,12 @@ if (!options.pr) {
   options.pr = String(JSON.parse(json).number);
 }
 
+const prSnapshot = JSON.parse(
+  run("gh", ["pr", "view", options.pr, "--json", "headRefOid", ...repoArgs]),
+);
+const requestedHead = prSnapshot.headRefOid;
+if (options.to === "codex") triggerBodies.codex += ` ${requestedHead}`;
+
 // Step 1: flip the AI_REVIEW_AGENT repository variable.
 run("gh", [
   "variable",
@@ -101,7 +107,7 @@ if (options.comment) {
   console.log("Skipped native trigger comment because --no-comment was used.");
 }
 
-// Step 3: rerun the most recent failed AI Review run at the current head SHA.
+// Step 3: reevaluate the selected policy in the latest PR-linked same-head run.
 if (options.rerun) {
   const prJson = run("gh", [
     "pr",
@@ -112,35 +118,88 @@ if (options.rerun) {
     ...repoArgs,
   ]);
   const headSha = JSON.parse(prJson).headRefOid;
+  if (headSha !== requestedHead)
+    throw new Error(
+      "PR head changed after the review request; refusing stale requeue.",
+    );
 
+  const repository =
+    options.repo ||
+    JSON.parse(run("gh", ["repo", "view", "--json", "nameWithOwner"]))
+      .nameWithOwner;
   const runsJson = run("gh", [
-    "run",
-    "list",
-    "--workflow",
-    "ai-review.yml",
-    "--limit",
-    "10",
-    "--json",
-    "databaseId,conclusion,headSha",
-    ...repoArgs,
+    "api",
+    `repos/${repository}/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=${headSha}&per_page=100`,
+    "--paginate",
+    "--slurp",
   ]);
-  const runs = JSON.parse(runsJson);
-  // Match any non-success terminal conclusion so the helper also
-  // rescues Gemini-silent-timeout runs and cancelled reruns, not just
-  // explicit failures.
-  const rerunableConclusions = new Set([
-    "failure",
-    "timed_out",
-    "cancelled",
-    "startup_failure",
-    "action_required",
-  ]);
-  const target = runs.find(
-    (entry) =>
-      entry.headSha === headSha && rerunableConclusions.has(entry.conclusion),
-  );
+  const targetRun = JSON.parse(runsJson)
+    .flatMap((page) => page.workflow_runs)
+    .find(
+      (entry) =>
+        entry.event === "pull_request" &&
+        entry.head_sha === headSha &&
+        entry.pull_requests?.some((pr) => pr.number === Number(options.pr)),
+    );
+  const target = targetRun && {
+    databaseId: targetRun.id,
+    attempt: targetRun.run_attempt,
+  };
 
   if (target) {
+    const readAttempt = () => {
+      const current = JSON.parse(
+        run("gh", [
+          "run",
+          "view",
+          String(target.databaseId),
+          "--json",
+          "headSha,status,conclusion,attempt",
+          ...repoArgs,
+        ]),
+      );
+      const liveHead = JSON.parse(
+        run("gh", [
+          "pr",
+          "view",
+          options.pr,
+          "--json",
+          "headRefOid",
+          ...repoArgs,
+        ]),
+      ).headRefOid;
+      if (
+        liveHead !== requestedHead ||
+        current.headSha !== requestedHead ||
+        current.attempt !== target.attempt
+      )
+        throw new Error(
+          "PR head or run attempt changed; refusing stale requeue.",
+        );
+      return current;
+    };
+    let current = readAttempt();
+    if (current.status !== "completed") {
+      console.log(
+        `Cancelling active AI Review run ${target.databaseId} before selecting ${options.to}.`,
+      );
+      try {
+        run("gh", ["run", "cancel", String(target.databaseId), ...repoArgs]);
+      } catch (error) {
+        // The run may have finished between our read and the cancel request.
+        if (readAttempt().status !== "completed") throw error;
+      }
+      for (let poll = 0; poll < 60; poll += 1) {
+        current = readAttempt();
+        if (current.status === "completed") break;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      if (current.status !== "completed")
+        throw new Error(
+          "AI Review cancellation did not complete; no rerun dispatched.",
+        );
+    }
+    current = readAttempt();
     // `gh run rerun --failed` only reruns jobs whose conclusion is
     // literally `failure`. For runs that ended in `cancelled`,
     // `timed_out`, `startup_failure`, or `action_required` there
@@ -149,12 +208,12 @@ if (options.rerun) {
     // and keep the targeted `--failed` behavior only for actual
     // job failures.
     const rerunArgs = ["run", "rerun", String(target.databaseId), ...repoArgs];
-    if (target.conclusion === "failure") {
+    if (current.conclusion === "failure") {
       rerunArgs.push("--failed");
     }
     run("gh", rerunArgs);
     console.log(
-      `Re-run dispatched for AI Review run ${target.databaseId} (conclusion: ${target.conclusion}).`,
+      `Re-run dispatched for AI Review run ${target.databaseId} (conclusion: ${current.conclusion}).`,
     );
   } else {
     console.log(
