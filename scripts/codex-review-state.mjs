@@ -37,7 +37,7 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 const escapedMarkdownPunctuation = (text, index) =>
   text[index] === "\\" &&
   /[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/.test(text[index + 1] || "");
-const visibleLinkLabels = (text) => {
+const visibleLinkLabels = (text, activeLinkOnly = false) => {
   const opening = /\[/g;
   let result = "";
   let cursor = 0;
@@ -117,11 +117,23 @@ const visibleLinkLabels = (text) => {
     }
     if (!valid || text[end] !== ")") continue;
     end++;
+    let imageEscapes = 0;
+    for (let index = match.index - 2; text[index] === "\\"; index--)
+      imageEscapes++;
+    const image = text[match.index - 1] === "!" && imageEscapes % 2 === 0;
+    if (activeLinkOnly && image) {
+      opening.lastIndex = end;
+      continue;
+    }
+    // An active inner link wins over an enclosing link. Preserve the invalid
+    // outer destination instead of hiding literal blocker text there.
+    if (!image && visibleLinkLabels(label, true)) continue;
+    if (activeLinkOnly) return true;
     result += text.slice(cursor, match.index) + label;
     cursor = end;
     opening.lastIndex = end;
   }
-  return result + text.slice(cursor);
+  return activeLinkOnly ? false : result + text.slice(cursor);
 };
 // Standard HTML5 whitespace/format entity categories; visible checks only.
 const renderedVisibleText = (text, formatSeparator = "") =>
@@ -144,6 +156,13 @@ const renderedVisibleText = (text, formatSeparator = "") =>
     .replace(/&shy;?/gi, "\u00ad")
     .replace(/\p{Default_Ignorable_Code_Point}/gu, formatSeparator)
     .replace(/[*_~]/g, "");
+
+const hasVisibleContradiction = (text) =>
+  ["", " "].some((separator) =>
+    /\b(?:P[0-2]|do\s+not\s+merge|found\s+(?:an?\s+issue|[1-9]\d*\s+issues?|issues))\b/i.test(
+      renderedVisibleText(text, separator),
+    ),
+  );
 
 // A structured snapshot is authoritative only with one closed-schema machine
 // record and the matching native visible table. Prose and reactions are not proof.
@@ -257,6 +276,7 @@ export const parseCodexState = (
     );
     const canonicalVisible = visibleLines.slice(0, 4 + rows).join("\n");
     const canonical =
+      !hasVisibleContradiction(visible) &&
       sectionRows.length === rows &&
       visibleLines.filter((line) => line.includes("|")).length === rows + 2 &&
       parseCodexState(
@@ -266,14 +286,7 @@ export const parseCodexState = (
       );
     return { state, times: canonical ? canonical.times : {} };
   }
-  if (
-    ["", " "].some((separator) =>
-      /\b(?:P[0-2]|do\s+not\s+merge)\b/i.test(
-        renderedVisibleText(visible, separator),
-      ),
-    )
-  )
-    return false;
+  if (hasVisibleContradiction(visible)) return false;
   if (
     /<!--\s*(?:codex-review-state|codex-pull-request-review-summary|codex-review-receipt)/i.test(
       visible,

@@ -332,3 +332,7 @@ Visible inline-link labels remain visible with standard surrounding destination 
 A Markdown-escaped opening bracket remains literal warning text; link projection respects odd/even backslash escaping rather than treating an escaped opener as a link.
 
 Inline link projection balances label brackets and respects escaped closing delimiters before identifying any destination. An escaped label closer cannot hide blocker text as a destination.
+
+An active inner Markdown link takes precedence over an enclosing link. The invalid outer destination remains literal warning text; balanced plain brackets remain supported, and image syntax is not treated as an active nested link.
+
+A rendered existing finding-count contradiction, including “Found an issue”, makes the historical prefix clock incoherent. The leading typed TRUE fact remains negative evidence at server observation time across repeated same-head requests; the contradictory snapshot cannot approve or clear findings.
