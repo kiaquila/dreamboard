@@ -926,6 +926,7 @@ for (const mode of [
   "missing-security-clock",
   "malformed-old",
   "multiline-old",
+  "marker-prose-old",
   "wrong-actor",
 ]) {
   test(`actual gate retains section-specific security history: ${mode}`, () => {
@@ -941,6 +942,11 @@ for (const mode of [
           (_, prefix, json, suffix) =>
             prefix + JSON.stringify(JSON.parse(json), null, 2) + suffix,
         );
+    if (mode === "marker-prose-old")
+      old.body = old.body.replaceAll(
+        "Manual request",
+        "codex-review-state: parser review",
+      );
     if (mode === "malformed-old")
       old.body = old.body.replace("state:v1", "state:v2");
     if (mode === "wrong-actor") old.user = { login: "attacker" };

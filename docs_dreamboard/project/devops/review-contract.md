@@ -275,3 +275,5 @@ The history guard covers strict snapshots present in the current REST issue-comm
 Historical negative latching and clearing match the affected section’s exact head and canonical row independently of the other section’s head. This partial historical evidence never grants whole-PR approval or suppresses current pending signals.
 
 Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.
+
+Protocol-marker uniqueness counts actual HTML comment markers, not bare marker words in the supported visible review-trigger text.

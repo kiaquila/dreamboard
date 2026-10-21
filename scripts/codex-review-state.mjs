@@ -88,7 +88,7 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
     return false;
   let visible = match[2].trim();
   if (
-    /codex-review-state|codex-pull-request-review-summary|codex-review-receipt/i.test(
+    /<!--\s*(?:codex-review-state|codex-pull-request-review-summary|codex-review-receipt)/i.test(
       visible,
     )
   )
