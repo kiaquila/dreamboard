@@ -155,8 +155,14 @@ export const hasCleanCodexState = (body, head) => {
 };
 
 // Findings belong to their review section across repeated same-head requests.
-// Only a strictly newer canonical completion for that section can clear them.
-export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
+// A code-only receipt may clear resolved code history after its observation;
+// security history always requires a newer clean security completion.
+export const hasCodexNegativeHistory = (
+  comments,
+  head,
+  isTrusted,
+  codeApprovalTime = 0,
+) => {
   const sections = { code_review: [], security_review: [] };
   for (const entry of comments) {
     if (!isTrusted(entry)) continue;
@@ -175,6 +181,12 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
       )
         sections[section].push({
           negative: true,
+          observed: Math.floor(observed / 1000),
+          resolved:
+            review.status === "completed" &&
+            review.has_unresolved_findings === false &&
+            Number.isFinite(parsed.times[section]) &&
+            parsed.times[section] < observed + 1000,
           time: Math.floor(
             (review.status === "completed" &&
             Number.isFinite(parsed.times[section]) &&
@@ -193,7 +205,7 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
       }
     }
   }
-  return Object.values(sections).some((entries) => {
+  return Object.entries(sections).some(([section, entries]) => {
     const negative = Math.max(
       -Infinity,
       ...entries.filter((entry) => entry.negative).map((entry) => entry.time),
@@ -202,7 +214,27 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
       -Infinity,
       ...entries.filter((entry) => !entry.negative).map((entry) => entry.time),
     );
-    return negative !== -Infinity && clean <= negative;
+    if (negative === -Infinity || clean > negative) return false;
+    if (section === "code_review" && Number.isFinite(codeApprovalTime)) {
+      const observed = Math.max(
+        ...entries
+          .filter((entry) => entry.negative)
+          .map((entry) => entry.observed),
+      );
+      if (
+        entries.some(
+          (entry) =>
+            entry.negative &&
+            entry.resolved &&
+            entry.time >= negative &&
+            entry.observed >= observed &&
+            Math.floor(codeApprovalTime / 1000) >
+              Math.max(entry.observed, entry.time),
+        )
+      )
+        return false;
+    }
+    return true;
   });
 };
 

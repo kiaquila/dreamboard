@@ -733,15 +733,6 @@ while (Date.now() < deadline) {
       }
     }
     const historyComments = [...issueComments, ...(timelineEvents || [])];
-    if (
-      hasCodexNegativeHistory(historyComments, headSha, (entry) =>
-        codexReviewerLogins.has(entry.user?.login),
-      )
-    ) {
-      throw new Error(
-        "Codex structured findings remain uncleared for this head.",
-      );
-    }
     const afterDismissal = (entry) =>
       dismissalTime &&
       codexReviewerLogins.has(entry.user?.login) &&
@@ -760,6 +751,28 @@ while (Date.now() < deadline) {
       headSha,
       issueComments: issueComments.filter(afterDismissal),
     });
+    // The connector can retain has_any_findings after every thread is resolved.
+    // Only a separate, strictly later current-request SHA-bound native clean
+    // assessment can recover resolved code history. It cannot clear security.
+    const codeApprovalTime =
+      matchedComment?.classification.outcome === "pass" &&
+      !hasCleanCodexState(matchedComment.comment.body, headSha) &&
+      classifyCodexSummaryComment(matchedComment.comment, headSha).outcome ===
+        "pass"
+        ? Date.parse(matchedComment.comment.created_at || "")
+        : 0;
+    if (
+      hasCodexNegativeHistory(
+        historyComments,
+        headSha,
+        (entry) => codexReviewerLogins.has(entry.user?.login),
+        codeApprovalTime,
+      )
+    ) {
+      throw new Error(
+        "Codex structured findings remain uncleared for this head.",
+      );
+    }
     if (formalClassification?.outcome === "fail") {
       throw new Error(formalClassification.reason);
     }

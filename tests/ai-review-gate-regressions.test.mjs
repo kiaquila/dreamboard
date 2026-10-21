@@ -1159,3 +1159,133 @@ for (const clear of [false, true, "inactive-code"])
       result.stderr || result.stdout,
     );
   });
+
+for (const mode of [
+  "fresh-code",
+  "unresolved-code",
+  "security",
+  "same-second",
+  "before-observation",
+  "edited-old-receipt",
+  "before-request",
+  "wrong-head",
+  "wrong-actor",
+  "unknown-receipt",
+  "open-thread",
+  "newer-unresolved-observation",
+  "formal-only",
+]) {
+  test(`actual gate requires independent native resolved-code recovery: ${mode}`, () => {
+    const completed = "2026-10-20T12:02:00Z";
+    const resolvedBody =
+      mode === "security"
+        ? securityHistoryBody(true, completed).replace(
+            /("security_review":\{[^}]+"has_unresolved_findings":)true/,
+            "$1false",
+          )
+        : cleanStateBody(head, (state) => ({
+            ...state,
+            code_review: {
+              ...state.code_review,
+              has_any_findings: true,
+              has_unresolved_findings: mode === "unresolved-code",
+            },
+          }));
+    const resolved = comment(resolvedBody, {
+      id: 970,
+      created_at: completed,
+      updated_at: "2026-10-20T12:03:00Z",
+    });
+    const request = {
+      ...comment(`@codex review ${head}`, {
+        id: 971,
+        created_at:
+          mode === "before-request"
+            ? "2026-10-20T12:06:00Z"
+            : "2026-10-20T12:01:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const assessment = comment(
+      presentationReceipt(
+        mode === "wrong-head" ? "b".repeat(40) : head,
+        ":rocket:",
+      ),
+      {
+        id: 972,
+        created_at:
+          mode === "same-second"
+            ? "2026-10-20T12:03:00Z"
+            : ["before-observation", "edited-old-receipt"].includes(mode)
+              ? "2026-10-20T12:02:30Z"
+              : "2026-10-20T12:05:00Z",
+        ...(mode === "edited-old-receipt"
+          ? { updated_at: "2026-10-20T12:05:00Z" }
+          : {}),
+        ...(mode === "wrong-actor" ? { user: { login: "attacker" } } : {}),
+      },
+    );
+    if (mode === "unknown-receipt") assessment.body += "\nPending issue.";
+    const newerUnresolved = {
+      ...resolved,
+      id: 973,
+      body: resolved.body.replace(
+        '"has_unresolved_findings":false',
+        '"has_unresolved_findings":true',
+      ),
+      updated_at: "2026-10-20T12:04:00Z",
+    };
+    const events = [
+      { ...activation, created_at: "2026-10-20T12:00:00Z" },
+      request,
+      resolved,
+      ...(mode === "newer-unresolved-observation" ? [newerUnresolved] : []),
+      ...(mode === "formal-only" ? [] : [assessment]),
+    ].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+    const result = runGate({
+      timeline: events,
+      comments: events,
+      ...(mode === "open-thread"
+        ? {
+            threads: [
+              {
+                isResolved: false,
+                comments: {
+                  nodes: [
+                    {
+                      author: { login: bot },
+                      body: "P1: unresolved finding",
+                      url: "https://example.com/finding",
+                    },
+                  ],
+                },
+              },
+            ],
+          }
+        : {}),
+      ...(mode === "formal-only"
+        ? {
+            reviews: [
+              {
+                id: 974,
+                node_id: "resolved-history-review",
+                commit_id: head,
+                body: "Codex Review",
+                state: "APPROVED",
+                user: { login: bot },
+                submitted_at: "2026-10-20T12:05:00Z",
+              },
+            ],
+            reviewUpdatedAt: "2026-10-20T12:05:00Z",
+          }
+        : {}),
+    });
+    assert.equal(
+      result.status === 0,
+      mode === "fresh-code",
+      result.stderr || result.stdout,
+    );
+  });
+}
