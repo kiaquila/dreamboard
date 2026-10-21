@@ -41,15 +41,20 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
   if (
     /^(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
-      String(body || ""),
+      String(body || "").replace(/^\uFEFF/, ""),
     )
   )
     return false;
   const source = sectionHeads
     ? String(body || "")
-        .replace(/<!--[\s\S]*?-->/g, (comment) =>
-          /^<!--\s*codex-/i.test(comment) ? comment : "",
-        )
+        .replace(/<!--[\s\S]*?-->/g, (comment, offset, raw) => {
+          const linePrefix = raw.slice(
+            raw.lastIndexOf("\n", offset - 1) + 1,
+            offset,
+          );
+          const indentedCode = /^(?: {4}|[ \t]*\t)/.test(linePrefix);
+          return /^<!--\s*codex-/i.test(comment) || indentedCode ? comment : "";
+        })
         .trim()
     : String(body || "").trim();
   const match = source.match(
@@ -180,7 +185,11 @@ export const hasCodexNegativeHistory = (
       const original = String(entry.body || "");
       // Every line of a trailing example must stay inside Markdown code
       // indentation. Never consume a partly unindented live protocol block.
-      const leading = original.replace(
+      const withoutFence = original.replace(
+        /\r?\n(`{3}|~{3})(?:html)?[ \t]*\r?\n<!--[ \t]*codex-(?:review-state|pull-request-review-summary|review-receipt)[^\r\n]*-->[ \t]*\r?\n\1[ \t]*\s*$/i,
+        "",
+      );
+      const leading = withoutFence.replace(
         /(?:\r?\n(?: {4}|[ \t]*\t)[ \t]*<!--[ \t]*codex-(?:review-state|pull-request-review-summary|review-receipt)(?:(?!-->)[^\r\n])*(?:\r?\n(?: {4}|[ \t]*\t)(?:(?!-->)[^\r\n])*)*-->[ \t]*)+\s*$/i,
         "",
       );

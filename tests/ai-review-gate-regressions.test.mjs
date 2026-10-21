@@ -922,6 +922,8 @@ for (const mode of [
   "security-null",
   "newer-clear",
   "ordinary-comment-clear",
+  "indented-comment-clear",
+  "tabbed-comment-clear",
   "uppercase-clear",
   "equal-clear",
   "old-security-clock",
@@ -930,6 +932,12 @@ for (const mode of [
   "multiline-old",
   "marker-prose-old",
   "trailing-example-old",
+  "fenced-example-old",
+  "fenced-example-clear",
+  "bom-space-clear",
+  "bom-tab-clear",
+  "warning-clear",
+  "running-visible-clear",
   "example-clear",
   "multiline-example-clear",
   "indented-old",
@@ -959,6 +967,8 @@ for (const mode of [
         /^(<!-- codex-(?:pull-request-review-summary|review-state)[^\n]*)/gm,
         (mode === "tabbed-old" ? "\t" : "    ") + "$1",
       );
+    if (mode === "fenced-example-old")
+      old.body += "\n```html\n<!-- codex-review-state:v1 example -->\n```";
     if (mode === "trailing-example-old")
       old.body += "\n    <!-- codex-review-state:v1 example -->";
     if (mode === "malformed-old")
@@ -995,6 +1005,30 @@ for (const mode of [
       receipt.created_at = "2026-10-20T12:06:00Z";
     if (mode === "ordinary-comment-clear")
       newer.body += "\n<!-- TODO: presentation metadata -->";
+    if (["bom-space-clear", "bom-tab-clear"].includes(mode))
+      newer.body =
+        "\uFEFF" +
+        newer.body.replace(
+          /^<!-- codex-pull-request-review-summary/,
+          (mode === "bom-tab-clear" ? "\t" : "    ") +
+            "<!-- codex-pull-request-review-summary",
+        );
+    if (mode === "warning-clear")
+      newer.body = newer.body.replace(
+        "🔒 **Security Review**",
+        "⚠️ 🔒 **Security Review**",
+      );
+    if (mode === "running-visible-clear")
+      newer.body = newer.body.replaceAll(
+        '"status":"completed"',
+        '"status":"running"',
+      );
+    if (mode === "fenced-example-clear")
+      newer.body += "\n```html\n<!-- codex-review-state:v1 example -->\n```";
+    if (mode === "indented-comment-clear")
+      newer.body += "\n    <!-- TODO: presentation metadata -->";
+    if (mode === "tabbed-comment-clear")
+      newer.body += "\n\t<!-- TODO: presentation metadata -->";
     if (mode === "example-clear")
       newer.body += "\n\t<!-- codex-pull-request-review-summary -->";
     if (mode === "multiline-example-clear")
@@ -1023,9 +1057,16 @@ for (const mode of [
       ...([
         "security-null",
         "example-clear",
+        "fenced-example-clear",
+        "bom-space-clear",
+        "bom-tab-clear",
+        "warning-clear",
+        "running-visible-clear",
         "multiline-example-clear",
         "newer-clear",
         "ordinary-comment-clear",
+        "indented-comment-clear",
+        "tabbed-comment-clear",
         "uppercase-clear",
         "equal-clear",
         "old-security-clock",

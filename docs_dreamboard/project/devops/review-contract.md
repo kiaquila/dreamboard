@@ -298,3 +298,5 @@ A strict leading live snapshot may retain only explicit current-head negative fa
 Negative-only fallback snapshots cannot establish resolved-code recovery, even
 when their leading record says all findings are resolved and a later clean
 receipt exists. Recovery requires a complete canonical snapshot.
+
+A trailing fenced protocol example preserves strictly validated leading negative facts only; it cannot supply clean approval or historical clearing evidence. A leading BOM does not remove Markdown code indentation protection.
