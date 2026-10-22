@@ -391,3 +391,7 @@ Finding-subject headings followed by a colon or spaced dash also retain their
 observation clock. Only a standalone no/none/zero after the delimiter denotes
 an empty finding count; qualifiers such as “no workaround” remain findings.
 Explicit resolved/fixed descriptions still describe completed remediation.
+
+Finding subjects include demonstrative, possessive and distributive determiners
+and definite category-qualified subjects. Negated reports and explicit completed
+remediation do not renew findings merely because those determiners are present.

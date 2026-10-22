@@ -1170,9 +1170,9 @@ function hasPositiveFindingStatement(text) {
           (match) => " ".repeat(match.length),
         );
         const findingSubject =
-          "(?:\\b(?:a|an|one|some|several|multiple|[0-9]+) +(?:[\\p{L}-]+ +)*?" +
+          "(?:\\b(?:a|an|one|some|several|multiple|this|that|these|those|each|every|another|both|our|your|their|my|his|her|its|[0-9]+) +(?:[\\p{L}-]+ +)*?" +
           noun +
-          "|\\bthe +" +
+          "|\\bthe +(?:(?:code|security|blocking|critical|high|medium|low|major|minor|unresolved|open|new) +)*" +
           noun +
           "|(?<![\\p{L}\\p{N}_] )(?:(?:code|security|blocking|critical|high|medium|low|major|minor|unresolved|open|new) +)*" +
           noun +

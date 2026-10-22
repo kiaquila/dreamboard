@@ -76,3 +76,6 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Reproduce punctuation-delimited native P1 through the actual gate; retain
       colon/dash finding headings and negative workaround qualifiers, while
       preserving standalone zero-count and explicitly resolved controls.
+- [x] Reproduce demonstrative-subject P1 and cover demonstrative, possessive,
+      distributive and definite category subjects in the actual gate, retaining
+      negated-report and resolved-finding controls.
