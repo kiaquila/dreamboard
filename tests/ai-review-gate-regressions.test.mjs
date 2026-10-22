@@ -1007,6 +1007,16 @@ for (const mode of [
   "regression-repeat-clock",
   "qualified-absence-repeat-clock",
   "security-risk-repeat-clock",
+  "vulnerable-repeat-clock",
+  "bypassed-repeat-clock",
+  "see-repeat-clock",
+  "identify-repeat-clock",
+  "prevents-repeat-clock",
+  "avoids-repeat-clock",
+  "introduces-plural-repeat-clock",
+  "contains-plural-repeat-clock",
+  "has-plural-repeat-clock",
+
   "causes-repeat-clock",
   "exposes-repeat-clock",
   "qualified-fixed-repeat-clock",
@@ -1373,6 +1383,16 @@ for (const mode of [
         "regression-repeat-clock",
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
+        "vulnerable-repeat-clock",
+        "bypassed-repeat-clock",
+        "see-repeat-clock",
+        "identify-repeat-clock",
+        "prevents-repeat-clock",
+        "avoids-repeat-clock",
+        "introduces-plural-repeat-clock",
+        "contains-plural-repeat-clock",
+        "has-plural-repeat-clock",
+
         "causes-repeat-clock",
         "exposes-repeat-clock",
         "qualified-fixed-repeat-clock",
@@ -1525,6 +1545,16 @@ for (const mode of [
                                   "regression-repeat-clock",
                                   "qualified-absence-repeat-clock",
                                   "security-risk-repeat-clock",
+                                  "vulnerable-repeat-clock",
+                                  "bypassed-repeat-clock",
+                                  "see-repeat-clock",
+                                  "identify-repeat-clock",
+                                  "prevents-repeat-clock",
+                                  "avoids-repeat-clock",
+                                  "introduces-plural-repeat-clock",
+                                  "contains-plural-repeat-clock",
+                                  "has-plural-repeat-clock",
+
                                   "causes-repeat-clock",
                                   "exposes-repeat-clock",
                                   "qualified-fixed-repeat-clock",
@@ -1572,6 +1602,23 @@ for (const mode of [
                                       "This change causes a regression.",
                                     "exposes-repeat-clock":
                                       "This patch exposes a vulnerability.",
+                                    "prevents-repeat-clock":
+                                      "This patch prevents a vulnerability.",
+                                    "avoids-repeat-clock":
+                                      "This change avoids a regression.",
+                                    "introduces-plural-repeat-clock":
+                                      "This change introduces multiple bugs.",
+                                    "contains-plural-repeat-clock":
+                                      "This change contains some issues.",
+                                    "has-plural-repeat-clock":
+                                      "This change has several regressions.",
+                                    "see-repeat-clock": "I see a bug.",
+                                    "identify-repeat-clock":
+                                      "We identify an issue.",
+                                    "vulnerable-repeat-clock":
+                                      "The application is vulnerable to SQL injection.",
+                                    "bypassed-repeat-clock":
+                                      "Authentication can be bypassed.",
                                     "security-risk-repeat-clock":
                                       "A security risk remains.",
                                     "qualified-absence-repeat-clock":
@@ -2189,6 +2236,16 @@ for (const mode of [
         "regression-repeat-clock",
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
+        "vulnerable-repeat-clock",
+        "bypassed-repeat-clock",
+        "see-repeat-clock",
+        "identify-repeat-clock",
+        "prevents-repeat-clock",
+        "avoids-repeat-clock",
+        "introduces-plural-repeat-clock",
+        "contains-plural-repeat-clock",
+        "has-plural-repeat-clock",
+
         "causes-repeat-clock",
         "exposes-repeat-clock",
         "qualified-fixed-repeat-clock",
@@ -2332,6 +2389,8 @@ for (const mode of [
     assert.equal(
       result.status === 0,
       [
+        "prevents-repeat-clock",
+        "avoids-repeat-clock",
         "meta-term-repeat-clock",
         "meta-words-repeat-clock",
         "none-exist-repeat-clock",

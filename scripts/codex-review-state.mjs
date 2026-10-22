@@ -1195,10 +1195,11 @@ function hasPositiveFindingStatement(text) {
               tail,
             );
           if (
-            /\b(?:resolves|fixes|addresses|clears|removes|closes|eliminates) +(?:a|an) +/iu.test(
+            /\b(?:resolves?|fix(?:es)?|address(?:es)?|clears?|removes?|closes?|eliminates?|prevents?|avoids?|mitigates?) +(?:a|an) +/iu.test(
               modifiers,
             ) &&
-            !recurrence
+            !recurrence &&
+            !tail.trim()
           )
             return false;
           const obligation =
@@ -1277,6 +1278,8 @@ function hasPositiveFindingStatement(text) {
           ")";
 
         const patterns = [
+          "\\b(?:is|are) +vulnerable +to\\b",
+          "\\bauthentication +(?:can|could|may|might) +be +bypassed\\b",
           "\\b(?:most|every|numerous) +(?:[\\p{L}-]+ +)*?" +
             noun +
             " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
@@ -1296,8 +1299,10 @@ function hasPositiveFindingStatement(text) {
           "(?<![\\p{L}\\p{N}_] )\\b(?:(?:a|an|one|some|several|multiple) +)?(?:(?!(?:the|this|that|these|those)\\b)[\\p{L}-]+ +)*?" +
             headingNoun +
             "(?= *(?::|[–—-]) *[^ \\t])",
-          "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
+          "\\b(?:found|introduces|creates|contains|has|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" +
+            noun,
           "\\b[\\p{L}]+s +(?:a|an) +(?:[\\p{L}-]+ +)*?" + noun,
+          "\\b(?:I|we) +[\\p{L}]+ +(?:a|an) +(?:[\\p{L}-]+ +)*?" + noun,
           findingSubject +
             " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
           "\\bthere +(?:still +)?(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
