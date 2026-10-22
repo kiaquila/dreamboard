@@ -1108,7 +1108,7 @@ function hasPositiveFindingStatement(text) {
       .replace(/[ \t\r\n\f\v]+/g, " ")
       .replace(
         new RegExp(
-          "\\b(?:no|zero) +(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))[^.!?;]*?\\bexcept +((?:[1-9][0-9]*|some|several|multiple|" +
+          "\\b(?:no|zero) +(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)[^.!?;]*?\\bexcept +((?:[1-9][0-9]*|some|several|multiple|" +
             cardinal +
             "))\\b([^.!?;]*)",
           "giu",
@@ -1121,11 +1121,11 @@ function hasPositiveFindingStatement(text) {
           (suffix.trim() ? suffix.replace(/^ *, */, " ") : " remain"),
       )
       .replace(
-        /\b(no|zero) +((?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))) +(?:and|or) +(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))\b/giu,
+        /\b(no|zero) +((?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)) +(?:and|or) +(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)\b/giu,
         "$1 $2",
       )
       .replace(
-        /\b(no|zero) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)+(?:and|or) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)*((?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))\b)/giu,
+        /\b(no|zero) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)+(?:and|or) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)*((?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)\b)/giu,
         "$1 $2",
       )
       .split(/[.!?;]|(?<![0-9]),|,(?![0-9])|\b(?:and|or|but|however|yet)\b/i)
@@ -1136,7 +1136,7 @@ function hasPositiveFindingStatement(text) {
           " unresolved ",
         );
         const noun =
-          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))(?![\\p{L}\\p{N}_\\p{Pd}])";
+          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)(?![\\p{L}\\p{N}_\\p{Pd}])(?! +(?:tests?|reports?)\\b)";
         const headingNoun = noun.replace(
           "(?![\\p{L}\\p{N}_\\p{Pd}])",
           "(?![\\p{L}\\p{N}_-])",
@@ -1173,36 +1173,46 @@ function hasPositiveFindingStatement(text) {
           const modifiers = matchedNoun
             ? match[0].slice(0, matchedNoun.index)
             : "";
+          const tail = predicate + after;
+          // Absence/resolution is evidence only for an unqualified completed assertion.
           if (
-            /^ +(?:do|does|did) +not +(?:exist|exists|remain|remains)\b/iu.test(
-              predicate + after,
+            /^ +(?:do|does|did) +not +(?:exist|exists|remain|remains) *$/iu.test(
+              tail,
             )
           )
             return false;
+          if (
+            /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated) +$/iu.test(
+              before,
+            )
+          )
+            return false;
+          const recurrence =
+            /\b(?:reappears?|reappeared|recurs?|recurred|reopens?|reopened|found +again|(?:still +)?(?:persists?|remains?|exists?))\b/iu.test(
+              tail,
+            ) &&
+            !/\b(?:not|never) +(?:reappear|reappeared|recur|recurred|reopen|reopened|persist|remain|exist)\b/iu.test(
+              tail,
+            );
+          const obligation =
+            /\b(?:can|could|may|might|will|would|must|should) +(?:(?:be|been|being|get|gets|got) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/iu.test(
+              tail,
+            );
+          if (obligation) return true;
           if (
             /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
               modifiers,
             ) &&
-            !/^ +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting) +)*(?:(?:can|could|may|might|will|would|must|should) +(?:reappear|recur|reopen)|reappears?|reappeared|recurs?|recurred|reopens?|reopened|found +again|(?:still +)?(?:persists?|remains?|exists?))\b/iu.test(
-              predicate + after,
+            !recurrence &&
+            !/^ +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting) +)*(?:can|could|may|might|will|would|must|should) +(?:reappear|recur|reopen)\b/iu.test(
+              tail,
             )
           )
             return false;
           if (
-            /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
-              predicate,
+            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|now|already) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign) *$/iu.test(
+              tail,
             )
-          )
-            return false;
-          if (
-            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|now|already) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
-              after,
-            )
-          )
-            return false;
-          if (
-            /\b(?:harmless|benign)\b/i.test(predicate) &&
-            /\b(?:harmless|benign) *$/i.test(predicate + after)
           )
             return false;
           return true;
@@ -1265,7 +1275,7 @@ function hasPositiveFindingStatement(text) {
             " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
           "(?<![\\p{L}\\p{N}_] )\\b(?:the +)?(?:(?:critical|security|authentication|code|blocking|high|medium|low|major|minor|unresolved|open|new) +)+" +
             noun +
-            " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:(?:is|are|was|were) +[\\p{L}]+|found|[\\p{L}]+ed|remains?|exists?)\\b",
+            " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:(?:is|are|was|were) +[\\p{L}]+|found|[\\p{L}]+ed|[\\p{L}]+s|remains?|exists?)\\b",
           "\\b(?:a|an) +(?:[\\p{L}-]+ +)*?" +
             noun +
             " +(?:(?:can|could|may|might|will|would|must|should) +[\\p{L}-]+|[\\p{L}]+s)\\b",
@@ -1279,7 +1289,8 @@ function hasPositiveFindingStatement(text) {
           "(?<![\\p{L}\\p{N}_] )\\b(?:(?:a|an|one|some|several|multiple) +)?(?:(?!(?:the|this|that|these|those)\\b)[\\p{L}-]+ +)*?" +
             headingNoun +
             "(?= *(?::|[–—-]) *[^ \\t])",
-          "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
+          "\\b(?:found|introduces|creates|contains|has|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" +
+            noun,
           findingSubject +
             " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
           "\\bthere +(?:still +)?(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
@@ -1289,7 +1300,7 @@ function hasPositiveFindingStatement(text) {
           "\\b(?:this|that|these|those) +" +
             noun +
             " +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+s)\\b",
-          "(?:\\b(?:both|many|all) +|(?<![\\p{L}\\p{N}_] ))(?:issues|findings|problems|bugs|flaws|defects|regressions|vulnerabilities)\\b +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+)\\b",
+          "(?:\\b(?:both|many|all) +|(?<![\\p{L}\\p{N}_] ))(?:issues|findings|problems|bugs|flaws|defects|regressions|vulnerabilities|security +risks)\\b +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+)\\b",
         ];
         return patterns.some((pattern) =>
           [...reporting.matchAll(new RegExp(pattern, "giu"))].some((match) =>
@@ -1556,6 +1567,7 @@ export const hasCodexNegativeHistory = (
     }
     if (!parsed) continue;
     const observed = Date.parse(entry.updated_at || entry.created_at || "");
+    const created = Date.parse(entry.created_at || "");
     if (!Number.isFinite(observed)) continue;
     for (const section of Object.keys(sections)) {
       const review = parsed.state[section];
@@ -1572,10 +1584,16 @@ export const hasCodexNegativeHistory = (
             review.status === "completed" &&
             review.has_unresolved_findings === false &&
             Number.isFinite(parsed.times[section]) &&
+            Number.isFinite(created) &&
+            Math.floor(parsed.times[section] / 1000) >=
+              Math.floor(created / 1000) &&
             parsed.times[section] < observed + 1000,
           time: Math.floor(
             (review.status === "completed" &&
             Number.isFinite(parsed.times[section]) &&
+            Number.isFinite(created) &&
+            Math.floor(parsed.times[section] / 1000) >=
+              Math.floor(created / 1000) &&
             parsed.times[section] < observed + 1000
               ? parsed.times[section]
               : observed) / 1000,
@@ -1583,7 +1601,12 @@ export const hasCodexNegativeHistory = (
         });
       else if (!negativeOnly && cleanReview(review, head)) {
         const completed = parsed.times[section];
-        if (Number.isFinite(completed) && completed < observed + 1000)
+        if (
+          Number.isFinite(completed) &&
+          Number.isFinite(created) &&
+          Math.floor(completed / 1000) >= Math.floor(created / 1000) &&
+          completed < observed + 1000
+        )
           sections[section].push({
             negative: false,
             time: Math.floor(completed / 1000),
@@ -1644,6 +1667,7 @@ export const codexNegativeCompletionTime = (entry, head) => {
     sectionHeads: true,
   });
   const observed = Date.parse(entry.updated_at || entry.created_at || "");
+  const created = Date.parse(entry.created_at || "");
   if (
     !parsed ||
     Object.values(parsed.state).some((review) => review.status === "running")
@@ -1660,6 +1684,8 @@ export const codexNegativeCompletionTime = (entry, head) => {
     ...negatives.map(([section, review]) =>
       review.status === "completed" &&
       Number.isFinite(parsed.times[section]) &&
+      Number.isFinite(created) &&
+      Math.floor(parsed.times[section] / 1000) >= Math.floor(created / 1000) &&
       parsed.times[section] < observed + 1000
         ? Math.floor(parsed.times[section] / 1000) * 1000
         : observed,

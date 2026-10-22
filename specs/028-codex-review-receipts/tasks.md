@@ -94,3 +94,12 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Cover direct recurrence, qualified harmlessness, resolved exceptions,
       defect/regression nouns and quantified subjects without weakening metadata
       or historical clearing guards.
+
+- [x] Reject completion clocks preceding comment creation while preserving
+      observed negative invalidation and newer canonical recovery.
+
+- [x] Preserve qualified and recurring findings while keeping completed count
+      resolutions and test/report compounds neutral.
+
+- [x] Retain explicit security-risk findings without classifying generic risk
+      discussion as a finding.

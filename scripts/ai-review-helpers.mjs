@@ -203,6 +203,9 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     );
     if (
       !Number.isFinite(completedAt) ||
+      !Number.isFinite(Date.parse(entry.created_at || "")) ||
+      Math.floor(completedAt / 1000) <
+        Math.floor(Date.parse(entry.created_at || "") / 1000) ||
       completedAt >= codexCommentTimestamp(entry) + 1000 ||
       (Number.isFinite(stateBoundaryTime) &&
         Math.floor(completedAt / 1000) <=

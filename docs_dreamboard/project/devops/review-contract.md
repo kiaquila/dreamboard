@@ -420,3 +420,16 @@ defects and regressions. A harmless/benign predicate is neutral only when
 unqualified; context-limited harmlessness retains the finding. Explicitly
 resolved exception counts and post-noun absence remain neutral, while modified
 and quantified active finding subjects retain their observation clock.
+
+Canonical completion authority must not precede its comment creation bucket.
+Impossible negative clocks retain the observed update time; only a genuinely
+newer valid section completion can clear them. This lower bound also applies
+to positive authority and resolved-code recovery eligibility.
+
+Absence and completed resolution apply only to an unqualified assertion.
+Production-limited absence, recurrence after resolution and modal fix
+requirements retain findings; completed leading resolution verbs and compound
+test/report nouns do not invent a fresh finding.
+
+Explicit security-risk findings use the same observation and clearing rules as
+other review findings; generic risk discussion does not gain finding authority.

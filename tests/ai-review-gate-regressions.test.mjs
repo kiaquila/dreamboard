@@ -1005,6 +1005,23 @@ for (const mode of [
   "may-reappear-repeat-clock",
   "defect-repeat-clock",
   "regression-repeat-clock",
+  "qualified-absence-repeat-clock",
+  "security-risk-repeat-clock",
+  "qualified-fixed-repeat-clock",
+  "regression-tests-repeat-clock",
+  "not-remain-fixed-repeat-clock",
+  "exception-recurred-repeat-clock",
+  "regression-test-count-repeat-clock",
+  "defect-report-count-repeat-clock",
+  "must-fixed-repeat-clock",
+  "should-fixed-repeat-clock",
+  "fixed-one-repeat-clock",
+
+  "introduces-repeat-clock",
+  "creates-repeat-clock",
+  "contains-repeat-clock",
+  "has-finding-repeat-clock",
+
   "direct-reappeared-repeat-clock",
   "perfect-reappeared-repeat-clock",
   "recurred-repeat-clock",
@@ -1352,6 +1369,23 @@ for (const mode of [
         "may-reappear-repeat-clock",
         "defect-repeat-clock",
         "regression-repeat-clock",
+        "qualified-absence-repeat-clock",
+        "security-risk-repeat-clock",
+        "qualified-fixed-repeat-clock",
+        "regression-tests-repeat-clock",
+        "not-remain-fixed-repeat-clock",
+        "exception-recurred-repeat-clock",
+        "regression-test-count-repeat-clock",
+        "defect-report-count-repeat-clock",
+        "must-fixed-repeat-clock",
+        "should-fixed-repeat-clock",
+        "fixed-one-repeat-clock",
+
+        "introduces-repeat-clock",
+        "creates-repeat-clock",
+        "contains-repeat-clock",
+        "has-finding-repeat-clock",
+
         "direct-reappeared-repeat-clock",
         "perfect-reappeared-repeat-clock",
         "recurred-repeat-clock",
@@ -1485,6 +1519,23 @@ for (const mode of [
                                   "may-reappear-repeat-clock",
                                   "defect-repeat-clock",
                                   "regression-repeat-clock",
+                                  "qualified-absence-repeat-clock",
+                                  "security-risk-repeat-clock",
+                                  "qualified-fixed-repeat-clock",
+                                  "regression-tests-repeat-clock",
+                                  "not-remain-fixed-repeat-clock",
+                                  "exception-recurred-repeat-clock",
+                                  "regression-test-count-repeat-clock",
+                                  "defect-report-count-repeat-clock",
+                                  "must-fixed-repeat-clock",
+                                  "should-fixed-repeat-clock",
+                                  "fixed-one-repeat-clock",
+
+                                  "introduces-repeat-clock",
+                                  "creates-repeat-clock",
+                                  "contains-repeat-clock",
+                                  "has-finding-repeat-clock",
+
                                   "direct-reappeared-repeat-clock",
                                   "perfect-reappeared-repeat-clock",
                                   "recurred-repeat-clock",
@@ -1503,6 +1554,36 @@ for (const mode of [
                                 helpFooter.replace(
                                   "</details>",
                                   ({
+                                    "introduces-repeat-clock":
+                                      "This change introduces a bug.",
+                                    "creates-repeat-clock":
+                                      "This change creates a bug.",
+                                    "contains-repeat-clock":
+                                      "This change contains a bug.",
+                                    "has-finding-repeat-clock":
+                                      "This change has a bug.",
+                                    "security-risk-repeat-clock":
+                                      "A security risk remains.",
+                                    "qualified-absence-repeat-clock":
+                                      "The security issue does not exist locally but remains in production.",
+                                    "qualified-fixed-repeat-clock":
+                                      "A security issue is already fixed in tests but exploitable in production.",
+                                    "regression-tests-repeat-clock":
+                                      "Regression tests passed.",
+                                    "not-remain-fixed-repeat-clock":
+                                      "The issue does not remain fixed.",
+                                    "exception-recurred-repeat-clock":
+                                      "No issues were found except one already fixed that has reappeared.",
+                                    "regression-test-count-repeat-clock":
+                                      "One regression test passed.",
+                                    "defect-report-count-repeat-clock":
+                                      "One defect report was closed.",
+                                    "must-fixed-repeat-clock":
+                                      "A bug must be fixed.",
+                                    "should-fixed-repeat-clock":
+                                      "A bug should be fixed.",
+                                    "fixed-one-repeat-clock":
+                                      "Fixed one issue.",
                                     "direct-reappeared-repeat-clock":
                                       "An eliminated issue reappeared.",
                                     "perfect-reappeared-repeat-clock":
@@ -2096,6 +2177,23 @@ for (const mode of [
         "may-reappear-repeat-clock",
         "defect-repeat-clock",
         "regression-repeat-clock",
+        "qualified-absence-repeat-clock",
+        "security-risk-repeat-clock",
+        "qualified-fixed-repeat-clock",
+        "regression-tests-repeat-clock",
+        "not-remain-fixed-repeat-clock",
+        "exception-recurred-repeat-clock",
+        "regression-test-count-repeat-clock",
+        "defect-report-count-repeat-clock",
+        "must-fixed-repeat-clock",
+        "should-fixed-repeat-clock",
+        "fixed-one-repeat-clock",
+
+        "introduces-repeat-clock",
+        "creates-repeat-clock",
+        "contains-repeat-clock",
+        "has-finding-repeat-clock",
+
         "direct-reappeared-repeat-clock",
         "perfect-reappeared-repeat-clock",
         "recurred-repeat-clock",
@@ -2226,6 +2324,11 @@ for (const mode of [
         "meta-words-repeat-clock",
         "none-exist-repeat-clock",
         "harmless-repeat-clock",
+        "regression-tests-repeat-clock",
+        "regression-test-count-repeat-clock",
+        "defect-report-count-repeat-clock",
+        "fixed-one-repeat-clock",
+
         "already-fixed-exception-repeat-clock",
         "no-exist-repeat-clock",
         "no-remain-repeat-clock",
@@ -2571,6 +2674,10 @@ for (const mode of [
         ? [
             {
               ...newerUnresolved,
+              created_at:
+                mode === "older-unresolved-observation"
+                  ? "2026-10-20T12:01:00Z"
+                  : newerUnresolved.created_at,
               updated_at:
                 mode === "tied-unresolved-observation"
                   ? resolved.updated_at
@@ -2902,3 +3009,52 @@ test("actual gate retains contradictory false companion trigger observation", ()
     0,
   );
 });
+
+for (const recover of [false, true]) {
+  test(`actual gate bounds completion by comment creation; recovery=${recover}`, () => {
+    const h = head;
+    const body = (negative, time) =>
+      cleanStateBody(h, (state) => ({
+        ...state,
+        security_review: {
+          ...state.code_review,
+          has_any_findings: negative,
+          has_unresolved_findings: negative,
+        },
+      })).replaceAll("2026-10-20T12:02:00Z", time) +
+      `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${h.slice(0, 7)}\` | Manual request |`;
+    const old = comment(body(true, "2026-10-20T12:01:00Z"), {
+      id: 9550,
+      created_at: "2026-10-20T12:03:00Z",
+      updated_at: "2026-10-20T12:05:00Z",
+    });
+    const clear = comment(
+      body(false, recover ? "2026-10-20T12:06:00Z" : "2026-10-20T12:02:00Z"),
+      {
+        id: 9551,
+        created_at: recover ? "2026-10-20T12:06:00Z" : "2026-10-20T12:02:00Z",
+      },
+    );
+    const request = {
+      ...comment(`@codex review ${h}`, {
+        id: 9552,
+        created_at: "2026-10-20T12:07:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const events = [
+      { ...activation, created_at: "2026-10-20T12:00:00Z" },
+      old,
+      clear,
+      request,
+      comment(presentationReceipt(h, ":rocket:"), {
+        id: 9553,
+        created_at: "2026-10-20T12:08:00Z",
+      }),
+    ];
+    const result = runGate({ comments: events, timeline: events });
+    assert.equal(result.status === 0, recover, result.stderr || result.stdout);
+  });
+}
