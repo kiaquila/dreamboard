@@ -1007,6 +1007,8 @@ for (const mode of [
   "regression-repeat-clock",
   "qualified-absence-repeat-clock",
   "security-risk-repeat-clock",
+  "causes-repeat-clock",
+  "exposes-repeat-clock",
   "qualified-fixed-repeat-clock",
   "regression-tests-repeat-clock",
   "not-remain-fixed-repeat-clock",
@@ -1371,6 +1373,8 @@ for (const mode of [
         "regression-repeat-clock",
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
+        "causes-repeat-clock",
+        "exposes-repeat-clock",
         "qualified-fixed-repeat-clock",
         "regression-tests-repeat-clock",
         "not-remain-fixed-repeat-clock",
@@ -1521,6 +1525,8 @@ for (const mode of [
                                   "regression-repeat-clock",
                                   "qualified-absence-repeat-clock",
                                   "security-risk-repeat-clock",
+                                  "causes-repeat-clock",
+                                  "exposes-repeat-clock",
                                   "qualified-fixed-repeat-clock",
                                   "regression-tests-repeat-clock",
                                   "not-remain-fixed-repeat-clock",
@@ -1562,6 +1568,10 @@ for (const mode of [
                                       "This change contains a bug.",
                                     "has-finding-repeat-clock":
                                       "This change has a bug.",
+                                    "causes-repeat-clock":
+                                      "This change causes a regression.",
+                                    "exposes-repeat-clock":
+                                      "This patch exposes a vulnerability.",
                                     "security-risk-repeat-clock":
                                       "A security risk remains.",
                                     "qualified-absence-repeat-clock":
@@ -2179,6 +2189,8 @@ for (const mode of [
         "regression-repeat-clock",
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
+        "causes-repeat-clock",
+        "exposes-repeat-clock",
         "qualified-fixed-repeat-clock",
         "regression-tests-repeat-clock",
         "not-remain-fixed-repeat-clock",
