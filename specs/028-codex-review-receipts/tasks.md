@@ -82,3 +82,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Reproduce determiner metalinguistic P2 with actual-gate chronology and
       restrict naming subjects to category-only modifiers, preserving genuine
       word-boundary, label-validation, token-security and string-parsing findings.
+
+- [x] Cover nominal/modal findings, qualified empty results, explicit exceptions,
+      worded positive counts and resolved-adjective reappearance in actual gate
+      regressions while preserving strict newer canonical recovery.

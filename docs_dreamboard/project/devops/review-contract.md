@@ -388,8 +388,8 @@ Actual gate regressions distinguish finding subjects from words/terms/labels
 that merely name a finding category.
 
 Finding-subject headings followed by a colon or spaced dash also retain their
-observation clock. Only a standalone no/none/zero after the delimiter denotes
-an empty finding count; qualifiers such as “no workaround” remain findings.
+observation clock. No/none/zero count payloads may retain ordinary empty-result qualifiers;
+qualifiers such as “no workaround” remain findings.
 Explicit resolved/fixed descriptions still describe completed remediation.
 
 Finding subjects include demonstrative, possessive and distributive determiners
@@ -401,3 +401,12 @@ finding-category adjectives are presentation, including demonstrative and
 possessive forms. This exception cannot consume an intervening technical
 modifier: word-boundary, label-validation, token-security and string-parsing
 finding assertions remain blocking.
+
+Predicate-nominal, modal and active finding assertions, positive worded counts,
+and explicit exceptions to an otherwise empty result retain the observation
+clock. Resolution adjectives alone remain benign; a subsequent reappearance or
+persistence predicate remains a finding.
+
+Receipt recovery requires a resolved code observation to be strictly newer than
+every unresolved observation in both completion and server-observation seconds;
+equal-second snapshots remain ambiguous.
