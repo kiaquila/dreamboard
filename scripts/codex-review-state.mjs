@@ -1114,7 +1114,7 @@ function hasPositiveFindingStatement(text) {
           const after = clause.slice(match.index + match[0].length);
           if (
             !counted &&
-            /^ *: *(?:no|none|zero|0+(?:,000)*)(?![\p{L}\p{N}_])/iu.test(after)
+            /^ *(?::|[–—-]) *(?:no|none|zero|0+(?:,000)*) *$/iu.test(after)
           )
             return false;
           // Scope negation to this construction, not an unrelated earlier clause.
@@ -1137,7 +1137,7 @@ function hasPositiveFindingStatement(text) {
           )
             return false;
           if (
-            /^ +(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|be|been|being|get|gets|got|gotten|getting|now) +)*(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
+            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|be|been|being|get|gets|got|gotten|getting|now) +)*(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
               after,
             )
           )
@@ -1169,16 +1169,19 @@ function hasPositiveFindingStatement(text) {
           ),
           (match) => " ".repeat(match.length),
         );
+        const findingSubject =
+          "(?:\\b(?:a|an|one|some|several|multiple|[0-9]+) +(?:[\\p{L}-]+ +)*?" +
+          noun +
+          "|\\bthe +" +
+          noun +
+          "|(?<![\\p{L}\\p{N}_] )(?:(?:code|security|blocking|critical|high|medium|low|major|minor|unresolved|open|new) +)*" +
+          noun +
+          ")";
         const patterns = [
           "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
-          "(?:\\b(?:a|an|one|some|several|multiple|[0-9]+) +(?:[\\p{L}-]+ +)*?" +
-            noun +
-            "|\\bthe +" +
-            noun +
-            "|(?<![\\p{L}\\p{N}_] )(?:(?:code|security|blocking|critical|high|medium|low|major|minor|unresolved|open|new) +)*" +
-            noun +
-            ")" +
+          findingSubject +
             " +(?:(?:is|are|was|were|has|have|be|been|being|get|gets|got|gotten|getting) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
+          findingSubject + "(?= *(?::|[–—-]) +\\S)",
           "\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
           "\\b(?:a|an) +(?:[\\p{L}-]+ +)*?" +
             noun +

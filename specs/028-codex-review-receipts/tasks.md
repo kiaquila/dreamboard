@@ -73,3 +73,6 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Reproduce native get-passive P1 and documented-word P2 in the actual gate;
       recognize passive reports and resolutions, retain negated-resolution
       findings, and verify metalinguistic subjects remain presentation only.
+- [x] Reproduce punctuation-delimited native P1 through the actual gate; retain
+      colon/dash finding headings and negative workaround qualifiers, while
+      preserving standalone zero-count and explicitly resolved controls.

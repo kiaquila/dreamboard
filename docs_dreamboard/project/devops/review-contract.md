@@ -386,3 +386,8 @@ security issue got flagged” and “an issue is being detected”. The same aux
 forms preserve explicit resolution, while negated resolution remains blocking.
 Actual gate regressions distinguish finding subjects from words/terms/labels
 that merely name a finding category.
+
+Finding-subject headings followed by a colon or spaced dash also retain their
+observation clock. Only a standalone no/none/zero after the delimiter denotes
+an empty finding count; qualifiers such as “no workaround” remain findings.
+Explicit resolved/fixed descriptions still describe completed remediation.
