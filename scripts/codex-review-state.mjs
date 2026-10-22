@@ -1108,7 +1108,7 @@ function hasPositiveFindingStatement(text) {
       .replace(/[ \t\r\n\f\v]+/g, " ")
       .replace(
         new RegExp(
-          "\\b(?:no|zero) +(?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))[^.!?;]*?\\bexcept +((?:[1-9][0-9]*|some|several|multiple|" +
+          "\\b(?:no|zero) +(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))[^.!?;]*?\\bexcept +((?:[1-9][0-9]*|some|several|multiple|" +
             cardinal +
             "))\\b([^.!?;]*)",
           "giu",
@@ -1121,11 +1121,11 @@ function hasPositiveFindingStatement(text) {
           (suffix.trim() ? suffix.replace(/^ *, */, " ") : " remain"),
       )
       .replace(
-        /\b(no|zero) +((?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))) +(?:and|or) +(?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))\b/giu,
+        /\b(no|zero) +((?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))) +(?:and|or) +(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))\b/giu,
         "$1 $2",
       )
       .replace(
-        /\b(no|zero) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies)|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)+(?:and|or) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies)|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)*((?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))\b)/giu,
+        /\b(no|zero) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)+(?:and|or) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)*((?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))\b)/giu,
         "$1 $2",
       )
       .split(/[.!?;]|(?<![0-9]),|,(?![0-9])|\b(?:and|or|but|however|yet)\b/i)
@@ -1136,7 +1136,7 @@ function hasPositiveFindingStatement(text) {
           " unresolved ",
         );
         const noun =
-          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))(?![\\p{L}\\p{N}_\\p{Pd}])";
+          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies))(?![\\p{L}\\p{N}_\\p{Pd}])";
         const headingNoun = noun.replace(
           "(?![\\p{L}\\p{N}_\\p{Pd}])",
           "(?![\\p{L}\\p{N}_-])",
@@ -1174,24 +1174,35 @@ function hasPositiveFindingStatement(text) {
             ? match[0].slice(0, matchedNoun.index)
             : "";
           if (
-            /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
-              modifiers,
-            ) &&
-            !/^ +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting) +)*(?:(?:can|could|may|might|will|would|must|should) +(?:reappear|recur)|found +again|(?:still +)?(?:persists?|remains?|exists?))\b/iu.test(
+            /^ +(?:do|does|did) +not +(?:exist|exists|remain|remains)\b/iu.test(
               predicate + after,
             )
           )
             return false;
           if (
-            /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign)\b/i.test(
+            /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
+              modifiers,
+            ) &&
+            !/^ +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting) +)*(?:(?:can|could|may|might|will|would|must|should) +(?:reappear|recur|reopen)|reappears?|reappeared|recurs?|recurred|reopens?|reopened|found +again|(?:still +)?(?:persists?|remains?|exists?))\b/iu.test(
+              predicate + after,
+            )
+          )
+            return false;
+          if (
+            /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
               predicate,
             )
           )
             return false;
           if (
-            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|now) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
+            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|now|already) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
               after,
             )
+          )
+            return false;
+          if (
+            /\b(?:harmless|benign)\b/i.test(predicate) &&
+            /\b(?:harmless|benign) *$/i.test(predicate + after)
           )
             return false;
           return true;
@@ -1249,6 +1260,12 @@ function hasPositiveFindingStatement(text) {
           ")";
 
         const patterns = [
+          "\\b(?:most|every|numerous) +(?:[\\p{L}-]+ +)*?" +
+            noun +
+            " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
+          "(?<![\\p{L}\\p{N}_] )\\b(?:the +)?(?:(?:critical|security|authentication|code|blocking|high|medium|low|major|minor|unresolved|open|new) +)+" +
+            noun +
+            " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:(?:is|are|was|were) +[\\p{L}]+|found|[\\p{L}]+ed|remains?|exists?)\\b",
           "\\b(?:a|an) +(?:[\\p{L}-]+ +)*?" +
             noun +
             " +(?:(?:can|could|may|might|will|would|must|should) +[\\p{L}-]+|[\\p{L}]+s)\\b",
@@ -1272,7 +1289,7 @@ function hasPositiveFindingStatement(text) {
           "\\b(?:this|that|these|those) +" +
             noun +
             " +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+s)\\b",
-          "(?:\\b(?:both|many|all) +|(?<![\\p{L}\\p{N}_] ))(?:issues|findings|problems|bugs|flaws|vulnerabilities)\\b +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+)\\b",
+          "(?:\\b(?:both|many|all) +|(?<![\\p{L}\\p{N}_] ))(?:issues|findings|problems|bugs|flaws|defects|regressions|vulnerabilities)\\b +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+)\\b",
         ];
         return patterns.some((pattern) =>
           [...reporting.matchAll(new RegExp(pattern, "giu"))].some((match) =>

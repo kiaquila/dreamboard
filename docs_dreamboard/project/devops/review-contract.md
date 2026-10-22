@@ -414,3 +414,9 @@ equal-second snapshots remain ambiguous.
 Rendered soft breaks preserve one finding assertion. Qualified empty results,
 neutral benign descriptions and resolved exceptions do not renew findings;
 modal recurrence, quantified subjects and continued existence remain active.
+
+Direct and perfect-tense recurrence renews observed finding evidence, including
+defects and regressions. A harmless/benign predicate is neutral only when
+unqualified; context-limited harmlessness retains the finding. Explicitly
+resolved exception counts and post-noun absence remain neutral, while modified
+and quantified active finding subjects retain their observation clock.

@@ -90,3 +90,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Preserve soft-break assertions and distinguish qualified empty results,
       resolved exceptions and benign descriptions from modal recurrence and
       quantified or continuing findings using actual review-gate chronology.
+
+- [x] Cover direct recurrence, qualified harmlessness, resolved exceptions,
+      defect/regression nouns and quantified subjects without weakening metadata
+      or historical clearing guards.
