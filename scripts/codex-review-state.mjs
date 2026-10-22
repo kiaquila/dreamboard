@@ -1088,55 +1088,81 @@ function hasPositiveFindingStatement(text) {
   return paragraphs.some((paragraph) =>
     paragraph
       .replace(/[ \t\r\n\f\v]+/g, " ")
-      .split(/[.!?;,]|\b(?:and|or|but|however|yet)\b/i)
+      .split(/[.!?;]|(?<![0-9]),|,(?![0-9])|\b(?:and|or|but|however|yet)\b/i)
       .some((clause) => {
-        if (
-          /\b(?:no|zero|not|without|never|cannot)\b|\b[\p{L}]+n['’]t\b/iu.test(
-            clause,
-          ) ||
-          /\b(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
-            clause,
-          )
-        )
-          return false;
+        // Negating a resolution preserves the finding, unlike negating its noun.
+        clause = clause.replace(
+          /\b(?:not|never) +(?:been +)?(?:resolved|fixed|addressed|cleared|removed|closed)\b|\b(?:is|are|was|were|has|have)n['’]t +(?:been +)?(?:resolved|fixed|addressed|cleared|removed|closed)\b/gi,
+          " unresolved ",
+        );
         const noun =
           "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?)(?![\\p{L}\\p{N}_\\p{Pd}])";
-        if (!new RegExp(noun, "iu").test(clause)) return false;
+        const isAffirmative = (match) => {
+          const before = clause.slice(0, match.index);
+          const after = clause.slice(match.index + match[0].length);
+          // Scope negation to this construction, not an unrelated earlier clause.
+          if (
+            /\b(?:no|zero|not|without|never|cannot)\b|\b[\p{L}]+n['’]t\b/iu.test(
+              match[0],
+            )
+          )
+            return false;
+          if (
+            /(?:\b(?:no|zero|not|without|never|cannot)|\b[\p{L}]+n['’]t)(?: +(?:be|been|being|considered))* +$/iu.test(
+              before,
+            )
+          )
+            return false;
+          if (
+            /\b(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
+              match[0],
+            )
+          )
+            return false;
+          if (
+            /^ +(?:(?:is|are|was|were|has|have|been|now) +)*(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
+              after,
+            )
+          )
+            return false;
+          return true;
+        };
         const counts = [
           ...clause.matchAll(
             new RegExp(
-              "(?<![\\p{L}\\p{N}_])[*_~`]*([0-9]+)[*_~`]* +(?:[\\p{L}-]+ +)*?" +
+              "(?<![\\p{L}\\p{N}_])[*_~`]*([0-9]+(?:,[0-9]{3})*)[*_~`]* +(?:[\\p{L}-]+ +)*?" +
                 noun,
               "giu",
             ),
           ),
         ];
-        if (counts.some((match) => !/^0+$/.test(match[1]))) return true;
+        if (
+          counts.some(
+            (match) =>
+              !/^0+$/.test(match[1].replaceAll(",", "")) &&
+              isAffirmative(match),
+          )
+        )
+          return true;
         const reporting = clause.replace(
           new RegExp(
-            "(?<![\\p{L}\\p{N}_])[*_~`]*0+[*_~`]* +(?:[\\p{L}-]+ +)*?" + noun,
+            "(?<![\\p{L}\\p{N}_])[*_~`]*0+(?:,000)*[*_~`]* +(?:[\\p{L}-]+ +)*?" +
+              noun,
             "giu",
           ),
-          "",
+          (match) => " ".repeat(match.length),
         );
-        const reportPrefix = new RegExp(
+        const patterns = [
           "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
-          "iu",
-        );
-        const reportSubject = new RegExp(
           "(?:(?:a|an|one|some|several|multiple|[0-9]+) +)?" +
             noun +
             " +(?:(?:is|are|was|were|has|have|been) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
-          "iu",
-        );
-        const existential = new RegExp(
           "\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
-          "iu",
-        );
-        return (
-          reportPrefix.test(reporting) ||
-          reportSubject.test(reporting) ||
-          existential.test(reporting)
+        ];
+        return patterns.some((pattern) =>
+          [...reporting.matchAll(new RegExp(pattern, "giu"))].some(
+            isAffirmative,
+          ),
         );
       }),
   );
