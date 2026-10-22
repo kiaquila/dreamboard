@@ -344,6 +344,23 @@ const normalize = (text) => text.replace(/\s+/g, " ").trim();
 const escapedMarkdownPunctuation = (text, index) =>
   text[index] === "\\" &&
   /[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]/.test(text[index + 1] || "");
+// Suppress only definition ranges accepted by the existing destination/title validator.
+const withoutReferenceDefinitionUsage = (source, validDefinition) =>
+  source.replace(
+    /^ {0,3}\[([^\]\r\n]+)\]:[ \t]*([^\r\n]+)(?:(\r\n|\r|\n)([ \t]+["'(][^\r\n]*))?$/gm,
+    (definition, label, destination, newline, title) => {
+      if (title && validDefinition(label, destination + newline + title))
+        return definition.replace(/[^\r\n]/g, "");
+      const firstLine = definition.slice(
+        0,
+        definition.length - (title ? newline.length + title.length : 0),
+      );
+      return validDefinition(label, destination)
+        ? firstLine.replace(/[^\r\n]/g, "") + (title ? newline + title : "")
+        : definition;
+    },
+  );
+
 const visibleLinkLabels = (
   text,
   activeLinkOnly = false,
@@ -368,12 +385,10 @@ const visibleLinkLabels = (
       ),
     ];
     const references = (source) => {
-      const usage = source.replace(
-        /^ {0,3}\[([^\]\r\n]+)\]:[ \t]*([^\r\n]+)$/gm,
-        (definition, label, destination) =>
-          visibleLinkLabels("[" + label + "](" + destination + ")", true)
-            ? definition.replace(/[^\r\n]/g, "")
-            : definition,
+      const usage = withoutReferenceDefinitionUsage(
+        source,
+        (label, destination) =>
+          visibleLinkLabels("[" + label + "](" + destination + ")", true),
       );
       const content = visibleLinkLabels(usage, false, true);
       return [...content.matchAll(/\[\^([^\[\]\x00-\x20]+)\]/g)]
@@ -560,6 +575,48 @@ function htmlTagText(text, separator) {
   return result;
 }
 
+function indentationColumns(prefix) {
+  return Array.from(prefix).reduce(
+    (column, character) => column + (character === "\t" ? 4 - (column % 4) : 1),
+    0,
+  );
+}
+
+function consumeIndentationColumns(line, required) {
+  let column = 0,
+    index = 0;
+  while (column < required && /[ \t]/.test(line[index] || "x")) {
+    column += line[index++] === "\t" ? 4 - (column % 4) : 1;
+  }
+  return column < required
+    ? null
+    : " ".repeat(column - required) + line.slice(index);
+}
+
+// HTML tokenizer comment endings, including abrupt empty-comment closure.
+function htmlCommentEnd(source, start) {
+  if (source.startsWith("<!-->", start)) return start + 5;
+  if (source.startsWith("<!--->", start)) return start + 6;
+  const close = /--!?>/g;
+  close.lastIndex = start + 4;
+  const match = close.exec(source);
+  return match ? match.index + match[0].length : null;
+}
+
+function withoutHtmlComments(source) {
+  let result = "",
+    cursor = 0,
+    start;
+  while ((start = source.indexOf("<!--", cursor)) >= 0) {
+    const end = htmlCommentEnd(source, start) ?? source.length;
+    result +=
+      source.slice(cursor, start) +
+      source.slice(start, end).replace(/[^\r\n]/g, "");
+    cursor = end;
+  }
+  return result + source.slice(cursor);
+}
+
 function markdownContainerContext(line) {
   const frames = [];
   while (true) {
@@ -571,7 +628,7 @@ function markdownContainerContext(line) {
     }
     const list = line.match(/^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])[ \t]+/);
     if (list) {
-      frames.push({ kind: "list", width: list[0].length });
+      frames.push({ kind: "list", width: indentationColumns(list[0]) });
       line = line.slice(list[0].length);
       continue;
     }
@@ -581,12 +638,14 @@ function markdownContainerContext(line) {
 
 function markdownContainerContinuation(line, frames) {
   for (const frame of frames) {
-    const prefix =
-      frame.kind === "quote"
-        ? line.match(/^ {0,3}>[ \t]?/)
-        : line.match(new RegExp("^(?: {" + frame.width + "}|\\t)"));
-    if (!prefix) return null;
-    line = line.slice(prefix[0].length);
+    if (frame.kind === "list") {
+      line = consumeIndentationColumns(line, frame.width);
+      if (line === null) return null;
+    } else {
+      const prefix = line.match(/^ {0,3}>[ \t]?/);
+      if (!prefix) return null;
+      line = line.slice(prefix[0].length);
+    }
   }
   return line;
 }
@@ -595,7 +654,42 @@ function markdownContainerContent(line) {
   return markdownContainerContext(line).content;
 }
 
-function rawHtmlBlockEnd(line) {
+function markdownTableCells(line) {
+  const value = String(line).trim();
+  const cells = [];
+  let cursor = 0;
+  for (let index = 0; index < value.length; index++)
+    if (
+      value[index] === "|" &&
+      (value.slice(0, index).match(/\\+$/)?.[0].length || 0) % 2 === 0
+    ) {
+      cells.push(value.slice(cursor, index).trim());
+      cursor = index + 1;
+    }
+  if (!cells.length) return null;
+  cells.push(value.slice(cursor).trim());
+  if (value.startsWith("|")) cells.shift();
+  if (
+    value.endsWith("|") &&
+    (value.slice(0, -1).match(/\\+$/)?.[0].length || 0) % 2 === 0
+  )
+    cells.pop();
+  return cells;
+}
+
+function isMarkdownTableBoundary(header, delimiter) {
+  const heading = markdownTableCells(header),
+    cells = markdownTableCells(delimiter);
+  return Boolean(
+    heading &&
+    cells &&
+    heading.length === cells.length &&
+    cells.length &&
+    cells.every((cell) => /^:?-+:?$/.test(cell)),
+  );
+}
+
+function rawHtmlBlockEnd(line, inParagraph = false) {
   const start = markdownContainerContent(line).replace(/^ {0,3}/, "");
   const special = start.match(/^<(script|pre|style|textarea)(?:\s|>|$)/i);
   const blockTag =
@@ -608,7 +702,8 @@ function rawHtmlBlockEnd(line) {
   else if (start.startsWith("<?")) return /\?>/;
   else if (start.startsWith("<![CDATA[")) return /\]\]>/;
   else if (/^<![A-Z]/.test(start)) return />/;
-  else if (blockTag.test(start) || completeTag.test(start)) return "blank";
+  else if (blockTag.test(start) || (!inParagraph && completeTag.test(start)))
+    return "blank";
   return null;
 }
 
@@ -622,11 +717,19 @@ function protectLiteralCode(source) {
   let spans = "";
   let htmlBlock = null;
   let htmlContainer = null;
+  let paragraphFrames = null;
+  let tableActive = false,
+    previousContent = "";
   const raw = String(source)
     .split(/(\r?\n)/)
     .map((line) => {
       if (/^\r?\n$/.test(line)) return line;
       const context = markdownContainerContext(line);
+      if (
+        paragraphFrames &&
+        markdownContainerContinuation(line, paragraphFrames) === null
+      )
+        paragraphFrames = null;
       let content = htmlBlock
         ? markdownContainerContinuation(line, htmlContainer.frames)
         : context.content;
@@ -637,22 +740,34 @@ function protectLiteralCode(source) {
       }
       if (htmlBlock === "blank" && !content.trim()) {
         htmlBlock = null;
+        paragraphFrames = null;
         return line;
       }
       if (!htmlBlock) {
-        htmlBlock = rawHtmlBlockEnd(content);
+        htmlBlock = rawHtmlBlockEnd(content, paragraphFrames !== null);
         if (htmlBlock) htmlContainer = context;
       }
+      if (isMarkdownTableBoundary(previousContent, content)) tableActive = true;
+      else if (tableActive && !content.includes("|")) tableActive = false;
+      previousContent = content;
+      paragraphFrames =
+        tableActive ||
+        htmlBlock ||
+        !content.trim() ||
+        /^ {0,3}(?:#{1,6}(?:[ \t]|$)|`{3,}|~{3,}|(?:[-*_][ \t]*){3,}$|\|)/.test(
+          content,
+        )
+          ? null
+          : context.frames;
       if (!htmlBlock) return line;
-      const literal = line.replace(/[\[`]/g, save);
+      const literal = line.replace(/[\[`*_~]/g, save);
       if (htmlBlock !== "blank" && htmlBlock.test(content)) htmlBlock = null;
       return literal;
     })
     .join("");
   for (let i = 0; i < raw.length; i++) {
     if (raw.startsWith("<!--", i)) {
-      const end = raw.indexOf("-->", i + 4);
-      const stop = end < 0 ? raw.length : end + 3;
+      const stop = htmlCommentEnd(raw, i) ?? raw.length;
       spans += raw.slice(i, stop);
       i = stop - 1;
       continue;
@@ -715,17 +830,25 @@ function protectLiteralCode(source) {
       let result = "";
       for (let i = 0; i < line.length; i++) {
         if (comment) {
-          if (line.startsWith("-->", i)) {
-            result += "-->";
-            i += 2;
-            comment = false;
-          } else result += line[i];
+          const close = /--!?>/.exec(line.slice(i));
+          if (!close) {
+            result += line.slice(i);
+            break;
+          }
+          const stop = i + close.index + close[0].length;
+          result += line.slice(i, stop);
+          i = stop - 1;
+          comment = false;
           continue;
         }
         if (line.startsWith("<!--", i)) {
-          result += "<!--";
-          i += 3;
-          comment = true;
+          const end = htmlCommentEnd(line, i);
+          result += line.slice(i, end ?? line.length);
+          if (end === null) {
+            comment = true;
+            break;
+          }
+          i = end - 1;
           continue;
         }
         if (line[i] === "`") {
@@ -780,11 +903,19 @@ function protectLiteralCode(source) {
 const htmlNumericReferences = (source) => {
   let block = null;
   let htmlContainer = null;
+  let paragraphFrames = null;
+  let tableActive = false,
+    previousContent = "";
   return source
     .split(/(\r?\n)/)
     .map((line) => {
       if (/^\r?\n$/.test(line)) return line;
       const context = markdownContainerContext(line);
+      if (
+        paragraphFrames &&
+        markdownContainerContinuation(line, paragraphFrames) === null
+      )
+        paragraphFrames = null;
       let content = block
         ? markdownContainerContinuation(line, htmlContainer.frames)
         : context.content;
@@ -795,12 +926,25 @@ const htmlNumericReferences = (source) => {
       }
       if (block === "blank" && !content.trim()) {
         block = null;
+        paragraphFrames = null;
         return line;
       }
       if (!block) {
-        block = rawHtmlBlockEnd(content);
+        block = rawHtmlBlockEnd(content, paragraphFrames !== null);
         if (block) htmlContainer = context;
       }
+      if (isMarkdownTableBoundary(previousContent, content)) tableActive = true;
+      else if (tableActive && !content.includes("|")) tableActive = false;
+      previousContent = content;
+      paragraphFrames =
+        tableActive ||
+        block ||
+        !content.trim() ||
+        /^ {0,3}(?:#{1,6}(?:[ \t]|$)|`{3,}|~{3,}|(?:[-*_][ \t]*){3,}$|\|)/.test(
+          content,
+        )
+          ? null
+          : context.frames;
       if (!block) return line;
       const text = line.replace(/&#(?:x[0-9a-f]+|[0-9]+);?/gi, (entity) =>
         entity.endsWith(";") ? entity : entity + ";",
@@ -813,13 +957,111 @@ const htmlNumericReferences = (source) => {
 
 // Visible warnings use one literal-code-aware projection. Structure is read
 // before entities; raw protocol, JSON, SHA and completion clocks are untouched.
+// CommonMark delimiter runs: flanking, intraword underscores, and rule of three.
+function activeMarkdownEmphasis(text) {
+  const removed = new Set();
+  const runs = [];
+  const whitespace = (value) => !value || /\s/u.test(value);
+  const punctuation = (value) => !!value && /[\p{P}\p{S}]/u.test(value);
+  const escaped = (index) =>
+    (text.slice(0, index).match(/\\+$/)?.[0].length || 0) % 2 === 1;
+  // Matched code-span delimiters disappear; their literal content is protected
+  // by the existing code-context stage before this projection.
+  const ticks = [...text.matchAll(/`+/g)];
+  let consumed = 0;
+  for (let i = 0; i < ticks.length; i += 1) {
+    const start = ticks[i];
+    if (start.index < consumed || escaped(start.index)) continue;
+    const end = ticks
+      .slice(i + 1)
+      .find((run) => run[0].length === start[0].length);
+    if (!end) continue;
+    for (let j = 0; j < start[0].length; j += 1) {
+      removed.add(start.index + j);
+      removed.add(end.index + j);
+    }
+    consumed = end.index + end[0].length;
+  }
+  for (const match of text.matchAll(/\*+|_+|~{2,}/g)) {
+    if (escaped(match.index)) continue;
+    const before = [...text.slice(0, match.index)].at(-1) || "";
+    const after = [...text.slice(match.index + match[0].length)][0] || "";
+    const left =
+      !whitespace(after) &&
+      (!punctuation(after) || whitespace(before) || punctuation(before));
+    const right =
+      !whitespace(before) &&
+      (!punctuation(before) || whitespace(after) || punctuation(after));
+    runs.push({
+      character: match[0][0],
+      start: match.index,
+      length: match[0].length,
+      usedOpen: 0,
+      usedClose: 0,
+      open:
+        match[0][0] === "_" ? left && (!right || punctuation(before)) : left,
+      close:
+        match[0][0] === "_" ? right && (!left || punctuation(after)) : right,
+    });
+  }
+  for (let closeIndex = 0; closeIndex < runs.length; closeIndex += 1) {
+    const closer = runs[closeIndex];
+    if (!closer.close) continue;
+    for (
+      let openIndex = closeIndex - 1;
+      openIndex >= 0 &&
+      closer.length - closer.usedClose >= (closer.character === "~" ? 2 : 1);
+      openIndex -= 1
+    ) {
+      const opener = runs[openIndex];
+      if (
+        !opener.open ||
+        opener.character !== closer.character ||
+        /\r?\n[ \t\f\v]*\r?\n/.test(text.slice(opener.start, closer.start))
+      )
+        continue;
+      let availableOpen = opener.length - opener.usedOpen - opener.usedClose;
+      let availableClose = closer.length - closer.usedOpen - closer.usedClose;
+      if (availableOpen < (closer.character === "~" ? 2 : 1)) continue;
+      if (
+        closer.character !== "~" &&
+        (opener.close || closer.open) &&
+        (availableOpen + availableClose) % 3 === 0 &&
+        (availableOpen % 3 !== 0 || availableClose % 3 !== 0)
+      )
+        continue;
+      while (
+        availableOpen >= (closer.character === "~" ? 2 : 1) &&
+        availableClose >= (closer.character === "~" ? 2 : 1)
+      ) {
+        const count = availableOpen >= 2 && availableClose >= 2 ? 2 : 1;
+        for (let j = 0; j < count; j += 1) {
+          removed.add(opener.start + opener.length - opener.usedOpen - 1 - j);
+          removed.add(closer.start + closer.usedClose + j);
+        }
+        opener.usedOpen += count;
+        closer.usedClose += count;
+        for (let nested = openIndex + 1; nested < closeIndex; nested += 1) {
+          runs[nested].open = false;
+          runs[nested].close = false;
+        }
+        availableOpen -= count;
+        availableClose -= count;
+      }
+    }
+  }
+  return text
+    .split("")
+    .map((character, index) => (removed.has(index) ? "" : character))
+    .join("");
+}
+
 const renderedVisibleText = (text, formatSeparator = "") => {
   const literal = protectLiteralCode(text);
-  const raw = htmlNumericReferences(literal.text).replace(
-    /<!--[\s\S]*?(?:-->|$)/g,
-    (comment) => comment.replace(/[^\r\n]/g, ""),
-  );
-  const projected = visibleLinkLabels(htmlTagText(raw, formatSeparator))
+  const raw = withoutHtmlComments(htmlNumericReferences(literal.text));
+  const projected = activeMarkdownEmphasis(
+    visibleLinkLabels(htmlTagText(raw, formatSeparator)),
+  )
     .replace(/&#(?:x([0-9a-f]+)|([0-9]+));/gi, (entity, hex, decimal) => {
       const point = Number.parseInt(hex || decimal, hex ? 16 : 10);
       return point > 0 && point <= 0x10ffff
@@ -836,45 +1078,70 @@ const renderedVisibleText = (text, formatSeparator = "") => {
     )
     .replace(/&nbsp;?/gi, " ")
     .replace(/&shy;?/gi, "\u00ad")
-    .replace(/\p{Default_Ignorable_Code_Point}/gu, formatSeparator)
-    .replace(/[*_~]/g, "");
+    .replace(/\p{Default_Ignorable_Code_Point}/gu, formatSeparator);
   return literal.restore(projected);
 };
-const hasPositiveFindingStatement = (text) => {
-  const paragraphs = text
-    .replace(/\r\n?/g, "\n")
-    .split(/\n[ \t]*\n/)
-    .map((paragraph) => paragraph.replace(/\n/g, " "))
-    .join("\n\n");
-  if (
-    [
-      ...paragraphs.matchAll(
-        /\b([0-9]+|[\p{L}-]+[ \t]+an?)[ \t]+(?:[\p{L}-]+[ \t]+)*?(?:issues?|findings?|problems?|bugs?)\b/giu,
-      ),
-    ].some(
-      (match) =>
-        !/^0+$/.test(match[1]) &&
-        !/\b(?:no|zero|not|without)\b/i.test(match[0]),
-    )
-  )
-    return true;
-  return [
-    ...paragraphs.matchAll(
-      /\b(?:found|there[ \t]+(?:is|are))[ \t]+([^.!?\r\n]*)/gi,
-    ),
-  ].some((statement) =>
-    [
-      ...statement[1].matchAll(
-        /(.*?)\b(?:issues?|findings?|problems?|bugs?)\b/gi,
-      ),
-    ].some((clause) => {
-      const count = clause[1]
-        .trim()
-        .replace(/^(?:[,;:]\s*)?(?:and|but|or)\b\s*/i, "");
-      return !/^(?:no|zero|0)\b/i.test(count);
-    }),
+function hasPositiveFindingStatement(text) {
+  const paragraphs = String(text)
+    .replace(/\r\n/g, "\n")
+    .split(/[\r\n][ \t\f\v]*[\r\n]/);
+  return paragraphs.some((paragraph) =>
+    paragraph
+      .replace(/[ \t\r\n\f\v]+/g, " ")
+      .split(/[.!?;,]|\b(?:and|or|but|however|yet)\b/i)
+      .some((clause) => {
+        if (
+          /\b(?:no|zero|not|without|never|cannot)\b|\b[\p{L}]+n['’]t\b/iu.test(
+            clause,
+          ) ||
+          /\b(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
+            clause,
+          )
+        )
+          return false;
+        const noun =
+          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?)(?![\\p{L}\\p{N}_\\p{Pd}])";
+        if (!new RegExp(noun, "iu").test(clause)) return false;
+        const counts = [
+          ...clause.matchAll(
+            new RegExp(
+              "(?<![\\p{L}\\p{N}_])[*_~`]*([0-9]+)[*_~`]* +(?:[\\p{L}-]+ +)*?" +
+                noun,
+              "giu",
+            ),
+          ),
+        ];
+        if (counts.some((match) => !/^0+$/.test(match[1]))) return true;
+        const reporting = clause.replace(
+          new RegExp(
+            "(?<![\\p{L}\\p{N}_])[*_~`]*0+[*_~`]* +(?:[\\p{L}-]+ +)*?" + noun,
+            "giu",
+          ),
+          "",
+        );
+        const reportPrefix = new RegExp(
+          "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
+          "iu",
+        );
+        const reportSubject = new RegExp(
+          "(?:(?:a|an|one|some|several|multiple|[0-9]+) +)?" +
+            noun +
+            " +(?:(?:is|are|was|were|has|have|been) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
+          "iu",
+        );
+        const existential = new RegExp(
+          "\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
+          "iu",
+        );
+        return (
+          reportPrefix.test(reporting) ||
+          reportSubject.test(reporting) ||
+          existential.test(reporting)
+        );
+      }),
   );
-};
+}
+
 const hasVisibleContradiction = (text) =>
   ["", " "].some((separator) => {
     const visible = renderedVisibleText(text, separator);
@@ -997,16 +1264,38 @@ export const parseCodexState = (
       /^\| (?:📝|🔒|🛡️) \*\*(?:Code Review|Security Review)\*\* \|/.test(line),
     );
     const canonicalVisible = visibleLines.slice(0, 4 + rows).join("\n");
-    const canonical =
-      !hasVisibleContradiction(visible) &&
+    const structurallyCanonical =
       sectionRows.length === rows &&
       visibleLines.filter((line) => line.includes("|")).length === rows + 2 &&
       parseCodexState(
-        source.slice(0, source.length - match[2].length) + canonicalVisible,
+        source.slice(0, source.length - match[2].length) +
+          canonicalVisible.replace(
+            /^(\|[^|]*\|[^|]+\|\s*`[a-f0-9]{7,40}`\s*\|)[^|\r\n]*(\|\s*)$/gm,
+            "$1 Manual request $2",
+          ),
         head,
         { sectionHeads: true },
       );
-    return { state, times: canonical ? canonical.times : {} };
+    const times = {};
+    if (structurallyCanonical) {
+      for (const [section, label] of [
+        ["code_review", "Code Review"],
+        ["security_review", "Security Review"],
+      ]) {
+        const otherLabel =
+          section === "code_review" ? "Security Review" : "Code Review";
+        const companion = sectionRows.find((line) =>
+          line.includes("**" + otherLabel + "**"),
+        );
+        const scoped = companion ? visible.replace(companion, "") : visible;
+        if (
+          !hasVisibleContradiction(scoped) &&
+          state[section]?.status === "completed"
+        )
+          times[section] = structurallyCanonical.times[section];
+      }
+    }
+    return { state, times };
   }
   if (hasVisibleContradiction(visible)) return false;
   if (
