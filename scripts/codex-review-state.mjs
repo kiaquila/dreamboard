@@ -1137,7 +1137,7 @@ function hasPositiveFindingStatement(text) {
           )
             return false;
           if (
-            /^ +(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|been|now) +)*(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
+            /^ +(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|be|been|being|get|gets|got|gotten|getting|now) +)*(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
               after,
             )
           )
@@ -1175,10 +1175,10 @@ function hasPositiveFindingStatement(text) {
             noun +
             "|\\bthe +" +
             noun +
-            "|(?<![\\p{L}\\p{N}_] )" +
+            "|(?<![\\p{L}\\p{N}_] )(?:(?:code|security|blocking|critical|high|medium|low|major|minor|unresolved|open|new) +)*" +
             noun +
             ")" +
-            " +(?:(?:is|are|was|were|has|have|been) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
+            " +(?:(?:is|are|was|were|has|have|be|been|being|get|gets|got|gotten|getting) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
           "\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
           "\\b(?:a|an) +(?:[\\p{L}-]+ +)*?" +
             noun +

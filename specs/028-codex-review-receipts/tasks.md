@@ -70,3 +70,6 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 
 - [x] Reproduce native flagged/raised P1 and preserve common explicit triage and
       verification reports without restoring arbitrary words ending in -ed.
+- [x] Reproduce native get-passive P1 and documented-word P2 in the actual gate;
+      recognize passive reports and resolutions, retain negated-resolution
+      findings, and verify metalinguistic subjects remain presentation only.

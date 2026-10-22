@@ -371,13 +371,18 @@ Visible warning projection follows HTML abrupt-comment endings and tab-stop disp
 
 Warning projection removes only active Markdown emphasis delimiters, keeps type-7 HTML tags inside existing paragraphs, and excludes validated continuation titles from footnote usage. Finding statements scope negation to the matched finding, preserve unresolved findings despite unrelated negation, and recognize grouped numeric counts with whole noun boundaries, including bug-free compounds. Historical negative completion coherence is evaluated per section after structurally validating the companion row; a companion warning cannot renew an already-cleared section.
 
-Finding-report predicates recognize explicit reporting verbs such as found,
-detected and identified. Unrelated presentation verbs such as emphasized and
-highlighted cannot renew a historical negative at its mutable edit time. Actual
+Finding-report predicates recognize reporting and finding-subject constructions.
+Unrelated presentation about the word “issues”, such as emphasized or
+highlighted text, cannot renew a historical negative at its mutable edit time. Actual
 gate regressions retain mixed no-findings/positive-count assertions and findings
 whose trailing qualifiers mention a missing workaround or a fixed code path.
-The explicit report vocabulary also covers ordinary triage and verification
-verbs such as flagged, raised, confirmed and reproduced, while keeping unrelated
-presentation verbs outside the report predicate.
+These constructions cover ordinary triage and verification reports such as
+flagged, raised, confirmed and reproduced while excluding metalinguistic subjects.
 
 Historical clock checks preserve harmless metalinguistic prose and zero-after-colon reports, hide only validated link-reference definitions, and treat indented code as a paragraph boundary before type-7 HTML. Trigger isolation applies only to a companion with explicit typed findings; contradictory false/false companion presentation retains the observation timestamp.
+
+Finding subjects recognize get-passive and progressive reports such as “a
+security issue got flagged” and “an issue is being detected”. The same auxiliary
+forms preserve explicit resolution, while negated resolution remains blocking.
+Actual gate regressions distinguish finding subjects from words/terms/labels
+that merely name a finding category.
