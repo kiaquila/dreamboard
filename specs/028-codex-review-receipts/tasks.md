@@ -86,3 +86,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Cover nominal/modal findings, qualified empty results, explicit exceptions,
       worded positive counts and resolved-adjective reappearance in actual gate
       regressions while preserving strict newer canonical recovery.
+
+- [x] Preserve soft-break assertions and distinguish qualified empty results,
+      resolved exceptions and benign descriptions from modal recurrence and
+      quantified or continuing findings using actual review-gate chronology.

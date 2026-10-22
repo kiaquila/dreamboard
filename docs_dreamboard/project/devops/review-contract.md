@@ -410,3 +410,7 @@ persistence predicate remains a finding.
 Receipt recovery requires a resolved code observation to be strictly newer than
 every unresolved observation in both completion and server-observation seconds;
 equal-second snapshots remain ambiguous.
+
+Rendered soft breaks preserve one finding assertion. Qualified empty results,
+neutral benign descriptions and resolved exceptions do not renew findings;
+modal recurrence, quantified subjects and continued existence remain active.

@@ -568,11 +568,12 @@ function htmlTagText(text, separator, blockBoundaries = false) {
         const alt = /^<img\b/i.test(tag)
           ? tag.match(/\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i)
           : null;
-        const boundary =
-          blockBoundaries &&
-          /^<\/?(?:address|article|aside|blockquote|center|dd|details|dialog|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hr|li|main|menu|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul|br)(?:\s|\/?>)/i.test(
-            tag,
-          )
+        const boundary = /^<br(?:\s|\/?>)/i.test(tag)
+          ? " "
+          : blockBoundaries &&
+              /^<\/?(?:address|article|aside|blockquote|center|dd|details|dialog|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hr|li|main|menu|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul|br)(?:\s|\/?>)/i.test(
+                tag,
+              )
             ? "\n\n"
             : separator;
         result +=
@@ -1097,6 +1098,8 @@ const renderedVisibleText = (text, formatSeparator = "") => {
   return literal.restore(projected);
 };
 function hasPositiveFindingStatement(text) {
+  const cardinal =
+    "(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[ -](?:one|two|three|four|five|six|seven|eight|nine))?)";
   const paragraphs = String(text)
     .replace(/\r\n/g, "\n")
     .split(/[\r\n][ \t\f\v]*[\r\n]/);
@@ -1104,8 +1107,18 @@ function hasPositiveFindingStatement(text) {
     paragraph
       .replace(/[ \t\r\n\f\v]+/g, " ")
       .replace(
-        /\b(?:no|zero) +(?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))[^.!?;]*?\bexcept +((?:[1-9][0-9]*|one|some|several|multiple))\b/giu,
-        (match, count) => match + "; " + count + " findings remain",
+        new RegExp(
+          "\\b(?:no|zero) +(?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))[^.!?;]*?\\bexcept +((?:[1-9][0-9]*|some|several|multiple|" +
+            cardinal +
+            "))\\b([^.!?;]*)",
+          "giu",
+        ),
+        (match, count, suffix) =>
+          match +
+          "; " +
+          count +
+          " findings" +
+          (suffix.trim() ? suffix.replace(/^ *, */, " ") : " remain"),
       )
       .replace(
         /\b(no|zero) +((?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))) +(?:and|or) +(?:issues?|findings?|problems?|bugs?|flaws?|vulnerabilit(?:y|ies))\b/giu,
@@ -1133,7 +1146,7 @@ function hasPositiveFindingStatement(text) {
           const after = clause.slice(match.index + match[0].length);
           if (
             !counted &&
-            /^ *(?::|[–—-]) *(?:no|none|zero|0+(?:,000)*)(?: +(?:found|outstanding|exist|exists|remain|remains))? *$/iu.test(
+            /^ *(?::|[–—-]) *(?:no|none|zero|0+(?:,000)*)(?: +(?:(?:is|are|was|were|be|been|being|has|have|had|[\p{L}]+ly|now) +)*(?:found|outstanding|exist|exists|remain|remains))? *$/iu.test(
               after,
             )
           )
@@ -1160,18 +1173,17 @@ function hasPositiveFindingStatement(text) {
           const modifiers = matchedNoun
             ? match[0].slice(0, matchedNoun.index)
             : "";
-
           if (
             /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
               modifiers,
             ) &&
-            !/^ +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting) +)*(?:found|[\p{L}]+ed|[\p{L}]+s)\b/iu.test(
+            !/^ +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting) +)*(?:(?:can|could|may|might|will|would|must|should) +(?:reappear|recur)|found +again|(?:still +)?(?:persists?|remains?|exists?))\b/iu.test(
               predicate + after,
             )
           )
             return false;
           if (
-            /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/i.test(
+            /\b(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign)\b/i.test(
               predicate,
             )
           )
@@ -1210,8 +1222,7 @@ function hasPositiveFindingStatement(text) {
           (match) => " ".repeat(match.length),
         );
         const cardinalPattern =
-          "\\b(?:two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[ -](?:one|two|three|four|five|six|seven|eight|nine))?) +(?:[\\p{L}-]+ +)*?" +
-          noun;
+          "\\b" + cardinal + " +(?:[\\p{L}-]+ +)*?" + noun;
         if (
           [...reporting.matchAll(new RegExp(cardinalPattern, "giu"))].some(
             (match) => isAffirmative(match, true),
@@ -1253,15 +1264,15 @@ function hasPositiveFindingStatement(text) {
             "(?= *(?::|[–—-]) *[^ \\t])",
           "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
           findingSubject +
-            " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
-          "\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
+            " +(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
+          "\\bthere +(?:still +)?(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
           "\\b(?:a|an) +(?:[\\p{L}-]+ +)*?" +
             noun +
             " +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+s)\\b",
           "\\b(?:this|that|these|those) +" +
             noun +
             " +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+s)\\b",
-          "(?<![\\p{L}\\p{N}_] )(?:issues|findings|problems|bugs|flaws|vulnerabilities)\\b +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+)\\b",
+          "(?:\\b(?:both|many|all) +|(?<![\\p{L}\\p{N}_] ))(?:issues|findings|problems|bugs|flaws|vulnerabilities)\\b +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+)\\b",
         ];
         return patterns.some((pattern) =>
           [...reporting.matchAll(new RegExp(pattern, "giu"))].some((match) =>
