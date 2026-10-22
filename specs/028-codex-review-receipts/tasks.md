@@ -67,3 +67,6 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Reproduce native assertion-negation P1 and reporting-verb P2 in the actual
       gate. Preserve positive counts alongside unrelated negative assertions
       and trailing qualifiers, and restrict report predicates to finding verbs.
+
+- [x] Reproduce native flagged/raised P1 and preserve common explicit triage and
+      verification reports without restoring arbitrary words ending in -ed.

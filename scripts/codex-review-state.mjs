@@ -1160,7 +1160,7 @@ function hasPositiveFindingStatement(text) {
           (match) => " ".repeat(match.length),
         );
         const reportingVerbs =
-          "(?:found|detected|identified|discovered|observed|uncovered|reported|noted|located)";
+          "(?:found|detected|identified|discovered|observed|uncovered|reported|noted|located|flagged|raised|confirmed|revealed|exposed|surfaced|logged|documented|recorded|recognized|recognised|spotted|noticed|encountered|disclosed|diagnosed|reproduced|verified|demonstrated|established|acknowledged|substantiated|validated|inferred|ascertained)";
         const patterns = [
           ["\\b" + reportingVerbs + " +(?:[\\p{L}-]+ +)*?" + noun, false],
           [

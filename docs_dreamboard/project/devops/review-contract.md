@@ -376,3 +376,6 @@ detected and identified. Unrelated presentation verbs such as emphasized and
 highlighted cannot renew a historical negative at its mutable edit time. Actual
 gate regressions retain mixed no-findings/positive-count assertions and findings
 whose trailing qualifiers mention a missing workaround or a fixed code path.
+The explicit report vocabulary also covers ordinary triage and verification
+verbs such as flagged, raised, confirmed and reproduced, while keeping unrelated
+presentation verbs outside the report predicate.
