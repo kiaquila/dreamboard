@@ -370,3 +370,9 @@ Footnote label keys use Unicode 16.0 full case folding without compatibility nor
 Visible warning projection follows HTML abrupt-comment endings and tab-stop display columns when continuing Markdown list containers. These presentation rules do not alter raw protocol or canonical completion authority.
 
 Warning projection removes only active Markdown emphasis delimiters, keeps type-7 HTML tags inside existing paragraphs, and excludes validated continuation titles from footnote usage. Finding statements scope negation to the matched finding, preserve unresolved findings despite unrelated negation, and recognize grouped numeric counts with whole noun boundaries, including bug-free compounds. Historical negative completion coherence is evaluated per section after structurally validating the companion row; a companion warning cannot renew an already-cleared section.
+
+Finding-report predicates recognize explicit reporting verbs such as found,
+detected and identified. Unrelated presentation verbs such as emphasized and
+highlighted cannot renew a historical negative at its mutable edit time. Actual
+gate regressions retain mixed no-findings/positive-count assertions and findings
+whose trailing qualifiers mention a missing workaround or a fixed code path.

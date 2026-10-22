@@ -2181,3 +2181,63 @@ test("actual gate scopes edited warning clocks to their canonical section", () =
     0,
   );
 });
+
+for (const [warning, blocks] of [
+  ["No code issues: 1 security issue found", true],
+  ["No code issues 1 security issue found", true],
+  ["Found 0 code issues: 1 security issue found", true],
+  ["Found 1 security issue without a workaround.", true],
+  ["Found 1 security issue in the fixed login path.", true],
+  ["There is a bug that is not documented.", true],
+  ["Found no code issues but detected a security issue.", true],
+  ["One security issue was identified.", true],
+  ["Multiple security issues remain.", true],
+  ["There is a security issue.", true],
+  ["Found one security issue.", true],
+  ["The word issues is emphasized.", false],
+  ["The word issues is highlighted.", false],
+  ["Found no issues.", false],
+  ["Found 0 issues.", false],
+  ["There is not a bug.", false],
+  ["No security issue was found.", false],
+  ["We did not detect any issues.", false],
+  ["Found 1 fixed issue.", false],
+  ["1 issue was resolved.", false],
+  ["This is a bug-free change.", false],
+]) {
+  test(`actual gate scopes finding assertions: ${warning}`, () => {
+    const old = comment(
+      securityHistoryBody(true, "2026-10-20T12:01:00Z") + "\n" + warning,
+      {
+        id: 980,
+        created_at: "2026-10-20T12:01:00Z",
+        updated_at: "2026-10-20T12:05:00Z",
+      },
+    );
+    const clean = comment(securityHistoryBody(false, "2026-10-20T12:03:00Z"), {
+      id: 981,
+      created_at: "2026-10-20T12:03:00Z",
+    });
+    const request = {
+      ...comment(`@codex review ${head}`, {
+        id: 982,
+        created_at: "2026-10-20T12:06:00Z",
+      }),
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const assessment = comment(presentationReceipt(head, ":rocket:"), {
+      id: 983,
+      created_at: "2026-10-20T12:07:00Z",
+    });
+    const events = [
+      { ...activation, created_at: "2026-10-20T12:00:00Z" },
+      old,
+      clean,
+      request,
+      assessment,
+    ];
+    const result = runGate({ comments: events, timeline: events });
+    assert.equal(result.status !== 0, blocks, result.stderr || result.stdout);
+  });
+}

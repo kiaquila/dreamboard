@@ -1097,9 +1097,16 @@ function hasPositiveFindingStatement(text) {
         );
         const noun =
           "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?)(?![\\p{L}\\p{N}_\\p{Pd}])";
-        const isAffirmative = (match) => {
+        const isAffirmative = (match, subject = false) => {
           const before = clause.slice(0, match.index);
           const after = clause.slice(match.index + match[0].length);
+          if (
+            subject &&
+            /\b(?:no|zero|not|without|never|cannot) +(?:[\p{L}-]+ +)*$/iu.test(
+              before.split(new RegExp(noun, "iu")).at(-1),
+            )
+          )
+            return false;
           // Scope negation to this construction, not an unrelated earlier clause.
           if (
             /\b(?:no|zero|not|without|never|cannot)\b|\b[\p{L}]+n['’]t\b/iu.test(
@@ -1152,16 +1159,23 @@ function hasPositiveFindingStatement(text) {
           ),
           (match) => " ".repeat(match.length),
         );
+        const reportingVerbs =
+          "(?:found|detected|identified|discovered|observed|uncovered|reported|noted|located)";
         const patterns = [
-          "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
-          "(?:(?:a|an|one|some|several|multiple|[0-9]+) +)?" +
-            noun +
-            " +(?:(?:is|are|was|were|has|have|been) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
-          "\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
+          ["\\b" + reportingVerbs + " +(?:[\\p{L}-]+ +)*?" + noun, false],
+          [
+            "(?:(?:a|an|one|some|several|multiple|[0-9]+) +)?" +
+              noun +
+              " +(?:(?:is|are|was|were|has|have|been) +)*(?:" +
+              reportingVerbs +
+              "|remains?|exists?)\\b",
+            true,
+          ],
+          ["\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun, false],
         ];
-        return patterns.some((pattern) =>
-          [...reporting.matchAll(new RegExp(pattern, "giu"))].some(
-            isAffirmative,
+        return patterns.some(([pattern, subject]) =>
+          [...reporting.matchAll(new RegExp(pattern, "giu"))].some((match) =>
+            isAffirmative(match, subject),
           ),
         );
       }),

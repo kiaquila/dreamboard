@@ -63,3 +63,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Preserve explicit findings from a strict leading envelope independently of trailing presentation; keep complete-body clean/clear validation strict.
 
 - [x] Reject embedded-BOM/comment-prefixed code headings and rendered whitespace-entity warnings; preserve comment line breaks so split completion fields cannot clear historical findings. Exact actual-gate regressions cover each case.
+
+- [x] Reproduce native assertion-negation P1 and reporting-verb P2 in the actual
+      gate. Preserve positive counts alongside unrelated negative assertions
+      and trailing qualifiers, and restrict report predicates to finding verbs.
