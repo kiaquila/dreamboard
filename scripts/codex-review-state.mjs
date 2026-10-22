@@ -1169,12 +1169,22 @@ function hasPositiveFindingStatement(text) {
           ),
           (match) => " ".repeat(match.length),
         );
+        const categoryModifiers =
+          "(?:(?:code|security|blocking|critical|high|medium|low|major|minor|unresolved|open|new) +)*";
         const findingSubject =
-          "(?:\\b(?:a|an|one|some|several|multiple|this|that|these|those|each|every|another|both|our|your|their|my|his|her|its|[0-9]+) +(?:[\\p{L}-]+ +)*?" +
+          "(?:\\b(?:a|an|one|some|several|multiple|this|that|these|those|each|every|another|both|our|your|their|my|his|her|its|[0-9]+) +" +
+          // Naming the term/category is presentation. Only category adjectives
+          // may intervene: "label validation issue" is still a real finding.
+          "(?!(?:words?|terms?|phrases?|labels?|headings?|names?|titles?) +" +
+          categoryModifiers +
           noun +
-          "|\\bthe +(?:(?:code|security|blocking|critical|high|medium|low|major|minor|unresolved|open|new) +)*" +
+          ")(?:[\\p{L}-]+ +)*?" +
           noun +
-          "|(?<![\\p{L}\\p{N}_] )(?:(?:code|security|blocking|critical|high|medium|low|major|minor|unresolved|open|new) +)*" +
+          "|\\bthe +" +
+          categoryModifiers +
+          noun +
+          "|(?<![\\p{L}\\p{N}_] )" +
+          categoryModifiers +
           noun +
           ")";
         const patterns = [

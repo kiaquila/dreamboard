@@ -79,3 +79,6 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Reproduce demonstrative-subject P1 and cover demonstrative, possessive,
       distributive and definite category subjects in the actual gate, retaining
       negated-report and resolved-finding controls.
+- [x] Reproduce determiner metalinguistic P2 with actual-gate chronology and
+      restrict naming subjects to category-only modifiers, preserving genuine
+      word-boundary, label-validation, token-security and string-parsing findings.

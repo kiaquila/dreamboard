@@ -395,3 +395,9 @@ Explicit resolved/fixed descriptions still describe completed remediation.
 Finding subjects include demonstrative, possessive and distributive determiners
 and definite category-qualified subjects. Negated reports and explicit completed
 remediation do not renew findings merely because those determiners are present.
+
+Determiner subjects that explicitly name a word/term/label followed only by
+finding-category adjectives are presentation, including demonstrative and
+possessive forms. This exception cannot consume an intervening technical
+modifier: word-boundary, label-validation, token-security and string-parsing
+finding assertions remain blocking.
