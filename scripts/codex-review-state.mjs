@@ -430,6 +430,10 @@ const visibleLinkLabels = (
         text.slice(match.index + match[0].length);
     }
   }
+  if (!activeLinkOnly)
+    text = withoutReferenceDefinitionUsage(text, (label, destination) =>
+      visibleLinkLabels("[" + label + "](" + destination + ")", true),
+    );
   const opening = /\[/g;
   let result = "";
   let cursor = 0;
@@ -751,6 +755,8 @@ function protectLiteralCode(source) {
       else if (tableActive && !content.includes("|")) tableActive = false;
       previousContent = content;
       paragraphFrames =
+        (!paragraphFrames &&
+          indentationColumns(content.match(/^[ \t]*/)[0]) >= 4) ||
         tableActive ||
         htmlBlock ||
         !content.trim() ||
@@ -937,6 +943,8 @@ const htmlNumericReferences = (source) => {
       else if (tableActive && !content.includes("|")) tableActive = false;
       previousContent = content;
       paragraphFrames =
+        (!paragraphFrames &&
+          indentationColumns(content.match(/^[ \t]*/)[0]) >= 4) ||
         tableActive ||
         block ||
         !content.trim() ||
@@ -1088,6 +1096,10 @@ function hasPositiveFindingStatement(text) {
   return paragraphs.some((paragraph) =>
     paragraph
       .replace(/[ \t\r\n\f\v]+/g, " ")
+      .replace(
+        /\b(no|zero) +(?:(?!(?:issues?|findings?|problems?|bugs?)\b)[\p{L}-]+ +)+(?:and|or) +(?:(?!(?:issues?|findings?|problems?|bugs?)\b)[\p{L}-]+ +)*((?:issues?|findings?|problems?|bugs?)\b)/giu,
+        "$1 $2",
+      )
       .split(/[.!?;]|(?<![0-9]),|,(?![0-9])|\b(?:and|or|but|however|yet)\b/i)
       .some((clause) => {
         // Negating a resolution preserves the finding, unlike negating its noun.
@@ -1097,14 +1109,12 @@ function hasPositiveFindingStatement(text) {
         );
         const noun =
           "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?)(?![\\p{L}\\p{N}_\\p{Pd}])";
-        const isAffirmative = (match, subject = false) => {
+        const isAffirmative = (match, counted = false) => {
           const before = clause.slice(0, match.index);
           const after = clause.slice(match.index + match[0].length);
           if (
-            subject &&
-            /\b(?:no|zero|not|without|never|cannot) +(?:[\p{L}-]+ +)*$/iu.test(
-              before.split(new RegExp(noun, "iu")).at(-1),
-            )
+            !counted &&
+            /^ *: *(?:no|none|zero|0+(?:,000)*)(?![\p{L}\p{N}_])/iu.test(after)
           )
             return false;
           // Scope negation to this construction, not an unrelated earlier clause.
@@ -1127,7 +1137,7 @@ function hasPositiveFindingStatement(text) {
           )
             return false;
           if (
-            /^ +(?:(?:is|are|was|were|has|have|been|now) +)*(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
+            /^ +(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|been|now) +)*(?:resolved|fixed|addressed|cleared|removed|closed)\b/i.test(
               after,
             )
           )
@@ -1147,7 +1157,7 @@ function hasPositiveFindingStatement(text) {
           counts.some(
             (match) =>
               !/^0+$/.test(match[1].replaceAll(",", "")) &&
-              isAffirmative(match),
+              isAffirmative(match, true),
           )
         )
           return true;
@@ -1159,23 +1169,24 @@ function hasPositiveFindingStatement(text) {
           ),
           (match) => " ".repeat(match.length),
         );
-        const reportingVerbs =
-          "(?:found|detected|identified|discovered|observed|uncovered|reported|noted|located|flagged|raised|confirmed|revealed|exposed|surfaced|logged|documented|recorded|recognized|recognised|spotted|noticed|encountered|disclosed|diagnosed|reproduced|verified|demonstrated|established|acknowledged|substantiated|validated|inferred|ascertained)";
         const patterns = [
-          ["\\b" + reportingVerbs + " +(?:[\\p{L}-]+ +)*?" + noun, false],
-          [
-            "(?:(?:a|an|one|some|several|multiple|[0-9]+) +)?" +
-              noun +
-              " +(?:(?:is|are|was|were|has|have|been) +)*(?:" +
-              reportingVerbs +
-              "|remains?|exists?)\\b",
-            true,
-          ],
-          ["\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun, false],
+          "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
+          "(?:\\b(?:a|an|one|some|several|multiple|[0-9]+) +(?:[\\p{L}-]+ +)*?" +
+            noun +
+            "|\\bthe +" +
+            noun +
+            "|(?<![\\p{L}\\p{N}_] )" +
+            noun +
+            ")" +
+            " +(?:(?:is|are|was|were|has|have|been) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
+          "\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
+          "\\b(?:a|an) +(?:[\\p{L}-]+ +)*?" +
+            noun +
+            " +(?:(?:is|are|was|were) +[\\p{L}-]+|(?!(?:is|was|has)\\b)[\\p{L}]+s)\\b",
         ];
-        return patterns.some(([pattern, subject]) =>
+        return patterns.some((pattern) =>
           [...reporting.matchAll(new RegExp(pattern, "giu"))].some((match) =>
-            isAffirmative(match, subject),
+            isAffirmative(match),
           ),
         );
       }),
@@ -1311,7 +1322,15 @@ export const parseCodexState = (
         source.slice(0, source.length - match[2].length) +
           canonicalVisible.replace(
             /^(\|[^|]*\|[^|]+\|\s*`[a-f0-9]{7,40}`\s*\|)[^|\r\n]*(\|\s*)$/gm,
-            "$1 Manual request $2",
+            (row, prefix, suffix) => {
+              const review = prefix.includes("**Code Review**")
+                ? state.code_review
+                : state.security_review;
+              return review?.has_any_findings === true ||
+                review?.has_unresolved_findings === true
+                ? prefix + " Manual request " + suffix
+                : row;
+            },
           ),
         head,
         { sectionHeads: true },

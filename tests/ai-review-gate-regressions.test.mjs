@@ -993,6 +993,15 @@ for (const mode of [
   "not-resolved-repeat-clock",
   "unrelated-negation-repeat-clock",
   "grouped-count-repeat-clock",
+  "positive-count-zero-colon-repeat-clock",
+  "indefinite-present-repeat-clock",
+  "indefinite-happens-repeat-clock",
+  "indefinite-exists-repeat-clock",
+  "ordinary-definition-repeat-clock",
+  "zero-after-colon-repeat-clock",
+  "colon-count-repeat-clock",
+  "emphasized-repeat-clock",
+  "type7-indented-repeat-clock",
 
   "wrapped-numeric-repeat-clock",
   "passive-finding-repeat-clock",
@@ -1280,6 +1289,15 @@ for (const mode of [
         "not-resolved-repeat-clock",
         "unrelated-negation-repeat-clock",
         "grouped-count-repeat-clock",
+        "positive-count-zero-colon-repeat-clock",
+        "indefinite-present-repeat-clock",
+        "indefinite-happens-repeat-clock",
+        "indefinite-exists-repeat-clock",
+        "ordinary-definition-repeat-clock",
+        "zero-after-colon-repeat-clock",
+        "colon-count-repeat-clock",
+        "emphasized-repeat-clock",
+        "type7-indented-repeat-clock",
 
         "wrapped-numeric-repeat-clock",
         "passive-finding-repeat-clock",
@@ -1379,83 +1397,122 @@ for (const mode of [
                                                                         "grouped-count-repeat-clock"
                                                                       ? "\nFound 1,000 issues."
                                                                       : mode ===
-                                                                          "wrapped-numeric-repeat-clock"
-                                                                        ? "\n<div>\nFound **1** issue\n</div>"
+                                                                          "positive-count-zero-colon-repeat-clock"
+                                                                        ? "\n1 issue: zero"
                                                                         : mode ===
-                                                                            "passive-finding-repeat-clock"
-                                                                          ? "\nAn issue was detected."
+                                                                            "indefinite-present-repeat-clock"
+                                                                          ? "\n" +
+                                                                            helpFooter.replace(
+                                                                              "</details>",
+                                                                              "A bug is present.\n</details>",
+                                                                            )
                                                                           : mode ===
-                                                                              "bugfree-repeat-clock"
-                                                                            ? "\nThis is a bug-free change"
+                                                                              "indefinite-happens-repeat-clock"
+                                                                            ? "\n" +
+                                                                              helpFooter.replace(
+                                                                                "</details>",
+                                                                                "A bug happens.\n</details>",
+                                                                              )
                                                                             : mode ===
-                                                                                "type7-paragraph-repeat-clock"
-                                                                              ? "\nparagraph\n<span>\n[safe](P1)"
+                                                                                "indefinite-exists-repeat-clock"
+                                                                              ? "\n" +
+                                                                                helpFooter.replace(
+                                                                                  "</details>",
+                                                                                  "An issue exists.\n</details>",
+                                                                                )
                                                                               : mode ===
-                                                                                  "unmatched-underscore-repeat-clock"
-                                                                                ? "\nP_1 is not a priority token"
+                                                                                  "ordinary-definition-repeat-clock"
+                                                                                ? "\n\n[safe]: P1"
                                                                                 : mode ===
-                                                                                    "unmatched-star-repeat-clock"
-                                                                                  ? "\nP*1"
+                                                                                    "zero-after-colon-repeat-clock"
+                                                                                  ? "\nFound issues: zero. Issues found: zero."
                                                                                   : mode ===
-                                                                                      "abrupt-comment-repeat-clock"
-                                                                                    ? "\n<!-->P1 blocker"
+                                                                                      "colon-count-repeat-clock"
+                                                                                    ? "\nNo code issues: 1 security issue found"
                                                                                     : mode ===
-                                                                                        "abrupt-dash-comment-repeat-clock"
-                                                                                      ? "\n<!--->P1 blocker"
+                                                                                        "emphasized-repeat-clock"
+                                                                                      ? "\nThe word issues is emphasized."
                                                                                       : mode ===
-                                                                                          "tab-list-repeat-clock"
-                                                                                        ? "\n-  <div>\n \t[safe](P1)\n   </div>"
+                                                                                          "type7-indented-repeat-clock"
+                                                                                        ? "\n\n    example\n<span>\n[safe](P1)\n</span>"
                                                                                         : mode ===
-                                                                                            "footnote-transitive-reference-repeat-clock"
-                                                                                          ? "\nroot[^a]\n\n[^a]: safe\n  [safe]: https://example.test/[^note]\n[^note]: P1 example"
+                                                                                            "wrapped-numeric-repeat-clock"
+                                                                                          ? "\n<div>\nFound **1** issue\n</div>"
                                                                                           : mode ===
-                                                                                              "footnote-transitive-destination-repeat-clock"
-                                                                                            ? "\nroot[^a]\n\n[^a]: [safe](https://example.test/[^note])\n[^note]: P1 example"
+                                                                                              "passive-finding-repeat-clock"
+                                                                                            ? "\nAn issue was detected."
                                                                                             : mode ===
-                                                                                                "unused-footnote-repeat-clock"
-                                                                                              ? "\n[^doc]: P1"
+                                                                                                "bugfree-repeat-clock"
+                                                                                              ? "\nThis is a bug-free change"
                                                                                               : mode ===
-                                                                                                  "deep-destination-repeat-clock"
-                                                                                                ? "\n[safe](" +
-                                                                                                  "(".repeat(
-                                                                                                    33,
-                                                                                                  ) +
-                                                                                                  "P1" +
-                                                                                                  ")".repeat(
-                                                                                                    33,
-                                                                                                  ) +
-                                                                                                  ")"
+                                                                                                  "type7-paragraph-repeat-clock"
+                                                                                                ? "\nparagraph\n<span>\n[safe](P1)"
                                                                                                 : mode ===
-                                                                                                    "allzero-finding-count-repeat-clock"
-                                                                                                  ? "\nFound 0 code issues and 0 security issues."
+                                                                                                    "unmatched-underscore-repeat-clock"
+                                                                                                  ? "\nP_1 is not a priority token"
                                                                                                   : mode ===
-                                                                                                      "raw-html-link-repeat-clock"
-                                                                                                    ? "\n<div>\n[safe](P1)\n</div>"
+                                                                                                      "unmatched-star-repeat-clock"
+                                                                                                    ? "\nP*1"
                                                                                                     : mode ===
-                                                                                                        "found-html-no-repeat-clock"
-                                                                                                      ? "\nFound <em>no</em> issues"
+                                                                                                        "abrupt-comment-repeat-clock"
+                                                                                                      ? "\n<!-->P1 blocker"
                                                                                                       : mode ===
-                                                                                                          "found-html-zero-repeat-clock"
-                                                                                                        ? "\nFound <code>0</code> issues"
+                                                                                                          "abrupt-dash-comment-repeat-clock"
+                                                                                                        ? "\n<!--->P1 blocker"
                                                                                                         : mode ===
-                                                                                                            "html-break-repeat-clock"
-                                                                                                          ? "\nDo<br>not<br>merge"
+                                                                                                            "tab-list-repeat-clock"
+                                                                                                          ? "\n-  <div>\n \t[safe](P1)\n   </div>"
                                                                                                           : mode ===
-                                                                                                              "code-priority-repeat-clock"
-                                                                                                            ? "\nP`1`"
+                                                                                                              "footnote-transitive-reference-repeat-clock"
+                                                                                                            ? "\nroot[^a]\n\n[^a]: safe\n  [safe]: https://example.test/[^note]\n[^note]: P1 example"
                                                                                                             : mode ===
-                                                                                                                "code-warning-repeat-clock"
-                                                                                                              ? "\nDo `not` merge"
+                                                                                                                "footnote-transitive-destination-repeat-clock"
+                                                                                                              ? "\nroot[^a]\n\n[^a]: [safe](https://example.test/[^note])\n[^note]: P1 example"
                                                                                                               : mode ===
-                                                                                                                  "blank-label-repeat-clock"
-                                                                                                                ? "\n[safe\n\nlabel](P1)"
+                                                                                                                  "unused-footnote-repeat-clock"
+                                                                                                                ? "\n[^doc]: P1"
                                                                                                                 : mode ===
-                                                                                                                    "found-word-count-repeat-clock"
-                                                                                                                  ? "\nFound one issue"
+                                                                                                                    "deep-destination-repeat-clock"
+                                                                                                                  ? "\n[safe](" +
+                                                                                                                    "(".repeat(
+                                                                                                                      33,
+                                                                                                                    ) +
+                                                                                                                    "P1" +
+                                                                                                                    ")".repeat(
+                                                                                                                      33,
+                                                                                                                    ) +
+                                                                                                                    ")"
                                                                                                                   : mode ===
-                                                                                                                      "found-html-article-repeat-clock"
-                                                                                                                    ? "\nFound <em>an</em> issue"
-                                                                                                                    : "\nFound an issue";
+                                                                                                                      "allzero-finding-count-repeat-clock"
+                                                                                                                    ? "\nFound 0 code issues and 0 security issues."
+                                                                                                                    : mode ===
+                                                                                                                        "raw-html-link-repeat-clock"
+                                                                                                                      ? "\n<div>\n[safe](P1)\n</div>"
+                                                                                                                      : mode ===
+                                                                                                                          "found-html-no-repeat-clock"
+                                                                                                                        ? "\nFound <em>no</em> issues"
+                                                                                                                        : mode ===
+                                                                                                                            "found-html-zero-repeat-clock"
+                                                                                                                          ? "\nFound <code>0</code> issues"
+                                                                                                                          : mode ===
+                                                                                                                              "html-break-repeat-clock"
+                                                                                                                            ? "\nDo<br>not<br>merge"
+                                                                                                                            : mode ===
+                                                                                                                                "code-priority-repeat-clock"
+                                                                                                                              ? "\nP`1`"
+                                                                                                                              : mode ===
+                                                                                                                                  "code-warning-repeat-clock"
+                                                                                                                                ? "\nDo `not` merge"
+                                                                                                                                : mode ===
+                                                                                                                                    "blank-label-repeat-clock"
+                                                                                                                                  ? "\n[safe\n\nlabel](P1)"
+                                                                                                                                  : mode ===
+                                                                                                                                      "found-word-count-repeat-clock"
+                                                                                                                                    ? "\nFound one issue"
+                                                                                                                                    : mode ===
+                                                                                                                                        "found-html-article-repeat-clock"
+                                                                                                                                      ? "\nFound <em>an</em> issue"
+                                                                                                                                      : "\nFound an issue";
       old.updated_at = "2026-10-20T12:05:00Z";
       request.created_at = "2026-10-20T12:06:00Z";
       receipt.created_at = "2026-10-20T12:07:00Z";
@@ -1640,6 +1697,15 @@ for (const mode of [
         "not-resolved-repeat-clock",
         "unrelated-negation-repeat-clock",
         "grouped-count-repeat-clock",
+        "positive-count-zero-colon-repeat-clock",
+        "indefinite-present-repeat-clock",
+        "indefinite-happens-repeat-clock",
+        "indefinite-exists-repeat-clock",
+        "ordinary-definition-repeat-clock",
+        "zero-after-colon-repeat-clock",
+        "colon-count-repeat-clock",
+        "emphasized-repeat-clock",
+        "type7-indented-repeat-clock",
 
         "wrapped-numeric-repeat-clock",
         "passive-finding-repeat-clock",
@@ -1719,6 +1785,9 @@ for (const mode of [
       result.status === 0,
       [
         "newer-clear",
+        "ordinary-definition-repeat-clock",
+        "zero-after-colon-repeat-clock",
+        "emphasized-repeat-clock",
         "allzero-finding-count-repeat-clock",
         "footnote-destination-repeat-clock",
         "footnote-reference-destination-repeat-clock",
@@ -2246,3 +2315,71 @@ for (const [warning, blocks] of [
     assert.equal(result.status !== 0, blocks, result.stderr || result.stdout);
   });
 }
+
+test("actual gate retains contradictory false companion trigger observation", () => {
+  const body = (code, security, time) =>
+    cleanStateBody(head, (state) => ({
+      ...state,
+      code_review: {
+        ...state.code_review,
+        has_any_findings: code,
+        has_unresolved_findings: code,
+      },
+      security_review: {
+        ...state.code_review,
+        has_any_findings: security,
+        has_unresolved_findings: security,
+      },
+    })).replaceAll("2026-10-20T12:02:00Z", time) +
+    `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${head.slice(0, 7)}\` | Manual request |`;
+  const old = comment(
+    body(true, false, "2026-10-20T12:01:00Z").replace(
+      /^(\| 🔒[^\n]+)Manual request/gm,
+      "$1 P1",
+    ),
+    {
+      id: 940,
+      created_at: "2026-10-20T12:01:00Z",
+      updated_at: "2026-10-20T12:05:00Z",
+    },
+  );
+  const codeclear = comment(body(false, true, "2026-10-20T12:02:00Z"), {
+    id: 942,
+    created_at: "2026-10-20T12:02:00Z",
+  });
+  const securityBody = body(false, false, "2026-10-20T12:06:00Z")
+    .replace(
+      /"code_review":\{[^}]+\}/,
+      '"code_review":{"status":null,"commit_sha":null,"has_any_findings":null,"has_unresolved_findings":null}',
+    )
+    .replace(/^\| 📝[^\n]+\n/gm, "");
+  const securityclear = comment(securityBody, {
+    id: 944,
+    created_at: "2026-10-20T12:06:00Z",
+  });
+  const request = {
+    ...comment(`@codex review ${head}`, {
+      id: 941,
+      created_at: "2026-10-20T12:07:00Z",
+    }),
+    event: "commented",
+    user: { login: "kiaquila" },
+    author_association: "OWNER",
+  };
+  const events = [
+    { ...activation, created_at: "2026-10-20T12:00:00Z" },
+    old,
+    codeclear,
+    request,
+    comment(presentationReceipt(head, ":rocket:"), {
+      id: 943,
+      created_at: "2026-10-20T12:08:00Z",
+    }),
+  ];
+  assert.notEqual(runGate({ timeline: events, comments: events }).status, 0);
+  const uncleared = events.filter((event) => event.id !== 944);
+  assert.notEqual(
+    runGate({ timeline: uncleared, comments: uncleared }).status,
+    0,
+  );
+});

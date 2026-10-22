@@ -379,3 +379,5 @@ whose trailing qualifiers mention a missing workaround or a fixed code path.
 The explicit report vocabulary also covers ordinary triage and verification
 verbs such as flagged, raised, confirmed and reproduced, while keeping unrelated
 presentation verbs outside the report predicate.
+
+Historical clock checks preserve harmless metalinguistic prose and zero-after-colon reports, hide only validated link-reference definitions, and treat indented code as a paragraph boundary before type-7 HTML. Trigger isolation applies only to a companion with explicit typed findings; contradictory false/false companion presentation retains the observation timestamp.
