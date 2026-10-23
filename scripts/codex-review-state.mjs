@@ -1157,7 +1157,7 @@ function hasPositiveFindingStatement(text) {
           " unresolved ",
         );
         const noun =
-          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)(?![\\p{L}\\p{N}_\\p{Pd}])(?! +(?:tests?|reports?|fix(?:es)?|fix(?:es)?|fix(?:es)?)\\b)";
+          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)(?![\\p{L}\\p{N}_\\p{Pd}])(?! +(?:tests?|reports?)\\b)";
         const headingNoun = noun.replace(
           "(?![\\p{L}\\p{N}_\\p{Pd}])",
           "(?![\\p{L}\\p{N}_-])",
@@ -1195,12 +1195,6 @@ function hasPositiveFindingStatement(text) {
             ? match[0].slice(0, matchedNoun.index)
             : "";
           const tail = predicate + after;
-          if (
-            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +/iu.test(
-              modifiers,
-            )
-          )
-            return false;
           // Absence/resolution is evidence only for an unqualified completed assertion.
           if (
             /^ +(?:do|does|did) +not +(?:exist|exists|remain|remains) *$/iu.test(
@@ -1221,6 +1215,14 @@ function hasPositiveFindingStatement(text) {
             !/\b(?:not|never) +(?:reappear|reappeared|recur|recurred|reopen|reopened|persist|remain|exist)\b/iu.test(
               tail,
             );
+          if (/^ +fix(?:es)?\b/iu.test(tail) && !recurrence) return false;
+          if (
+            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +/iu.test(
+              modifiers,
+            ) &&
+            !recurrence
+          )
+            return false;
           if (
             /\b(?:resolves?|fix(?:es)?|address(?:es)?|clears?|removes?|closes?|eliminates?|prevents?|avoids?|mitigates?) +(?:a|an) +/iu.test(
               modifiers,
@@ -1245,7 +1247,7 @@ function hasPositiveFindingStatement(text) {
           )
             return false;
           if (
-            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|now|already) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign) *$/iu.test(
+            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|now|already|remains?) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign) *$/iu.test(
               tail,
             )
           )
@@ -1305,7 +1307,7 @@ function hasPositiveFindingStatement(text) {
           ")";
 
         const patterns = [
-          "\\b(?:can|could|may|might) +bypass +authentication\\b",
+          "\\b(?:(?:no +(?:(?!(?:is|are|was|were|has|have|had|can|could|may|might)\\b)[\\p{L}-]+ +)*?)?[\\p{L}-]+ +)?(?:(?:can|could|may|might) +|(?:is|are) +able +to +)bypass +authentication\\b",
           "\\b(?:is|are) +vulnerable +to\\b",
           "\\bauthentication +(?:can|could|may|might) +be +bypassed\\b",
           "\\b(?:most|every|numerous) +(?:[\\p{L}-]+ +)*?" +
