@@ -268,7 +268,7 @@ A fresh unedited static receipt at the same timestamp second as a request or hea
 
 Strict valid same-head structured finding flags persist per section across repeated review requests. A strictly newer canonical completed false/false result clears the affected section; the resolved-code recovery below is the only additional path. Security null and later code-only/formal/static approvals cannot clear security findings; equal-second evidence stays blocked. Malformed and untrusted historical snapshots cannot create a permanent latch.
 
-Completed negative state uses the affected section’s canonical completion clock for ordering and clearing. Edits to another section cannot renew that negative verdict; running or invalid completion clocks retain the observed comment timestamp fallback.
+Completed negative state uses the affected section’s canonical completion clock only when the entire summary is canonical. A recognized companion-section edit preserves that clock; unknown presentation, running state or invalid completion clocks retain server observation time.
 
 The history guard covers strict snapshots present in the current REST issue-comment/timeline response. GitHub exposes only the current body of a mutable comment; this contract does not retain unseen prior revisions. Lifecycle fixtures use distinct persisted comment IDs. Native inline findings and unresolved review-thread guards remain authoritative. Durable webhook revision capture is outside this change.
 
@@ -287,168 +287,33 @@ history only; security findings still require a newer canonical clean security
 completion. Unknown, malformed, stale or running snapshots, formal findings,
 unresolved threads, invalidation records and final-head checks keep their vetoes.
 
-Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining a unique leading protocol envelope, closed fields, duplicate-key rejection and exact affected-section head. Canonical visible rows provide section clocks; complete-body validation remains required for approval and clearing. This formatting tolerance never grants affirmative review authority.
+## Canonical presentation and conservative history
 
-Protocol-marker uniqueness counts actual HTML comment markers, not bare marker words in the supported visible review-trigger text.
+Only the complete canonical native summary can supply completion authority:
+unique live protocol markers, closed typed JSON, the exact native heading and
+introductory text, one canonical visible row per active section, matching raw
+SHA and completion fields, and the known native help footer. The supported
+review-trigger label is `Manual request`; unknown labels fail closed and need a
+new supported native assessment. Nonprotocol HTML comments may be removed only
+while preserving line breaks and source indentation. Multiline JSON remains
+supported for historical evidence with duplicate-key and scalar checks intact.
 
-Negative completion ordering considers only affected sections bound to the current full head. Protocol marker lines indented as Markdown code (four spaces or a tab) are examples, not live structured snapshots.
+A strict leading native envelope with explicit current-head negative flags can
+retain those negative facts even when later presentation is unknown. It cannot
+supply any completion clock, clean evidence or resolved-code recovery. Its
+server observation time orders the negative, regardless of whether appended
+English, Markdown, HTML, code or punctuation appears active, harmless or resolved.
+No natural-language classifier is allowed to move that observation backwards.
 
-Negative-only fallback snapshots cannot establish resolved-code recovery, even
-when their leading record says all findings are resolved and a later clean
-receipt exists. Recovery requires a complete canonical snapshot.
+This deliberately requires fresh canonical evidence after an ambiguous edit,
+including apparently benign prose. Whitespace and known native presentation
+remain supported; arbitrary text is never interpreted as approval or clearing.
+A genuinely newer canonical false/false section completion clears that section.
+Resolved code recovery still requires a complete canonical resolved-code snapshot
+and a separate strictly later, current-request SHA-bound native clean assessment.
+Security null, unbound receipts and resolved threads alone cannot clear findings.
 
-Negative history uses a strict leading official summary marker, closed typed JSON and exact summary heading. Once that envelope proves an explicit current-head finding, later presentation cannot erase it, including quoted examples or trailing markers. Coherent canonical section rows retain their completion clocks; otherwise the observation time applies. Duplicate or malformed metadata before the heading remains invalid. Clean approval and historical clearing always require strict validation of the original complete body.
-
-The leading negative boundary recognizes the supported one-to-three-space Markdown heading indentation. An explicit “Do not merge” in the visible trigger cell is contradictory and cannot supply canonical approval or historical clearing evidence; ordinary scheduled and security trigger text remains supported.
-
-Canonical summary headings allow zero to three leading spaces; four spaces or a tab cannot supply authority. Trigger contradiction checks normalize inline Markdown emphasis/links and character entities, so rendered “Do not merge” remains contradictory.
-
-Known P0–P2 severity and “Do not merge” contradictions are checked on normalized visible presentation, including numeric character entities and inline emphasis. Machine metadata, SHA and time validation continues to use the original raw values.
-
-A duplicate visible canonical section row makes negative-history completion clocks ambiguous, including accepted leading-space indentation. The explicit finding remains, ordered by observed update time. Hidden comment rows cannot provide completion clocks.
-
-Heading validation also checks the effective line after presentation-comment removal: an embedded BOM or comment-prefixed code indentation cannot become live Markdown through trimming. Removing ordinary HTML comments preserves line breaks, preventing split row fields from joining into a canonical completion. Visible contradiction normalization includes standard HTML whitespace entity names; protocol markers, machine JSON, hashes and completion timestamps remain raw.
-
-Decoded Unicode format characters are removed only for visible contradiction checks, so zero-width formatting cannot hide a rendered P0–P2 warning. Machine data and completion-row parsing are unchanged.
-
-Raw protocol indentation detection includes a BOM between indentation and the marker. Visible format characters are checked both as removed characters and word separators, including standard named zero-width entities, preserving existing priority and merge-warning detection without normalizing machine evidence.
-
-Visible contradiction projection uses the Unicode Default_Ignorable_Code_Point category, covering variation selectors as well as format characters. A rendered priority warning cannot be hidden by these characters; raw machine evidence remains unchanged.
-
-Visible link labels are projected with balanced destination parentheses before known contradiction checks. Negative completion-clock reuse requires the complete visible table row count to match the active sections; an extra rendered inactive-companion row retains the typed finding at observation time rather than borrowing an older completion.
-
-The original summary-marker and heading lines must have canonical ASCII indentation (zero to three spaces) before any trimming or presentation-comment removal. Other raw prefix characters cannot be normalized into protocol or Markdown authority.
-
-Link projection only hides a balanced compact destination with no unescaped whitespace; unproven/malformed link-looking text remains literal for known blocker checks. This presentation projection never changes the raw machine record or supplies approval.
-
-Negative clock coherence counts all pipe-bearing presentation lines, including optional-leading-pipe GFM rows and quoted/container rows. Unexpected rows force observation-time fallback; they never supply completion, clearing, or approval authority.
-
-Visible warning link projection separates a balanced destination from an optional Markdown title (double quoted, single quoted, or parenthesized). Titles cannot conceal the existing blocking label; malformed destination text remains literal. This presentation-only check does not alter protocol, review clocks, or canonical row authority.
-
-Markdown backslash escapes apply only to ASCII punctuation during visible link projection. A backslash before whitespace cannot turn a malformed destination into a hidden label-only link.
-
-Visible inline-link labels remain visible with standard surrounding destination whitespace or an empty destination. These forms cannot hide an existing blocking warning.
-
-A Markdown-escaped opening bracket remains literal warning text; link projection respects odd/even backslash escaping rather than treating an escaped opener as a link.
-
-Inline link projection balances label brackets and respects escaped closing delimiters before identifying any destination. An escaped label closer cannot hide blocker text as a destination.
-
-An active inner Markdown link takes precedence over an enclosing link. The invalid outer destination remains literal warning text; balanced plain brackets remain supported, and image syntax is not treated as an active nested link.
-
-A rendered existing finding-count contradiction, including “Found an issue”, makes the historical prefix clock incoherent. The leading typed TRUE fact remains negative evidence at server observation time across repeated same-head requests; the contradictory snapshot cannot approve or clear findings.
-
-Rendered finding contradictions also project grammatical raw HTML tags before entity decoding while preserving literal code content. Nonprotocol HTML comments containing table pipes remain in raw table validation, so comment removal cannot repair a malformed row into clearing evidence.
-
-The existing finding-statement contradiction covers positive worded counts as well as articles and digits, without requiring a finite count-word list. Such edited statements retain the negative fact at its observation time.
-
-Markdown link labels cannot cross a blank line; invalid labels preserve their literal destinations for warning detection, while a single label line break remains valid.
-
-Warning projection protects Markdown code literals before HTML, link, and entity interpretation. It restores literal code text without delimiters and checks HTML separators in both joined and spaced forms, so rendered inline-code and break-element warnings invalidate a borrowed completion clock. This affects warning detection only.
-
-Standard raw HTML blocks disable Markdown-link/code-span interpretation until their GFM terminator; their HTML and entities still render normally. Finding-count negation is applied to the trimmed rendered count, so formatted no/zero statements do not renew an old negative.
-
-Finding-statement checks normalize soft line breaks within a paragraph while preserving blank-line clause boundaries.
-
-Numeric character references require semicolons in Markdown warning text. Standard raw HTML block text also accepts semicolonless numeric references; literal Markdown code is shielded from either decoding path. This follows the verified GitHub renderer contexts.
-
-Raw HTML context detection first peels the same standard Markdown quote/list container prefixes as literal-code detection. Finding statements inspect every issue-count clause, so an initial zero count cannot hide a later positive count; entirely zero/no counts retain clean recovery behavior.
-
-Visible finding statements also retain existential issue reports (such as “There is an issue”) at observation time. Bare Markdown link destinations follow the renderer’s 32-level balanced-parenthesis limit; deeper destinations remain visible literal text.
-
-Within already accepted presentation, referenced footnotes retain their visible contents; unused footnote definitions do not create a warning. Literal code and raw HTML contexts remain shielded before Markdown footnote projection.
-
-Affirmative numeric counts before issue, finding, or problem nouns are visible negative statements independently of their leading verb. Zero/no-only reports preserve clean recovery; this projection does not alter canonical review authority.
-
-Footnote usage follows referenced definitions transitively; unused lazy continuation content remains hidden. Invalid footnote identifiers can still form valid ordinary link-reference definitions, while malformed destinations remain literal. Raw HTML warning context ends when its containing Markdown quote or list ends.
-
-Footnote use is determined from the existing visible inline projection for both initial text and referenced definition contents; hidden link destinations and HTML attributes do not activate a footnote.
-
-Raw HTML context follows ordered quote/list frames on each continuation line. Footnote usage excludes validated ordinary-reference destinations as well as inline destinations. Affirmative article findings require a preceding word in the same paragraph, preserving blank-line boundaries without a reporting-verb allowlist.
-
-Footnote label keys use Unicode 16.0 full case folding without compatibility normalization. Visible affirmative bug counts and article statements share the existing issue/finding/problem contradiction grammar; raw protocol fields remain unchanged.
-
-Visible warning projection follows HTML abrupt-comment endings and tab-stop display columns when continuing Markdown list containers. These presentation rules do not alter raw protocol or canonical completion authority.
-
-Warning projection removes only active Markdown emphasis delimiters, keeps type-7 HTML tags inside existing paragraphs, and excludes validated continuation titles from footnote usage. Finding statements scope negation to the matched finding, preserve unresolved findings despite unrelated negation, and recognize grouped numeric counts with whole noun boundaries, including bug-free compounds. Historical negative completion coherence is evaluated per section after structurally validating the companion row; a companion warning cannot renew an already-cleared section.
-
-Finding-report predicates recognize reporting and finding-subject constructions.
-Unrelated presentation about the word “issues”, such as emphasized or
-highlighted text, cannot renew a historical negative at its mutable edit time. Actual
-gate regressions retain mixed no-findings/positive-count assertions and findings
-whose trailing qualifiers mention a missing workaround or a fixed code path.
-These constructions cover ordinary triage and verification reports such as
-flagged, raised, confirmed and reproduced while excluding metalinguistic subjects.
-
-Historical clock checks preserve harmless metalinguistic prose and zero-after-colon reports, hide only validated link-reference definitions, and treat indented code as a paragraph boundary before type-7 HTML. Trigger isolation applies only to a companion with explicit typed findings; contradictory false/false companion presentation retains the observation timestamp.
-
-Finding subjects recognize get-passive and progressive reports such as “a
-security issue got flagged” and “an issue is being detected”. The same auxiliary
-forms preserve explicit resolution, while negated resolution remains blocking.
-Actual gate regressions distinguish finding subjects from words/terms/labels
-that merely name a finding category.
-
-Finding-subject headings followed by a colon or spaced dash also retain their
-observation clock. No/none/zero count payloads may retain ordinary empty-result qualifiers;
-qualifiers such as “no workaround” remain findings.
-Explicit resolved/fixed descriptions still describe completed remediation.
-
-Finding subjects include demonstrative, possessive and distributive determiners
-and definite category-qualified subjects. Negated reports and explicit completed
-remediation do not renew findings merely because those determiners are present.
-
-Determiner subjects that explicitly name a word/term/label followed only by
-finding-category adjectives are presentation, including demonstrative and
-possessive forms. This exception cannot consume an intervening technical
-modifier: word-boundary, label-validation, token-security and string-parsing
-finding assertions remain blocking.
-
-Predicate-nominal, modal and active finding assertions, positive worded counts,
-and explicit exceptions to an otherwise empty result retain the observation
-clock. Resolution adjectives alone remain benign; a subsequent reappearance or
-persistence predicate remains a finding.
-
-Receipt recovery requires a resolved code observation to be strictly newer than
-every unresolved observation in both completion and server-observation seconds;
-equal-second snapshots remain ambiguous.
-
-Rendered soft breaks preserve one finding assertion. Qualified empty results,
-neutral benign descriptions and resolved exceptions do not renew findings;
-modal recurrence, quantified subjects and continued existence remain active.
-
-Direct and perfect-tense recurrence renews observed finding evidence, including
-defects and regressions. A harmless/benign predicate is neutral only when
-unqualified; context-limited harmlessness retains the finding. Explicitly
-resolved exception counts and post-noun absence remain neutral, while modified
-and quantified active finding subjects retain their observation clock.
-
-Canonical completion authority must not precede its comment creation bucket.
-Impossible negative clocks retain the observed update time; only a genuinely
-newer valid section completion can clear them. This lower bound also applies
-to positive authority and resolved-code recovery eligibility.
-
-Absence and completed resolution apply only to an unqualified assertion.
-Production-limited absence, recurrence after resolution and modal fix
-requirements retain findings; completed leading resolution verbs and compound
-test/report nouns do not invent a fresh finding.
-
-Explicit security-risk findings use the same observation and clearing rules as
-other review findings; generic risk discussion does not gain finding authority.
-
-Raw HTML warnings recognize the HTML legacy named references that browsers accept
-without semicolons, including a longest valid prefix before literal trailing
-text. Markdown text still requires semicolons, Markdown code stays literal, and
-entities are decoded once after source structure. Mention tails with continuing open or
-outstanding state retain findings even with intervening adverbs. Predicate
-negation is checked beyond a short auxiliary match; negated completed reports
-remain neutral, while negated resolutions retain their finding.
-
-Mention verbs do not hide an active relative or participial predicate: a
-discussed issue that is exploitable, allows bypass or causes code execution
-retains its observation clock. Unqualified negated open/outstanding/unresolved
-state is neutral; a qualified statement that leaves a finding in production
-remains blocking. Plain discussion and completed resolutions stay neutral.
-
-Non-coordinate commas before `which` or `that` keep the relative predicate
-attached to its finding subject. Independent comma-separated assertions still
-have separate negation scopes, including mixed absent code and active security
-findings.
+Completion authority must not precede its comment creation bucket or exceed its
+observed update time beyond GitHub's timestamp-second truncation. Same-second
+clearing remains ambiguous. All native inline, formal, thread, invalidation,
+current-head and unchanged protected-main guards continue to apply.

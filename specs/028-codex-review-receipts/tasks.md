@@ -117,3 +117,14 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Keep non-coordinate commas before `which`/`that` attached to their finding
       subjects; actual-gate regressions preserve production findings, resolved
       relative clauses and independent comma-separated assertion boundaries.
+
+## Conservative canonical boundary (supersedes prose classification)
+
+- [x] Replace Markdown/English warning heuristics with complete canonical native
+      presentation and a closed trigger label; remove unused rendering/entity code.
+- [x] Retain unknown negative-only presentation at server observation time with
+      no clean, completion or resolved-code recovery authority.
+- [x] Verify all previous active and benign prose cases remain fail closed and
+      genuinely later canonical evidence still recovers each section.
+- [x] Require exact-source preflight and a new native current-head assessment
+      before protected merge; preserve all review and stable-wait gates.

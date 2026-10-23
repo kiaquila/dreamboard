@@ -2542,68 +2542,12 @@ for (const mode of [
       reviews,
       reviewUpdatedAt: "2026-10-20T12:04:00Z",
     });
+    // Only canonical or genuinely absent/untrusted historical evidence can
+    // retain completion authority. Every unknown presentation case stays closed.
     assert.equal(
       result.status === 0,
       [
-        "prevents-repeat-clock",
-        "avoids-repeat-clock",
-        "no-users-repeat-clock",
-        "qualified-no-repeat-clock",
-        "mentioned-fixed-repeat-clock",
-        "mentioned-resolved-repeat-clock",
-        "mentioned-closed-repeat-clock",
-        "nobody-repeat-clock",
-        "mentioned-repeat-clock",
-        "documents-repeat-clock",
-        "includes-repeat-clock",
-        "discussed-repeat-clock",
-        "meta-term-repeat-clock",
-        "meta-words-repeat-clock",
-        "none-exist-repeat-clock",
-        "harmless-repeat-clock",
-        "regression-tests-repeat-clock",
-        "regression-test-count-repeat-clock",
-        "defect-report-count-repeat-clock",
-        "fixed-one-repeat-clock",
-
-        "already-fixed-exception-repeat-clock",
-        "no-exist-repeat-clock",
-        "no-remain-repeat-clock",
-        "benign-repeat-clock",
-        "except-fixed-repeat-clock",
-        "none-current-repeat-clock",
-        "none-were-repeat-clock",
-        "eliminated-documented-repeat-clock",
         "newer-clear",
-        "coordinated-nouns-repeat-clock",
-        "eliminated-repeat-clock",
-        "documented-meta-repeat-clock",
-        "ordinary-definition-repeat-clock",
-        "zero-after-colon-repeat-clock",
-        "emphasized-repeat-clock",
-        "allzero-finding-count-repeat-clock",
-        "footnote-destination-repeat-clock",
-        "footnote-reference-destination-repeat-clock",
-        "footnote-reference-title-repeat-clock",
-        "bugfree-repeat-clock",
-        "type7-paragraph-repeat-clock",
-        "unmatched-underscore-repeat-clock",
-        "unmatched-star-repeat-clock",
-
-        "footnote-transitive-reference-repeat-clock",
-        "footnote-transitive-destination-repeat-clock",
-        "invalid-footnote-reference-repeat-clock",
-        "footnote-two-space-repeat-clock",
-        "footnote-four-space-repeat-clock",
-
-        "quoted-html-exit-repeat-clock",
-        "list-html-exit-repeat-clock",
-        "unused-footnote-repeat-clock",
-        "markdown-numeric-repeat-clock",
-        "code-numeric-repeat-clock",
-        "finding-blankline-repeat-clock",
-        "found-html-no-repeat-clock",
-        "found-html-zero-repeat-clock",
         "ordinary-comment-clear",
         "malformed-old",
         "duplicate-leading-old",
@@ -3001,7 +2945,7 @@ test("actual gate preserves latest foreign negative observation", () => {
   assert.notEqual(result.status, 0, result.stdout);
 });
 
-test("actual gate scopes edited warning clocks to their canonical section", () => {
+test("unknown companion presentation requires fresh canonical evidence for each negative section", () => {
   const body = (code, security, time) =>
     cleanStateBody(head, (state) => ({
       ...state,
@@ -3062,133 +3006,143 @@ test("actual gate scopes edited warning clocks to their canonical section", () =
       created_at: "2026-10-20T12:08:00Z",
     }),
   ];
-  assert.equal(runGate({ timeline: events, comments: events }).status, 0);
-  const uncleared = events.filter((event) => event.id !== 944);
+  assert.notEqual(runGate({ timeline: events, comments: events }).status, 0);
+  const codeFresh = comment(
+    cleanStateBody(head).replaceAll(
+      "2026-10-20T12:02:00Z",
+      "2026-10-20T12:06:30Z",
+    ),
+    { id: 945, created_at: "2026-10-20T12:06:30Z" },
+  );
+  const cleared = [...events, codeFresh];
+  assert.equal(runGate({ timeline: cleared, comments: cleared }).status, 0);
+  const uncleared = cleared.filter((event) => event.id !== 944);
   assert.notEqual(
     runGate({ timeline: uncleared, comments: uncleared }).status,
     0,
   );
 });
 
-for (const [warning, blocks] of [
-  ["<div>Do&nbspnot&nbspmerge</div>", true],
-  ["<div>P&shy1</div>", true],
-  ["<div>Do&nbspnot&nbspmerge&notin;</div>", true],
-  ["Do&nbspnot&nbspmerge", false],
-  ["`<div>Do&nbspnot&nbspmerge</div>`", false],
-  ["<div><code>Do&nbspnot&nbspmerge</code></div>", true],
-  ["<div>Do&amp;nbspnot&amp;nbspmerge</div>", false],
-  ["We discussed a security issue that is still open.", true],
-  ["We discussed a security issue, which is exploitable in production.", true],
-  ["We discussed a security issue,which is exploitable in production.", true],
-  ["We mentioned a security issue, that allows authentication bypass.", true],
-  ["We discussed a security issue, which is still fixed.", false],
-  ["We discussed a security issue, which is not open.", false],
-  ["There is a bug, which is not documented.", true],
-  ["No code issues were found, a security issue remains.", true],
-  ["A code issue was not found, a security issue remains.", true],
-  [
-    "We discussed a security issue that is still exploitable in production.",
-    true,
-  ],
-  ["We mentioned a security issue that allows authentication bypass.", true],
-  ["We discussed a security issue allowing code execution.", true],
-  ["We discussed a security issue yesterday.", false],
-  ["We discussed a security issue as an example.", false],
-  ["We discussed a security issue that is still fixed.", false],
-  ["A security issue is not open.", false],
-  ["A security issue is not outstanding.", false],
-  ["A security issue is not unresolved.", false],
-  ["A security issue is not open locally but remains in production.", true],
-  ["We mentioned a security issue that is currently outstanding.", true],
-  ["We discussed a security issue that is now still unresolved.", true],
-  ["We discussed a security issue that is not still open.", false],
-  ["We discussed a security issue that is still not open.", false],
-  ["We discussed a security issue that is still resolved.", false],
-  ["A security issue was not found.", false],
-  ["An authentication problem is not detected.", false],
-  ["Some security issues were never reported.", false],
-  ["Each security issue has not been flagged.", false],
-  ["Security issues are not found.", false],
-  ["A security issue does not exist.", false],
-  ["A security issue was not fixed.", true],
-  ["A security issue is not benign.", true],
-  ["A security issue is not harmless.", true],
-  ["1 security issue is not documented.", true],
-  ["A security issue is still found.", true],
-  ["Some security issues were reported.", true],
-  ["No code issues: 1 security issue found", true],
-  ["No code issues 1 security issue found", true],
-  ["Found 0 code issues: 1 security issue found", true],
-  ["Found 1 security issue without a workaround.", true],
-  ["Found 1 security issue in the fixed login path.", true],
-  ["There is a bug that is not documented.", true],
-  ["Found no code issues but detected a security issue.", true],
-  ["One security issue was identified.", true],
-  ["A security issue was flagged.", true],
-  ["Raised a security issue.", true],
-  ["A security issue was confirmed.", true],
-  ["A security bug was reproduced.", true],
-  ["A security issue got flagged.", true],
-  ["Security issues get reported.", true],
-  ["A security issue has gotten detected.", true],
-  ["A security issue is being flagged.", true],
-  ["This security issue was flagged.", true],
-  ["That security bug was reproduced.", true],
-  ["These new security issues were detected.", true],
-  ["Those authentication problems remain.", true],
-  ["Our security issue was flagged.", true],
-  ["Each authentication problem was detected.", true],
-  ["The security issue was flagged.", true],
-  ["This word boundary issue was flagged.", true],
-  ["This label validation issue was flagged.", true],
-  ["This token security issue was flagged.", true],
-  ["This string parsing issue was detected.", true],
-  ["Security issue: authentication bypass.", true],
-  ["A security issue: was flagged.", true],
-  ["Security issue — authentication bypass.", true],
-  ["Security issue: no authentication on the endpoint.", true],
-  ["Security issue: no workaround is available.", true],
-  ["1 security issue did not get resolved.", true],
-  ["The word parser has a security issue reported.", true],
-  ["The words security issues are documented below.", false],
-  ["This term security issue was recorded in the glossary.", false],
-  ["These words security issues were documented below.", false],
-  ["Our label security issue was recorded.", false],
-  ["Each phrase security issue was documented.", false],
-  ["The term security issue was reported in the glossary.", false],
-  ["The label security issue got recorded.", false],
-  ["No security issue got flagged.", false],
-  ["A security issue did not get flagged.", false],
-  ["A security issue never got detected.", false],
-  ["A security issue got resolved.", false],
-  ["1 security issue got fixed.", false],
-  ["This security issue was fixed.", false],
-  ["These security issues were not flagged.", false],
-  ["Those issues have been resolved.", false],
-  ["Our security issue was resolved.", false],
-  ["The security issue was not flagged.", false],
-  ["Security issues: zero.", false],
-  ["Security issues: none.", false],
-  ["Security issues: no.", false],
-  ["Security issue: was fixed.", false],
-  ["The words security issues: documented below.", false],
-  ["Multiple security issues remain.", true],
-  ["There is a security issue.", true],
-  ["Found one security issue.", true],
-  ["The word issues is emphasized.", false],
-  ["The word issues is highlighted.", false],
-  ["Found no issues.", false],
-  ["Found 0 issues.", false],
-  ["There is not a bug.", false],
-  ["No security issue was found.", false],
-  ["No security issue was flagged.", false],
-  ["We did not detect any issues.", false],
-  ["Found 1 fixed issue.", false],
-  ["1 issue was resolved.", false],
-  ["This is a bug-free change.", false],
+// Unknown presentation is intentionally opaque, even when apparently benign.
+// Only a genuinely later canonical section completion may clear its observation.
+for (const warning of [
+  "We discussed a security issue, currently exploitable in production.",
+  "The issue was resolved, which is good.",
+  "<div>Do&nbspnot&nbspmerge</div>",
+  "<div>P&shy1</div>",
+  "<div>Do&nbspnot&nbspmerge&notin;</div>",
+  "Do&nbspnot&nbspmerge",
+  "`<div>Do&nbspnot&nbspmerge</div>`",
+  "<div><code>Do&nbspnot&nbspmerge</code></div>",
+  "<div>Do&amp;nbspnot&amp;nbspmerge</div>",
+  "We discussed a security issue that is still open.",
+  "We discussed a security issue, which is exploitable in production.",
+  "We discussed a security issue,which is exploitable in production.",
+  "We mentioned a security issue, that allows authentication bypass.",
+  "We discussed a security issue, which is still fixed.",
+  "We discussed a security issue, which is not open.",
+  "There is a bug, which is not documented.",
+  "No code issues were found, a security issue remains.",
+  "A code issue was not found, a security issue remains.",
+  "We discussed a security issue that is still exploitable in production.",
+  "We mentioned a security issue that allows authentication bypass.",
+  "We discussed a security issue allowing code execution.",
+  "We discussed a security issue yesterday.",
+  "We discussed a security issue as an example.",
+  "We discussed a security issue that is still fixed.",
+  "A security issue is not open.",
+  "A security issue is not outstanding.",
+  "A security issue is not unresolved.",
+  "A security issue is not open locally but remains in production.",
+  "We mentioned a security issue that is currently outstanding.",
+  "We discussed a security issue that is now still unresolved.",
+  "We discussed a security issue that is not still open.",
+  "We discussed a security issue that is still not open.",
+  "We discussed a security issue that is still resolved.",
+  "A security issue was not found.",
+  "An authentication problem is not detected.",
+  "Some security issues were never reported.",
+  "Each security issue has not been flagged.",
+  "Security issues are not found.",
+  "A security issue does not exist.",
+  "A security issue was not fixed.",
+  "A security issue is not benign.",
+  "A security issue is not harmless.",
+  "1 security issue is not documented.",
+  "A security issue is still found.",
+  "Some security issues were reported.",
+  "No code issues: 1 security issue found",
+  "No code issues 1 security issue found",
+  "Found 0 code issues: 1 security issue found",
+  "Found 1 security issue without a workaround.",
+  "Found 1 security issue in the fixed login path.",
+  "There is a bug that is not documented.",
+  "Found no code issues but detected a security issue.",
+  "One security issue was identified.",
+  "A security issue was flagged.",
+  "Raised a security issue.",
+  "A security issue was confirmed.",
+  "A security bug was reproduced.",
+  "A security issue got flagged.",
+  "Security issues get reported.",
+  "A security issue has gotten detected.",
+  "A security issue is being flagged.",
+  "This security issue was flagged.",
+  "That security bug was reproduced.",
+  "These new security issues were detected.",
+  "Those authentication problems remain.",
+  "Our security issue was flagged.",
+  "Each authentication problem was detected.",
+  "The security issue was flagged.",
+  "This word boundary issue was flagged.",
+  "This label validation issue was flagged.",
+  "This token security issue was flagged.",
+  "This string parsing issue was detected.",
+  "Security issue: authentication bypass.",
+  "A security issue: was flagged.",
+  "Security issue — authentication bypass.",
+  "Security issue: no authentication on the endpoint.",
+  "Security issue: no workaround is available.",
+  "1 security issue did not get resolved.",
+  "The word parser has a security issue reported.",
+  "The words security issues are documented below.",
+  "This term security issue was recorded in the glossary.",
+  "These words security issues were documented below.",
+  "Our label security issue was recorded.",
+  "Each phrase security issue was documented.",
+  "The term security issue was reported in the glossary.",
+  "The label security issue got recorded.",
+  "No security issue got flagged.",
+  "A security issue did not get flagged.",
+  "A security issue never got detected.",
+  "A security issue got resolved.",
+  "1 security issue got fixed.",
+  "This security issue was fixed.",
+  "These security issues were not flagged.",
+  "Those issues have been resolved.",
+  "Our security issue was resolved.",
+  "The security issue was not flagged.",
+  "Security issues: zero.",
+  "Security issues: none.",
+  "Security issues: no.",
+  "Security issue: was fixed.",
+  "The words security issues: documented below.",
+  "Multiple security issues remain.",
+  "There is a security issue.",
+  "Found one security issue.",
+  "The word issues is emphasized.",
+  "The word issues is highlighted.",
+  "Found no issues.",
+  "Found 0 issues.",
+  "There is not a bug.",
+  "No security issue was found.",
+  "No security issue was flagged.",
+  "We did not detect any issues.",
+  "Found 1 fixed issue.",
+  "1 issue was resolved.",
+  "This is a bug-free change.",
 ]) {
-  test(`actual gate scopes finding assertions: ${warning}`, () => {
+  test(`unknown edited presentation retains observation: ${warning}`, () => {
     const old = comment(
       securityHistoryBody(true, "2026-10-20T12:01:00Z") + "\n" + warning,
       {
@@ -3221,7 +3175,7 @@ for (const [warning, blocks] of [
       assessment,
     ];
     const result = runGate({ comments: events, timeline: events });
-    assert.equal(result.status !== 0, blocks, result.stderr || result.stdout);
+    assert.equal(result.status !== 0, true, result.stderr || result.stdout);
   });
 }
 
@@ -3341,3 +3295,73 @@ for (const recover of [false, true]) {
     assert.equal(result.status === 0, recover, result.stderr || result.stdout);
   });
 }
+
+for (const section of ["code_review", "security_review"])
+  for (const presentation of [
+    "We discussed a security issue, currently exploitable in production.",
+    "The issue was resolved, which is good.",
+    "`Do not merge`",
+    "<div>Do&nbspnot&nbspmerge</div>",
+    "Unrecognized presentation: 日本語.",
+    "unknown-trigger",
+    "comment-in-clock",
+  ])
+    for (const clearAt of ["03", "05", "06"])
+      test(`opaque ${section} presentation ${presentation} requires strictly newer canonical ${clearAt}`, () => {
+        const makeBody = (negative, time) =>
+          section === "security_review"
+            ? securityHistoryBody(negative, time)
+            : cleanStateBody(head, (state) => ({
+                ...state,
+                code_review: {
+                  ...state.code_review,
+                  has_any_findings: negative,
+                  has_unresolved_findings: negative,
+                },
+              })).replaceAll("2026-10-20T12:02:00Z", time);
+        let oldBody = makeBody(true, "2026-10-20T12:02:00Z");
+        if (presentation === "unknown-trigger")
+          oldBody = oldBody.replaceAll(
+            "Manual request",
+            "Unrecognized trigger",
+          );
+        else if (presentation === "comment-in-clock")
+          oldBody = oldBody.replaceAll(
+            "12:02:00Z",
+            "12:<!-- explanation -->02:00Z",
+          );
+        else oldBody += "\n" + presentation;
+        const old = comment(oldBody, {
+          id: 9600,
+          created_at: "2026-10-20T12:02:00Z",
+          updated_at: "2026-10-20T12:05:00Z",
+        });
+        const clean = comment(makeBody(false, `2026-10-20T12:${clearAt}:00Z`), {
+          id: 9601,
+          created_at: `2026-10-20T12:${clearAt}:00Z`,
+        });
+        const request = {
+          ...comment(`@codex review ${head}`, {
+            id: 9602,
+            created_at: "2026-10-20T12:07:00Z",
+          }),
+          user: { login: "kiaquila" },
+          author_association: "OWNER",
+        };
+        const events = [
+          { ...activation, created_at: "2026-10-20T12:00:00Z" },
+          old,
+          clean,
+          request,
+          comment(presentationReceipt(head, ":rocket:"), {
+            id: 9603,
+            created_at: "2026-10-20T12:08:00Z",
+          }),
+        ];
+        const result = runGate({ comments: events, timeline: events });
+        assert.equal(
+          result.status === 0,
+          clearAt === "06",
+          result.stderr || result.stdout,
+        );
+      });

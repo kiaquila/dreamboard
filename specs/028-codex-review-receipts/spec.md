@@ -77,7 +77,7 @@ Static clean receipts use immutable creation time for approval ordering and curr
 
 Strict valid same-head structured finding flags latch per review section across repeated requests. A strictly newer canonical completed false/false result clears its section latch; the resolved-code recovery described below is the only additional path; security null, code-only/formal/static positives and equal-second completions cannot clear security findings. Malformed or untrusted history does not create permanent latches.
 
-Completed negative state uses the affected section’s canonical completion clock for ordering and clearing. Edits to another section cannot renew that negative verdict; running or invalid completion clocks retain the observed comment timestamp fallback.
+Completed negative state uses section completion authority only when the entire native summary is canonical. Unknown presentation always retains server observation time; a recognized companion-section edit can preserve the section clock.
 
 The history guard covers strict snapshots present in the current REST issue-comment/timeline response. GitHub exposes only the current body of a mutable comment; this contract does not retain unseen prior revisions. Lifecycle fixtures use distinct persisted comment IDs. Native inline findings and unresolved review-thread guards remain authoritative. Durable webhook revision capture is outside this change.
 
@@ -89,9 +89,9 @@ strictly later SHA-bound native clean assessment. Require immutable receipt
 creation after the latest negative snapshot observation and the current request.
 Never extend this code-only recovery to security findings or unresolved threads.
 
-Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.
+Historical negative snapshots accept multiline machine JSON and line-preserving nonprotocol HTML comments with unique leading markers, closed fields, duplicate-key rejection and exact affected-section head. Only complete canonical bodies supply section clocks. Unknown presentation retains explicit negatives at server observation time, never clean or recovery authority.
 
-Protocol-marker uniqueness counts actual HTML comment markers, not bare marker words in the supported visible review-trigger text.
+Protocol-marker uniqueness counts actual HTML comment markers. The only supported canonical trigger label is `Manual request`; bare marker words or any other label cannot supply canonical completion authority.
 
 Negative completion ordering considers only affected sections bound to the current full head. Protocol marker lines indented as Markdown code (four spaces or a tab) are examples, not live structured snapshots.
 
@@ -101,4 +101,14 @@ Negative-only fallback snapshots cannot establish resolved-code recovery, even
 when their leading record says all findings are resolved and a later clean
 receipt exists. Recovery requires a complete canonical snapshot.
 
-Reject embedded-BOM/comment-prefixed code headings and rendered whitespace-entity warnings; preserve comment line breaks so split completion fields cannot clear historical findings. Exact actual-gate regressions cover each case.
+Reject embedded-BOM/comment-prefixed code headings and preserve comment line breaks. Replace open-ended Markdown/English warning interpretation with closed canonical presentation: exact native rows, known help footer and Manual request trigger. Any unknown appended text, including benign English, keeps negative observation time. Actual-gate regressions retain every prior warning/neutral case as fail-closed history and require fresh canonical recovery.
+
+## Canonical presentation boundary
+
+The natural-language/rendering projection is superseded by a closed native
+presentation boundary. Complete canonical summaries retain section completion
+authority; negative-only leading envelopes with unknown text retain observation
+time and cannot clear or establish recovery. Unknown trigger labels also fail
+closed. No free-form text is classified as harmless to reuse an old negative
+clock. All stale, malformed, section-specific, strict-later receipt, security and
+unresolved-thread requirements remain in force.
