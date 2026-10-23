@@ -120,3 +120,5 @@ Canonical content retains separate heading/intro/table blocks and contiguous tab
 Negative-only retention depends on the live leading closed machine envelope, not a later heading. Prose before the heading, missing/quoted/fenced/indented headings and later protocol examples cannot discard explicit current-head negative flags. Only complete canonical bodies can supply clocks, clearing or resolved recovery. Whole-comment code/quote framing and indented leading machine records remain ineligible.
 
 Comment normalization distinguishes visible table pipes from pipes inside HTML comments using an offset/line-preserving comment mask. Invisible pipe-bearing separators between live machine markers do not discard negative flags; raw table comments still cannot assemble canonical clocks or SHA fields.
+
+Metadata liveness is validated in the original HTML context after masking hidden comments. Same-line separators and padded comment prefixes cannot discard negative flags; actual first-element code indentation remains ineligible. This history-only normalization never grants whole-PR approval.

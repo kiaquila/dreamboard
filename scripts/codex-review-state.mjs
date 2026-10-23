@@ -47,6 +47,7 @@ export const parseCodexState = (
     /^[^\r\n]*<!-- codex-pull-request-review-summary -->[^\r\n]*$/m,
   )?.[0];
   if (
+    !sectionHeads &&
     !/^ {0,3}<!-- codex-pull-request-review-summary -->[ \t]*$/.test(
       rawMarkerLine || "",
     )
@@ -71,9 +72,13 @@ export const parseCodexState = (
   // Preserve offsets and line breaks while locating pipes outside comments.
   // Invisible pipes in metadata separators must not hide a live envelope;
   // actual table pipes must still prevent comments from assembling raw fields.
+  const htmlComments = [];
   const commentMask = String(body || "").replace(
     /<!--[\s\S]*?-->/g,
-    (comment) => comment.replace(/[^\r\n]/g, " "),
+    (comment, offset) => {
+      htmlComments.push({ comment, offset, end: offset + comment.length });
+      return comment.replace(/[^\r\n]/g, " ");
+    },
   );
   const source = sectionHeads
     ? String(body || "")
@@ -94,7 +99,7 @@ export const parseCodexState = (
             ? comment
             : comment.replace(/[^\r\n]/g, "");
         })
-        .trim()
+        .replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "")
     : String(body || "").trim();
   // Comment removal must not turn a code-indented or BOM-prefixed heading
   // into live Markdown. Validate the effective line before capture trimming.
@@ -112,12 +117,29 @@ export const parseCodexState = (
       : /^<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 (\{[^\r\n]+\}) -->\n([\s\S]*)$/,
   );
   if (!match) return false;
-  if (negativeEnvelope) {
-    // The leading machine record must remain live. Later presentation, even a
-    // missing/moved heading or a protocol example, cannot erase its negatives.
-    const prefix = source.slice(0, source.indexOf(statePrefix));
-    const newline = prefix.lastIndexOf("\n");
-    if (newline >= 0 && !/^ {0,3}$/.test(prefix.slice(newline + 1)))
+  if (sectionHeads) {
+    // Validate the original HTML context rather than an exact physical line.
+    // Adjacent hidden comments keep metadata live, even with intervening
+    // padding. Real first-element code indentation must remain ineligible.
+    const records = htmlComments.filter(
+      ({ comment }) =>
+        comment === summaryMarker || comment.startsWith(statePrefix),
+    );
+    if (
+      records.length < 2 ||
+      records[0].comment !== summaryMarker ||
+      !records[1].comment.startsWith(statePrefix) ||
+      records.slice(0, 2).some(({ offset }) => {
+        const lineStart = String(body || "").lastIndexOf("\n", offset - 1) + 1;
+        const prefix = commentMask.slice(lineStart, offset);
+        const followsComment = htmlComments.some(
+          (prior) => prior.offset < offset && prior.end > lineStart,
+        );
+        return followsComment
+          ? !/^[ \t]*$/.test(prefix)
+          : !/^ {0,3}$/.test(prefix);
+      })
+    )
       return false;
   }
   const raw = match[1];

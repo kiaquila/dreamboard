@@ -329,3 +329,5 @@ Completion authority must not precede its comment creation bucket or exceed its
 observed update time beyond GitHub's timestamp-second truncation. Same-second
 clearing remains ambiguous. All native inline, formal, thread, invalidation,
 current-head and unchanged protected-main guards continue to apply.
+
+Metadata liveness is validated in the original HTML context after masking hidden comments. Same-line separators and padded comment prefixes cannot discard negative flags; actual first-element code indentation remains ineligible. This history-only normalization never grants whole-PR approval.

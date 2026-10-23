@@ -3599,3 +3599,99 @@ for (const section of ["code_review", "security_review"])
           result.stderr || result.stdout,
         );
       });
+
+for (const section of ["code_review", "security_review"])
+  for (const presentation of [
+    "summary-suffix-comment",
+    "summary-prefix-comment-padding",
+    "state-prefix-comment-padding",
+    "same-line-markers",
+    "multiline-prefix-comment-padding",
+    "code-indented-prefix-comment",
+    "code-indented-summary",
+    "tab-indented-summary",
+  ])
+    for (const clear of [false, true])
+      test(`${section} metadata liveness ${presentation} ${clear}`, () => {
+        const marker = "<!-- codex-pull-request-review-summary -->";
+        const state = "<!-- codex-review-state:v1";
+        const makeBody = (negative, time) =>
+          section === "security_review"
+            ? securityHistoryBody(negative, time)
+            : cleanStateBody(head, (value) => ({
+                ...value,
+                code_review: {
+                  ...value.code_review,
+                  has_any_findings: negative,
+                  has_unresolved_findings: negative,
+                },
+              })).replaceAll("2026-10-20T12:02:00Z", time);
+        let negative = makeBody(true, "2026-10-20T12:02:00Z");
+        if (presentation === "summary-suffix-comment")
+          negative = negative.replace(
+            marker,
+            marker + "<!-- invisible | separator -->",
+          );
+        if (presentation === "summary-prefix-comment-padding")
+          negative = negative.replace(marker, "<!-- prefix | -->    " + marker);
+        if (presentation === "state-prefix-comment-padding")
+          negative = negative.replace(state, "<!-- prefix | -->\t    " + state);
+        if (presentation === "same-line-markers")
+          negative = negative.replace(
+            marker + "\n" + state,
+            marker + "<!-- separator | -->    " + state,
+          );
+        if (presentation === "multiline-prefix-comment-padding")
+          negative = negative.replace(
+            marker,
+            "<!-- prefix\n| -->    " + marker,
+          );
+        if (presentation === "code-indented-prefix-comment")
+          negative = negative.replace(
+            marker,
+            "    <!-- prefix | -->    " + marker,
+          );
+        if (presentation === "code-indented-summary")
+          negative = negative.replace(marker, "    " + marker);
+        if (presentation === "tab-indented-summary")
+          negative = negative.replace(marker, "\t" + marker);
+        const events = [
+          { ...activation, created_at: "2026-10-20T12:00:00Z" },
+          comment(negative, {
+            id: 10000,
+            created_at: "2026-10-20T12:02:00Z",
+            updated_at: "2026-10-20T12:05:00Z",
+          }),
+          ...(clear
+            ? [
+                comment(makeBody(false, "2026-10-20T12:04:00Z"), {
+                  id: 10001,
+                  created_at: "2026-10-20T12:04:00Z",
+                }),
+              ]
+            : []),
+          {
+            ...comment(`@codex review ${head}`, {
+              id: 10002,
+              created_at: "2026-10-20T12:07:00Z",
+            }),
+            user: { login: "kiaquila" },
+            author_association: "OWNER",
+          },
+          comment(presentationReceipt(head, ":rocket:"), {
+            id: 10003,
+            created_at: "2026-10-20T12:08:00Z",
+          }),
+        ];
+        const result = runGate({ comments: events, timeline: events });
+        const live = ![
+          "code-indented-prefix-comment",
+          "code-indented-summary",
+          "tab-indented-summary",
+        ].includes(presentation);
+        assert.equal(
+          result.status === 0,
+          clear || !live,
+          result.stderr || result.stdout,
+        );
+      });

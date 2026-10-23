@@ -143,3 +143,5 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Ignore invisible separator pipes without discarding leading negatives;
       preserve raw-table field guards across multiple or multiline comments, and
       verify real canonical clearing for both sections.
+
+- [x] Validate original metadata liveness after masking same-line comments; cover padded and multiline prefixes, adjacent markers, real code indentation, both review sections and genuine newer canonical clearing.
