@@ -3,6 +3,7 @@ import {
   codexNegativeCompletionTime,
   isCodexStateBody,
   codexCodeReviewCompletionTime,
+  isCompletedCodexLifecycle,
 } from "./codex-review-state.mjs";
 import { isKnownCodexHelpFooter } from "./codex-review-help.mjs";
 
@@ -83,6 +84,35 @@ export const classifyCodexSetupReply = (comment) => {
   return null;
 };
 
+// Native presentation variants observed across the owner's repositories. This
+// closed catalog is separate from verdict/SHA parsing; arbitrary prose cannot
+// become approval. Public provenance lives in the native-response corpus.
+const codexCleanClosings = new Set(
+  [
+    "",
+    ":+1:",
+    ":rocket:",
+    ":tada:",
+    "🚀",
+    "🎉",
+    "Already looking forward to the next diff.",
+    "Another round soon, please!",
+    "Bravo.",
+    "Breezy!",
+    "Can't wait for the next one!",
+    "Chef's kiss.",
+    "Delightful!",
+    "Hooray!",
+    "Keep it up!",
+    "Keep them coming!",
+    "More of your lovely PRs please.",
+    "Nice work!",
+    "Swish!",
+    "What shall we delve into next?",
+    "You're on a roll.",
+  ].map((text) => text.toLowerCase()),
+);
+
 export const classifyCodexSummaryComment = (
   comment,
   headSha,
@@ -128,11 +158,10 @@ export const classifyCodexSummaryComment = (
     body = body.slice(0, footer).trim();
   }
   const lines = body.split(/\r?\n/).filter((line) => line.trim());
-  if (
-    !/^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s*(?:Nice work!|Keep it up!|Keep them coming!|Bravo\.|Hooray!|You're on a roll\.|Chef's kiss\.|Swish!|What shall we delve into next\?|:\+1:|:[a-z_]+:|🚀|🎉))*$/i.test(
-      lines[0] || "",
-    )
-  )
+  const verdict = (lines[0] || "").match(
+    /^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(.*)$/i,
+  );
+  if (!verdict || !codexCleanClosings.has(verdict[1].trim().toLowerCase()))
     return pending;
 
   const shaLine = lines[1]?.match(
@@ -333,8 +362,37 @@ export const pickAuthoritativeCodexSkipModeComment = ({
           (entry.id != null && candidate.id === entry.id),
       ),
     });
-  const latestTimestamp = Math.max(0, ...candidates.map(evidenceTime));
-  const tied = candidates.filter(
+  // A canonical completed null/null snapshot describes lifecycle, not a
+  // verdict or withdrawal. The connector publishes the independent receipt
+  // before this final summary edit. Pair only a fresh immutable SHA-bound
+  // receipt with the same code completion; null alone never grants approval.
+  // Other states (including running/security/unknown text) keep their veto.
+  const authoritativeCandidates = candidates.filter((entry) => {
+    if (
+      !eligibleState(entry) ||
+      !isCompletedCodexLifecycle(getBody(entry), headSha)
+    )
+      return true;
+    const created = Date.parse(entry.created_at || "");
+    const completed = codexCodeReviewCompletionTime(getBody(entry));
+    return !candidates.some((receipt) => {
+      const published = Date.parse(receipt.created_at || "");
+      return (
+        !isCodexStateBody(getBody(receipt)) &&
+        /\*\*Reviewed commit:\*\*/.test(getBody(receipt)) &&
+        classifyCodexSummaryComment(receipt, headSha).outcome === "pass" &&
+        eligibleStaticApproval(receipt) &&
+        codexCommentTimestamp(receipt) === published &&
+        published >= created &&
+        published <= completed
+      );
+    });
+  });
+  const latestTimestamp = Math.max(
+    0,
+    ...authoritativeCandidates.map(evidenceTime),
+  );
+  const tied = authoritativeCandidates.filter(
     (entry) => evidenceTime(entry) === latestTimestamp,
   );
   const canOrder = tied.every(
