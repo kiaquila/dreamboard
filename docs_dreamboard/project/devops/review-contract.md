@@ -367,3 +367,8 @@ conservative, while all existing negative-history and thread checks still apply.
 An unpaired lifecycle has no historical clock authority: canonical recovery
 must complete strictly after its observed edit second. An intermediate clear
 after the old lifecycle completion but before that edit cannot recover it.
+
+If the timeline cannot be retrieved, persisted canonical current-head null
+lifecycle still supplies pending evidence. Its bounded receipt correlation and
+newer canonical recovery remain checked; absence of timeline grants no synthetic
+activation or positive structured-state authority.

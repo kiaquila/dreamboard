@@ -4045,3 +4045,30 @@ for (const pair of nativeCorpus.lifecyclePairs) {
     assert.notEqual(result.status, 0, result.stdout + result.stderr);
   });
 }
+
+for (const pair of nativeCorpus.lifecyclePairs) {
+  test(`actual gate keeps REST unpaired lifecycle pending during timeline failure: ${pair.repo}`, () => {
+    const completed = Date.parse(
+      pair.lifecycle.body.match(/datetime="([^"<>]+)"/)[1],
+    );
+    const at = new Date(completed + 60000).toISOString();
+    const late = { ...pair.receipt, created_at: at, updated_at: at };
+    const result = runGate({
+      head: pair.head,
+      eventHead: pair.head,
+      comments: [pair.lifecycle, late],
+      timelineUnavailable: true,
+      reviews: [
+        {
+          id: 999993,
+          user: { login: bot },
+          commit_id: pair.head,
+          state: "APPROVED",
+          body: "Codex Review: approved",
+          submitted_at: new Date(completed + 120000).toISOString(),
+        },
+      ],
+    });
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  });
+}

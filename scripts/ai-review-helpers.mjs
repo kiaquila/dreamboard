@@ -259,6 +259,22 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       time === Date.parse(entry.created_at)
     );
   };
+  // When the timeline is unavailable, persisted canonical lifecycle still
+  // supplies a conservative pending signal. This grants no activation or
+  // positive state authority; only the existing SHA-bound receipt path can pass.
+  const eligibleLifecycle = (entry) => {
+    if (activationIndex >= 0) return eligibleState(entry);
+    const completed = codexCodeReviewCompletionTime(getBody(entry));
+    const created = Date.parse(entry.created_at || "");
+    const observed = codexCommentTimestamp(entry);
+    return (
+      codexStateCompletionTimesAreValid(entry, headSha) &&
+      Number.isFinite(created) &&
+      Number.isFinite(completed) &&
+      Math.floor(completed / 1000) >= Math.floor(created / 1000) &&
+      completed < observed + 1000
+    );
+  };
   const evidenceTime = (entry) =>
     Number.isFinite(codexNegativeCompletionTime(entry, headSha))
       ? codexNegativeCompletionTime(entry, headSha)
@@ -371,7 +387,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   // Other states (including running/security/unknown text) keep their veto.
   const authoritativeCandidates = candidates.filter((entry) => {
     if (
-      !eligibleState(entry) ||
+      !eligibleLifecycle(entry) ||
       !isCompletedCodexLifecycle(getBody(entry), headSha)
     )
       return true;
@@ -396,10 +412,12 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   const unpairedLifecycle = authoritativeCandidates
     .filter(
       (entry) =>
-        eligibleState(entry) &&
+        eligibleLifecycle(entry) &&
         isCompletedCodexLifecycle(getBody(entry), headSha) &&
-        !stateComments.some(
+        !allComments.some(
           (clear) =>
+            isCodexBotComment(clear) &&
+            eligibleLifecycle(clear) &&
             hasCleanCodexState(getBody(clear), headSha) &&
             Math.floor(codexCodeReviewCompletionTime(getBody(clear)) / 1000) >
               Math.floor(codexCommentTimestamp(entry) / 1000),

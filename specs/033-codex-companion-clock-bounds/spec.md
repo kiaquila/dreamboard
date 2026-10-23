@@ -42,3 +42,7 @@ clean completion. A same-second clear cannot establish a newer completion.
 An unpaired lifecycle has no historical clock authority: canonical recovery
 must complete strictly after its observed edit second. An intermediate clear
 after the old lifecycle completion but before that edit cannot recover it.
+
+Keep persisted unpaired lifecycle pending when timeline HTTP retrieval fails,
+before a later formal approval is considered. Do not synthesize activation or
+grant positive structured authority from this conservative fallback.
