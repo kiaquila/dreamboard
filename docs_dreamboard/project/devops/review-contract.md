@@ -441,3 +441,9 @@ entities are decoded once after source structure. Mention tails with continuing 
 outstanding state retain findings even with intervening adverbs. Predicate
 negation is checked beyond a short auxiliary match; negated completed reports
 remain neutral, while negated resolutions retain their finding.
+
+Mention verbs do not hide an active relative or participial predicate: a
+discussed issue that is exploitable, allows bypass or causes code execution
+retains its observation clock. Unqualified negated open/outstanding/unresolved
+state is neutral; a qualified statement that leaves a finding in production
+remains blocking. Plain discussion and completed resolutions stay neutral.

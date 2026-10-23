@@ -3455,13 +3455,24 @@ function hasPositiveFindingStatement(text) {
             ? match[0].slice(0, matchedNoun.index)
             : "";
           const tail = predicate + after;
+          const mentionContext =
+            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +(?:a|an|one|some|several|multiple|the) +/iu.test(
+              modifiers,
+            );
+          // A negative relative predicate qualifies a mentioned issue, but does
+          // not cancel an independent existential/count assertion before it.
+          const reportTail = mentionContext
+            ? tail.replace(/^ +(?:that|which) +/iu, " ")
+            : tail;
+          if (!counted && /^ +as +(?:a|an) +example *$/iu.test(tail))
+            return false;
           // A short regex match may end at an auxiliary (e.g. "was"). Read the
           // remaining predicate before treating that word as a finding assertion.
           // Negated resolutions have already become "unresolved" above.
           if (
             !counted &&
-            /^ +(?:(?:is|are|was|were|has|have|had|do|does|did|be|been|being|get|gets|got|gotten|getting|can|could|may|might|will|would|must|should|still|now|[\p{L}]+ly) +)+(?:not|never) +(?:(?:be|been|being|get|gets|got|gotten|getting) +)*(?:found|[\p{L}]+ed) *$/iu.test(
-              tail,
+            /^ +(?:(?:is|are|was|were|has|have|had|do|does|did|be|been|being|get|gets|got|gotten|getting|can|could|may|might|will|would|must|should|still|now|[\p{L}]+ly) +)+(?:not|never) +(?:(?:be|been|being|get|gets|got|gotten|getting|still|now|[\p{L}]+ly) +)*(?:found|[\p{L}]+ed|open|outstanding) *$/iu.test(
+              reportTail,
             )
           )
             return false;
@@ -3486,13 +3497,11 @@ function hasPositiveFindingStatement(text) {
               tail,
             );
           if (/^ +fix(?:es)?\b/iu.test(tail) && !recurrence) return false;
-          if (
-            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +(?:a|an|one|some|several|multiple|the) +/iu.test(
-              modifiers,
-            ) &&
-            !recurrence
-          )
-            return false;
+          const activeMentionTail =
+            /^ +(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|do|does|did|be|been|being|get|gets|got|gotten|getting|can|could|may|might|will|would|must|should) +|(?!(?:as|thus|perhaps)\b)(?:[\p{L}]+s|[\p{L}]+ed|[\p{L}]+ing)\b)/iu.test(
+              tail,
+            );
+          if (mentionContext && !recurrence && !activeMentionTail) return false;
           if (
             /\b(?:resolves?|fix(?:es)?|address(?:es)?|clears?|removes?|closes?|eliminates?|prevents?|avoids?|mitigates?) +(?:a|an) +/iu.test(
               modifiers,
@@ -3517,7 +3526,7 @@ function hasPositiveFindingStatement(text) {
           )
             return false;
           if (
-            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|now|already|remains?) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign) *$/iu.test(
+            /^(?: +| *(?::|[–—-]) *)(?:(?:that|which) +)?(?:(?:is|are|was|were|has|have|had|be|been|being|get|gets|got|gotten|getting|still|now|already|remains?) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign) *$/iu.test(
               tail,
             )
           )

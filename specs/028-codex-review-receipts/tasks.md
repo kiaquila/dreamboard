@@ -108,3 +108,8 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
       raw HTML legacy named references without semicolons, still-open mention
       tails, and negation after indefinite finding subjects. Preserve literal
       code, single decoding, resolved mentions and positive report controls.
+
+- [x] Preserve active relative and participial predicates after mention verbs,
+      including exploitability and code execution. Keep unqualified negated
+      open/outstanding/unresolved states neutral, preserving production-qualified
+      findings and completed-resolution controls in actual-gate chronology.
