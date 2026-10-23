@@ -139,3 +139,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Retain live leading typed negatives independently of later heading or
       presentation ordering; verify older/equal clean proof stays blocked and
       strictly newer canonical evidence recovers both sections.
+
+- [x] Ignore invisible separator pipes without discarding leading negatives;
+      preserve raw-table field guards across multiple or multiline comments, and
+      verify real canonical clearing for both sections.

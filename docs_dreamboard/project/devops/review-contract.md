@@ -303,6 +303,9 @@ review-trigger label is `Manual request`; unknown labels fail closed and need a
 new supported native assessment. Nonprotocol HTML comments may be removed only
 while preserving line breaks and source indentation. Multiline JSON remains
 supported for historical evidence with duplicate-key and scalar checks intact.
+An offset/line-preserving comment mask distinguishes actual table pipes from
+invisible separator pipes: comments between machine markers cannot hide negative
+flags, while comments in raw table fields cannot assemble canonical clocks or SHAs.
 
 A strict leading native envelope with explicit current-head negative flags can
 retain those negative facts even when later presentation is unknown. Later prose

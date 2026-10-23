@@ -3311,6 +3311,8 @@ for (const section of ["code_review", "security_review"])
     "fenced-heading",
     "indented-heading",
     "protocol-example-before-heading",
+    "prefixed-comment-in-clock",
+    "multiline-prefixed-comment-in-clock",
   ])
     for (const clearAt of ["03", "05", "06"])
       test(`opaque ${section} presentation ${presentation} requires strictly newer canonical ${clearAt}`, () => {
@@ -3366,7 +3368,21 @@ for (const section of ["code_review", "security_review"])
             "## Codex Review Summary",
             "    <!-- codex-review-state:v1 {} -->\n\n## Codex Review Summary",
           );
-        else oldBody += "\n" + presentation;
+        else if (
+          presentation === "prefixed-comment-in-clock" ||
+          presentation === "multiline-prefixed-comment-in-clock"
+        ) {
+          oldBody = oldBody.replace(
+            "\n| 📝",
+            presentation === "prefixed-comment-in-clock"
+              ? "\n<!-- decoration -->| 📝"
+              : "\n<!-- multi\nline decoration -->| 📝",
+          );
+          oldBody = oldBody.replaceAll(
+            "12:02:00Z",
+            "12:<!-- invisible | separator -->02:00Z",
+          );
+        } else oldBody += "\n" + presentation;
         const old = comment(oldBody, {
           id: 9600,
           created_at: "2026-10-20T12:02:00Z",
@@ -3521,6 +3537,65 @@ for (const section of ["code_review", "security_review"])
         assert.equal(
           result.status === 0,
           presentation === "extra-paragraph-spacing",
+          result.stderr || result.stdout,
+        );
+      });
+
+for (const section of ["code_review", "security_review"])
+  for (const separator of [
+    "<!-- invisible | separator -->\n",
+    "<!-- invisible | --> <!-- another separator -->\n",
+    "<!-- multiline\n| separator -->\n<!-- another | separator -->\n",
+  ])
+    for (const clear of [false, true])
+      test(`${section} pipe-bearing metadata comments preserve negatives and canonical clearing ${JSON.stringify(separator)} ${clear}`, () => {
+        const makeBody = (negative, time) =>
+          section === "security_review"
+            ? securityHistoryBody(negative, time)
+            : cleanStateBody(head, (state) => ({
+                ...state,
+                code_review: {
+                  ...state.code_review,
+                  has_any_findings: negative,
+                  has_unresolved_findings: negative,
+                },
+              })).replaceAll("2026-10-20T12:02:00Z", time);
+        const negative = makeBody(true, "2026-10-20T12:02:00Z").replace(
+          "<!-- codex-review-state:v1",
+          separator + "<!-- codex-review-state:v1",
+        );
+        const events = [
+          { ...activation, created_at: "2026-10-20T12:00:00Z" },
+          comment(negative, {
+            id: 9900,
+            created_at: "2026-10-20T12:02:00Z",
+            updated_at: "2026-10-20T12:05:00Z",
+          }),
+          ...(clear
+            ? [
+                comment(makeBody(false, "2026-10-20T12:04:00Z"), {
+                  id: 9901,
+                  created_at: "2026-10-20T12:04:00Z",
+                }),
+              ]
+            : []),
+          {
+            ...comment(`@codex review ${head}`, {
+              id: 9902,
+              created_at: "2026-10-20T12:07:00Z",
+            }),
+            user: { login: "kiaquila" },
+            author_association: "OWNER",
+          },
+          comment(presentationReceipt(head, ":rocket:"), {
+            id: 9903,
+            created_at: "2026-10-20T12:08:00Z",
+          }),
+        ];
+        const result = runGate({ comments: events, timeline: events });
+        assert.equal(
+          result.status === 0,
+          clear,
           result.stderr || result.stdout,
         );
       });

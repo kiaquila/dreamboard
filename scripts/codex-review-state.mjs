@@ -68,6 +68,13 @@ export const parseCodexState = (
     )
   )
     return false;
+  // Preserve offsets and line breaks while locating pipes outside comments.
+  // Invisible pipes in metadata separators must not hide a live envelope;
+  // actual table pipes must still prevent comments from assembling raw fields.
+  const commentMask = String(body || "").replace(
+    /<!--[\s\S]*?-->/g,
+    (comment) => comment.replace(/[^\r\n]/g, " "),
+  );
   const source = sectionHeads
     ? String(body || "")
         .replace(/<!--[\s\S]*?-->/g, (comment, offset, raw) => {
@@ -77,14 +84,13 @@ export const parseCodexState = (
           );
           const indentedCode = /^(?: {4}|[ \t]*\t)/.test(linePrefix);
           const lineEnd = raw.indexOf("\n", offset + comment.length);
-          const rawLine = raw.slice(
+          const visibleLine = commentMask.slice(
             raw.lastIndexOf("\n", offset - 1) + 1,
             lineEnd < 0 ? raw.length : lineEnd,
           );
           return /^<!--\s*codex-/i.test(comment) ||
             indentedCode ||
-            rawLine.includes("|") ||
-            /(?:^|[^\\])(?:\\\\)*\|/.test(comment)
+            visibleLine.includes("|")
             ? comment
             : comment.replace(/[^\r\n]/g, "");
         })
