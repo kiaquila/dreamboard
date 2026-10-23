@@ -113,3 +113,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
       including exploitability and code execution. Keep unqualified negated
       open/outstanding/unresolved states neutral, preserving production-qualified
       findings and completed-resolution controls in actual-gate chronology.
+
+- [x] Keep non-coordinate commas before `which`/`that` attached to their finding
+      subjects; actual-gate regressions preserve production findings, resolved
+      relative clauses and independent comma-separated assertion boundaries.

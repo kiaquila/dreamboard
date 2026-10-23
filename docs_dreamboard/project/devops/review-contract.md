@@ -447,3 +447,8 @@ discussed issue that is exploitable, allows bypass or causes code execution
 retains its observation clock. Unqualified negated open/outstanding/unresolved
 state is neutral; a qualified statement that leaves a finding in production
 remains blocking. Plain discussion and completed resolutions stay neutral.
+
+Non-coordinate commas before `which` or `that` keep the relative predicate
+attached to its finding subject. Independent comma-separated assertions still
+have separate negation scopes, including mixed absent code and active security
+findings.

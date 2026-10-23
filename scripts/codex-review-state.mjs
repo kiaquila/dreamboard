@@ -3403,6 +3403,9 @@ function hasPositiveFindingStatement(text) {
         /\b(no|zero) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)+(?:and|or) +(?:(?!(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?|is|are|was|were|has|have|been|get|gets|got|a|an|one|some|several|multiple)\b)[\p{L}-]+ +)*((?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)\b)/giu,
         "$1 $2",
       )
+      // A non-coordinate comma keeps the finding's relative predicate attached.
+      // Coordinate commas still split assertions so negation stays scoped.
+      .replace(/, *(?=(?:which|that)\b)/giu, " ")
       .split(/[.!?;]|(?<![0-9]),|,(?![0-9])|\b(?:and|or|but|however|yet)\b/i)
       .some((clause) => {
         // Negating a resolution preserves the finding, unlike negating its noun.
