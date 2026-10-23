@@ -39,3 +39,38 @@ arrival orders, schemas, freshness, spoofing, contradictions and native blockers
 Run full preflight and obtain current-head native review before protected merge.
 
 Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
+
+Strict valid same-head structured finding flags latch per review section across repeated requests. A strictly newer canonical completed false/false result clears its section latch; the resolved-code recovery described below is the only additional path; security null, code-only/formal/static positives and equal-second completions cannot clear security findings. Malformed or untrusted history does not create permanent latches.
+
+Historical negative snapshots accept multiline machine JSON and line-preserving nonprotocol HTML comments with unique leading markers, closed fields, duplicate-key rejection and exact affected-section head. Only complete canonical bodies supply section clocks. Unknown presentation retains explicit negatives at server observation time, never clean or recovery authority.
+
+Consume trailing multiline protocol examples only when every line keeps Markdown
+code indentation. Retain leading code/security negatives without granting clean
+or resolved-code recovery authority; reject partially unindented blocks.
+
+Reproduce the native resolved-history flag with actual CLI fixtures. Recover code
+history only after a canonical completed resolved code snapshot and a separate
+strict current-request SHA-bound clean receipt created after that observation.
+Retain security latching, unresolved-thread vetoes and immutable receipt clocks.
+
+Reject embedded-BOM/comment-prefixed code headings and preserve comment line breaks. Replace open-ended Markdown/English warning interpretation with closed canonical presentation: exact native rows, known help footer and Manual request trigger. Any unknown appended text, including benign English, keeps negative observation time. Actual-gate regressions retain every prior warning/neutral case as fail-closed history and require fresh canonical recovery.
+
+## Canonical presentation boundary
+
+The natural-language/rendering projection is superseded by a closed native
+presentation boundary. Complete canonical summaries retain section completion
+authority; negative-only leading envelopes with unknown text retain observation
+time and cannot clear or establish recovery. Unknown trigger labels also fail
+closed. No free-form text is classified as harmless to reuse an old negative
+clock. All stale, malformed, section-specific, strict-later receipt, security and
+unresolved-thread requirements remain in force.
+
+Canonical native table blocks permit at most three leading ASCII spaces. Four-space, tab, or other leading whitespace cannot be normalized into canonical clock or clearing authority; negative envelopes retain observation time.
+
+Canonical content retains separate heading/intro/table blocks and contiguous table rows. Internal blank or removed-comment lines, missing paragraph boundaries and non-ASCII whitespace-only lines cannot provide canonical completion or clearing authority. Extra genuine blank lines between native blocks remain supported.
+
+Negative-only retention depends on the live leading closed machine envelope, not a later heading. Prose before the heading, missing/quoted/fenced/indented headings and later protocol examples cannot discard explicit current-head negative flags. Only complete canonical bodies can supply clocks, clearing or resolved recovery. Whole-comment code/quote framing and indented leading machine records remain ineligible.
+
+Comment normalization distinguishes visible table pipes from pipes inside HTML comments using an offset/line-preserving comment mask. Invisible pipe-bearing separators between live machine markers do not discard negative flags; raw table comments still cannot assemble canonical clocks or SHA fields.
+
+Metadata liveness is validated in the original HTML context after masking hidden comments. Same-line separators and padded comment prefixes cannot discard negative flags; actual first-element code indentation remains ineligible. This history-only normalization never grants whole-PR approval.

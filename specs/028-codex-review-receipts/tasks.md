@@ -46,3 +46,102 @@ arrival orders, schemas, freshness, spoofing, contradictions and native blockers
 Run full preflight and obtain current-head native review before protected merge.
 
 Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
+
+Strict valid same-head structured finding flags latch per review section across repeated requests. A strictly newer canonical completed false/false result clears its section latch; the resolved-code recovery described below is the only additional path; security null, code-only/formal/static positives and equal-second completions cannot clear security findings. Malformed or untrusted history does not create permanent latches.
+
+Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.
+
+- [x] Verify resolved code history can recover only after a separate fresh native
+      assessment, without allowing code receipts to clear security findings.
+- [x] Reject resolved-code recovery from negative-only trailing-example snapshots;
+      reproduce the unsafe pass and verify the fix with full preflight (312 tests).
+- [x] Reproduce native P1 on trailing multiline protocol examples: retain code and
+      security negatives with space/tab/CRLF indentation, reject partial blocks,
+      and preserve clean-state and resolved-code recovery vetoes. Full preflight:
+      322 tests passed.
+
+- [x] Preserve explicit findings from a strict leading envelope independently of trailing presentation; keep complete-body clean/clear validation strict.
+
+- [x] Reject embedded-BOM/comment-prefixed code headings and rendered whitespace-entity warnings; preserve comment line breaks so split completion fields cannot clear historical findings. Exact actual-gate regressions cover each case.
+
+- [x] Reproduce native assertion-negation P1 and reporting-verb P2 in the actual
+      gate. Preserve positive counts alongside unrelated negative assertions
+      and trailing qualifiers, and restrict report predicates to finding verbs.
+
+- [x] Reproduce native flagged/raised P1 and preserve common explicit triage and
+      verification reports without restoring arbitrary words ending in -ed.
+- [x] Reproduce native get-passive P1 and documented-word P2 in the actual gate;
+      recognize passive reports and resolutions, retain negated-resolution
+      findings, and verify metalinguistic subjects remain presentation only.
+- [x] Reproduce punctuation-delimited native P1 through the actual gate; retain
+      colon/dash finding headings and negative workaround qualifiers, while
+      preserving standalone zero-count and explicitly resolved controls.
+- [x] Reproduce demonstrative-subject P1 and cover demonstrative, possessive,
+      distributive and definite category subjects in the actual gate, retaining
+      negated-report and resolved-finding controls.
+- [x] Reproduce determiner metalinguistic P2 with actual-gate chronology and
+      restrict naming subjects to category-only modifiers, preserving genuine
+      word-boundary, label-validation, token-security and string-parsing findings.
+
+- [x] Cover nominal/modal findings, qualified empty results, explicit exceptions,
+      worded positive counts and resolved-adjective reappearance in actual gate
+      regressions while preserving strict newer canonical recovery.
+
+- [x] Preserve soft-break assertions and distinguish qualified empty results,
+      resolved exceptions and benign descriptions from modal recurrence and
+      quantified or continuing findings using actual review-gate chronology.
+
+- [x] Cover direct recurrence, qualified harmlessness, resolved exceptions,
+      defect/regression nouns and quantified subjects without weakening metadata
+      or historical clearing guards.
+
+- [x] Reject completion clocks preceding comment creation while preserving
+      observed negative invalidation and newer canonical recovery.
+
+- [x] Preserve qualified and recurring findings while keeping completed count
+      resolutions and test/report compounds neutral.
+
+- [x] Retain explicit security-risk findings without classifying generic risk
+      discussion as a finding.
+
+- [x] Reproduce the three current native findings through actual-gate chronology:
+      raw HTML legacy named references without semicolons, still-open mention
+      tails, and negation after indefinite finding subjects. Preserve literal
+      code, single decoding, resolved mentions and positive report controls.
+
+- [x] Preserve active relative and participial predicates after mention verbs,
+      including exploitability and code execution. Keep unqualified negated
+      open/outstanding/unresolved states neutral, preserving production-qualified
+      findings and completed-resolution controls in actual-gate chronology.
+
+- [x] Keep non-coordinate commas before `which`/`that` attached to their finding
+      subjects; actual-gate regressions preserve production findings, resolved
+      relative clauses and independent comma-separated assertion boundaries.
+
+## Conservative canonical boundary (supersedes prose classification)
+
+- [x] Replace Markdown/English warning heuristics with complete canonical native
+      presentation and a closed trigger label; remove unused rendering/entity code.
+- [x] Retain unknown negative-only presentation at server observation time with
+      no clean, completion or resolved-code recovery authority.
+- [x] Verify all previous active and benign prose cases remain fail closed and
+      genuinely later canonical evidence still recovers each section.
+- [x] Require exact-source preflight and a new native current-head assessment
+      before protected merge; preserve all review and stable-wait gates.
+
+- [x] Reject code-indented table blocks before line trimming; cover code/security
+      negative-clock reuse and false/false clearing, with three-space controls.
+
+- [x] Preserve native Markdown block boundaries and contiguous table rows; cover
+      malformed code/security negative clocks and clean clearing with valid-spacing
+      controls in actual-gate regressions.
+
+- [x] Retain live leading typed negatives independently of later heading or
+      presentation ordering; verify older/equal clean proof stays blocked and
+      strictly newer canonical evidence recovers both sections.
+
+- [x] Ignore invisible separator pipes without discarding leading negatives;
+      preserve raw-table field guards across multiple or multiline comments, and
+      verify real canonical clearing for both sections.
+
+- [x] Validate original metadata liveness after masking same-line comments; cover padded and multiline prefixes, adjacent markers, real code indentation, both review sections and genuine newer canonical clearing.

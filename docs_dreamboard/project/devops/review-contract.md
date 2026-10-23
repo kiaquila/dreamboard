@@ -265,3 +265,69 @@ SHA resolution and final-head checks keep their existing blocking rules.
 Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
 
 A fresh unedited static receipt at the same timestamp second as a request or head activation may use observed timeline order after that boundary. Edited or unordered equal-second receipts remain pending.
+
+Strict valid same-head structured finding flags persist per section across repeated review requests. A strictly newer canonical completed false/false result clears the affected section; the resolved-code recovery below is the only additional path. Security null and later code-only/formal/static approvals cannot clear security findings; equal-second evidence stays blocked. Malformed and untrusted historical snapshots cannot create a permanent latch.
+
+Completed negative state uses the affected section’s canonical completion clock only when the entire summary is canonical. A recognized companion-section edit preserves that clock; unknown presentation, running state or invalid completion clocks retain server observation time.
+
+The history guard covers strict snapshots present in the current REST issue-comment/timeline response. GitHub exposes only the current body of a mutable comment; this contract does not retain unseen prior revisions. Lifecycle fixtures use distinct persisted comment IDs. Native inline findings and unresolved review-thread guards remain authoritative. Durable webhook revision capture is outside this change.
+
+Historical negative latching and clearing match the affected section’s exact head and canonical row independently of the other section’s head. This partial historical evidence never grants whole-PR approval or suppresses current pending signals.
+
+Native summaries can retain `has_any_findings=true` after all code threads are
+resolved, even when a new current-head review reports no issues
+([PR #63](https://github.com/kiaquila/dreamboard/pull/63#issuecomment-6304811853)).
+This is not clean structured proof. Recovery requires a strict completed code
+snapshot explicitly reporting `has_unresolved_findings=false`, followed in a
+strictly later timestamp second by a separately created, SHA-bound native clean
+assessment eligible under the current request and head boundaries. An edit to
+an old receipt cannot qualify. That assessment must follow the latest observed
+negative code snapshot, not just its embedded completion clock. It clears code
+history only; security findings still require a newer canonical clean security
+completion. Unknown, malformed, stale or running snapshots, formal findings,
+unresolved threads, invalidation records and final-head checks keep their vetoes.
+
+## Canonical presentation and conservative history
+
+Only the complete canonical native summary can supply completion authority:
+unique live protocol markers, closed typed JSON, the exact native heading and
+introductory text, one canonical visible row per active section, matching raw
+SHA and completion fields, and the known native help footer. Source table lines
+permit at most three leading ASCII spaces; code indentation or other whitespace
+cannot be trimmed into canonical evidence. Heading, intro and contiguous table
+retain their block boundaries: blank lines or removed-comment lines inside the
+table, missing paragraph boundaries, and non-ASCII whitespace-only lines cannot
+supply canonical authority. Extra blank lines between native blocks are supported.
+This follows [GFM table boundaries](https://github.github.com/gfm/#tables-extension-). The supported
+review-trigger label is `Manual request`; unknown labels fail closed and need a
+new supported native assessment. Nonprotocol HTML comments may be removed only
+while preserving line breaks and source indentation. Multiline JSON remains
+supported for historical evidence with duplicate-key and scalar checks intact.
+An offset/line-preserving comment mask distinguishes actual table pipes from
+invisible separator pipes: comments between machine markers cannot hide negative
+flags, while comments in raw table fields cannot assemble canonical clocks or SHAs.
+
+A strict leading native envelope with explicit current-head negative flags can
+retain those negative facts even when later presentation is unknown. Later prose
+before a heading, a missing or code/quote-framed heading, or a protocol example
+cannot erase that live leading record. Whole-comment code/quote framing and
+code-indented leading records remain ineligible. It cannot
+supply any completion clock, clean evidence or resolved-code recovery. Its
+server observation time orders the negative, regardless of whether appended
+English, Markdown, HTML, code or punctuation appears active, harmless or resolved.
+No natural-language classifier is allowed to move that observation backwards.
+
+This deliberately requires fresh canonical evidence after an ambiguous edit,
+including apparently benign prose. Whitespace and known native presentation
+remain supported; arbitrary text is never interpreted as approval or clearing.
+A genuinely newer canonical false/false section completion clears that section.
+Resolved code recovery still requires a complete canonical resolved-code snapshot
+and a separate strictly later, current-request SHA-bound native clean assessment.
+Security null, unbound receipts and resolved threads alone cannot clear findings.
+
+Completion authority must not precede its comment creation bucket or exceed its
+observed update time beyond GitHub's timestamp-second truncation. Same-second
+clearing remains ambiguous. All native inline, formal, thread, invalidation,
+current-head and unchanged protected-main guards continue to apply.
+
+Metadata liveness is validated in the original HTML context after masking hidden comments. Same-line separators and padded comment prefixes cannot discard negative flags; actual first-element code indentation remains ineligible. This history-only normalization never grants whole-PR approval.

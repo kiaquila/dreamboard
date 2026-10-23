@@ -17,6 +17,8 @@ import {
   pickAuthoritativeCodexSkipModeComment,
 } from "./ai-review-helpers.mjs";
 
+import { hasCodexNegativeHistory } from "./codex-review-state.mjs";
+
 const token = process.env.GITHUB_TOKEN;
 const repository = process.env.GITHUB_REPOSITORY;
 const eventPath = process.env.GITHUB_EVENT_PATH;
@@ -730,6 +732,7 @@ while (Date.now() < deadline) {
         codexTimelineWarningLogged = true;
       }
     }
+    const historyComments = [...issueComments, ...(timelineEvents || [])];
     const afterDismissal = (entry) =>
       dismissalTime &&
       codexReviewerLogins.has(entry.user?.login) &&
@@ -748,6 +751,28 @@ while (Date.now() < deadline) {
       headSha,
       issueComments: issueComments.filter(afterDismissal),
     });
+    // The connector can retain has_any_findings after every thread is resolved.
+    // Only a separate, strictly later current-request SHA-bound native clean
+    // assessment can recover resolved code history. It cannot clear security.
+    const codeApprovalTime =
+      matchedComment?.classification.outcome === "pass" &&
+      !hasCleanCodexState(matchedComment.comment.body, headSha) &&
+      classifyCodexSummaryComment(matchedComment.comment, headSha).outcome ===
+        "pass"
+        ? Date.parse(matchedComment.comment.created_at || "")
+        : 0;
+    if (
+      hasCodexNegativeHistory(
+        historyComments,
+        headSha,
+        (entry) => codexReviewerLogins.has(entry.user?.login),
+        codeApprovalTime,
+      )
+    ) {
+      throw new Error(
+        "Codex structured findings remain uncleared for this head.",
+      );
+    }
     if (formalClassification?.outcome === "fail") {
       throw new Error(formalClassification.reason);
     }
