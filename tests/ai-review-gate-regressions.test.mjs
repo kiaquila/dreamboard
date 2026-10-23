@@ -3365,3 +3365,57 @@ for (const section of ["code_review", "security_review"])
           result.stderr || result.stdout,
         );
       });
+
+for (const section of ["code_review", "security_review"])
+  for (const [indentName, indent] of [
+    ["three-spaces", "   "],
+    ["four-spaces", "    "],
+    ["tab", "\t"],
+  ])
+    for (const altered of ["negative", "clean"])
+      test(`${section} history rejects code-indented ${altered} table ${indentName}`, () => {
+        const makeBody = (negative, time) =>
+          section === "security_review"
+            ? securityHistoryBody(negative, time)
+            : cleanStateBody(head, (state) => ({
+                ...state,
+                code_review: {
+                  ...state.code_review,
+                  has_any_findings: negative,
+                  has_unresolved_findings: negative,
+                },
+              })).replaceAll("2026-10-20T12:02:00Z", time);
+        const indentTable = (body) => body.replace(/^\|/gm, indent + "|");
+        const negative = makeBody(true, "2026-10-20T12:02:00Z");
+        const clean = makeBody(false, "2026-10-20T12:04:00Z");
+        const events = [
+          { ...activation, created_at: "2026-10-20T12:00:00Z" },
+          comment(altered === "negative" ? indentTable(negative) : negative, {
+            id: 9700,
+            created_at: "2026-10-20T12:02:00Z",
+            updated_at: "2026-10-20T12:05:00Z",
+          }),
+          comment(altered === "clean" ? indentTable(clean) : clean, {
+            id: 9701,
+            created_at: "2026-10-20T12:04:00Z",
+          }),
+          {
+            ...comment(`@codex review ${head}`, {
+              id: 9702,
+              created_at: "2026-10-20T12:07:00Z",
+            }),
+            user: { login: "kiaquila" },
+            author_association: "OWNER",
+          },
+          comment(presentationReceipt(head, ":rocket:"), {
+            id: 9703,
+            created_at: "2026-10-20T12:08:00Z",
+          }),
+        ];
+        const result = runGate({ comments: events, timeline: events });
+        assert.equal(
+          result.status === 0,
+          indentName === "three-spaces",
+          result.stderr || result.stdout,
+        );
+      });

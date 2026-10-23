@@ -128,3 +128,6 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
       genuinely later canonical evidence still recovers each section.
 - [x] Require exact-source preflight and a new native current-head assessment
       before protected merge; preserve all review and stable-wait gates.
+
+- [x] Reject code-indented table blocks before line trimming; cover code/security
+      negative-clock reuse and false/false clearing, with three-space controls.

@@ -162,10 +162,12 @@ export const parseCodexState = (
     if (!help || normalize(help[1]) !== normalize(summaryHelp)) return false;
     visible = visible.slice(0, footer).trim();
   }
-  const lines = visible
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const rawLines = visible.split(/\r?\n/);
+  // Markdown code indentation must never become canonical table evidence
+  // through trimming. Keep only the native block's zero-to-three ASCII spaces.
+  if (rawLines.some((line) => line.trim() && !/^ {0,3}\S/.test(line)))
+    return false;
+  const lines = rawLines.map((line) => line.trim()).filter(Boolean);
   if (
     lines[0] !== "## Codex Review Summary" ||
     lines[1] !==

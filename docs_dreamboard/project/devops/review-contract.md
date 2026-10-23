@@ -292,7 +292,9 @@ unresolved threads, invalidation records and final-head checks keep their vetoes
 Only the complete canonical native summary can supply completion authority:
 unique live protocol markers, closed typed JSON, the exact native heading and
 introductory text, one canonical visible row per active section, matching raw
-SHA and completion fields, and the known native help footer. The supported
+SHA and completion fields, and the known native help footer. Source table lines
+permit at most three leading ASCII spaces; code indentation or other whitespace
+cannot be trimmed into canonical evidence. The supported
 review-trigger label is `Manual request`; unknown labels fail closed and need a
 new supported native assessment. Nonprotocol HTML comments may be removed only
 while preserving line breaks and source indentation. Multiline JSON remains

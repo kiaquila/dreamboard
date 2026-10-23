@@ -64,3 +64,5 @@ time and cannot clear or establish recovery. Unknown trigger labels also fail
 closed. No free-form text is classified as harmless to reuse an old negative
 clock. All stale, malformed, section-specific, strict-later receipt, security and
 unresolved-thread requirements remain in force.
+
+Canonical native table blocks permit at most three leading ASCII spaces. Four-space, tab, or other leading whitespace cannot be normalized into canonical clock or clearing authority; negative envelopes retain observation time.
