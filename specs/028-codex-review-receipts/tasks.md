@@ -103,3 +103,8 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 
 - [x] Retain explicit security-risk findings without classifying generic risk
       discussion as a finding.
+
+- [x] Reproduce the three current native findings through actual-gate chronology:
+      raw HTML legacy named references without semicolons, still-open mention
+      tails, and negation after indefinite finding subjects. Preserve literal
+      code, single decoding, resolved mentions and positive report controls.

@@ -433,3 +433,11 @@ test/report nouns do not invent a fresh finding.
 
 Explicit security-risk findings use the same observation and clearing rules as
 other review findings; generic risk discussion does not gain finding authority.
+
+Raw HTML warnings recognize the HTML legacy named references that browsers accept
+without semicolons, including a longest valid prefix before literal trailing
+text. Markdown text still requires semicolons, Markdown code stays literal, and
+entities are decoded once after source structure. Mention tails with continuing open or
+outstanding state retain findings even with intervening adverbs. Predicate
+negation is checked beyond a short auxiliary match; negated completed reports
+remain neutral, while negated resolutions retain their finding.

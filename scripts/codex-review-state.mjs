@@ -911,10 +911,121 @@ function protectLiteralCode(source) {
   };
 }
 
-// HTML raw blocks accept semicolonless numeric references; Markdown does not.
+// Legacy names accepted without a semicolon by the HTML tokenizer.
+// https://html.spec.whatwg.org/multipage/named-characters.html
+const HTML_LEGACY_NAMES = [
+  "Aacute",
+  "Agrave",
+  "Atilde",
+  "Ccedil",
+  "Eacute",
+  "Egrave",
+  "Iacute",
+  "Igrave",
+  "Ntilde",
+  "Oacute",
+  "Ograve",
+  "Oslash",
+  "Otilde",
+  "Uacute",
+  "Ugrave",
+  "Yacute",
+  "aacute",
+  "agrave",
+  "atilde",
+  "brvbar",
+  "ccedil",
+  "curren",
+  "divide",
+  "eacute",
+  "egrave",
+  "frac12",
+  "frac14",
+  "frac34",
+  "iacute",
+  "igrave",
+  "iquest",
+  "middot",
+  "ntilde",
+  "oacute",
+  "ograve",
+  "oslash",
+  "otilde",
+  "plusmn",
+  "uacute",
+  "ugrave",
+  "yacute",
+  "AElig",
+  "Acirc",
+  "Aring",
+  "Ecirc",
+  "Icirc",
+  "Ocirc",
+  "THORN",
+  "Ucirc",
+  "acirc",
+  "acute",
+  "aelig",
+  "aring",
+  "cedil",
+  "ecirc",
+  "icirc",
+  "iexcl",
+  "laquo",
+  "micro",
+  "ocirc",
+  "pound",
+  "raquo",
+  "szlig",
+  "thorn",
+  "times",
+  "ucirc",
+  "Auml",
+  "COPY",
+  "Euml",
+  "Iuml",
+  "Ouml",
+  "QUOT",
+  "Uuml",
+  "auml",
+  "cent",
+  "copy",
+  "euml",
+  "iuml",
+  "macr",
+  "nbsp",
+  "ordf",
+  "ordm",
+  "ouml",
+  "para",
+  "quot",
+  "sect",
+  "sup1",
+  "sup2",
+  "sup3",
+  "uuml",
+  "yuml",
+  "AMP",
+  "ETH",
+  "REG",
+  "amp",
+  "deg",
+  "eth",
+  "not",
+  "reg",
+  "shy",
+  "uml",
+  "yen",
+  "GT",
+  "LT",
+  "gt",
+  "lt",
+];
+
+// HTML raw blocks accept semicolonless references; Markdown does not.
 // Add the terminator only after literal code is shielded and before structural
 // HTML/link tokenization, so decoded entities can never create source markers.
-const htmlNumericReferences = (source) => {
+const htmlRawReferences = (source) => {
   let block = null;
   let htmlContainer = null;
   let paragraphFrames = null;
@@ -962,9 +1073,21 @@ const htmlNumericReferences = (source) => {
           ? null
           : context.frames;
       if (!block) return line;
-      const text = line.replace(/&#(?:x[0-9a-f]+|[0-9]+);?/gi, (entity) =>
-        entity.endsWith(";") ? entity : entity + ";",
-      );
+      const text = line
+        .replace(/&#(?:x[0-9a-f]+|[0-9]+);?/gi, (entity) =>
+          entity.endsWith(";") ? entity : entity + ";",
+        )
+        .replace(/&([A-Za-z][A-Za-z0-9]*)(;?)/g, (entity, name, end) => {
+          if (end && Object.hasOwn(HTML_NAMED_ENTITIES, name)) return entity;
+          // Preserve the longest valid name and leave any trailing text literal.
+          // Only add a terminator: decoding still happens after source structure.
+          const prefix = HTML_LEGACY_NAMES.find((legacy) =>
+            name.startsWith(legacy),
+          );
+          return prefix
+            ? "&" + prefix + ";" + name.slice(prefix.length) + end
+            : entity;
+        });
       if (block !== "blank" && block.test(content)) block = null;
       return text;
     })
@@ -3223,7 +3346,7 @@ const HTML_NAMED_ENTITIES = Object.freeze({
 
 const renderedVisibleText = (text, formatSeparator = "") => {
   const literal = protectLiteralCode(text);
-  const raw = withoutHtmlComments(htmlNumericReferences(literal.text));
+  const raw = withoutHtmlComments(htmlRawReferences(literal.text));
   const projected = activeMarkdownEmphasis(
     visibleLinkLabels(htmlTagText(raw, formatSeparator, true)),
   )
@@ -3284,7 +3407,7 @@ function hasPositiveFindingStatement(text) {
       .some((clause) => {
         // Negating a resolution preserves the finding, unlike negating its noun.
         clause = clause.replace(
-          /\b(?:not|never) +(?:(?:be|been|being|get|gets|got|gotten|getting) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b|\b(?:is|are|was|were|has|have|had)n['’]t +(?:(?:be|been|being|get|gets|got|gotten|getting) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/gi,
+          /\b(?:not|never) +(?:(?:be|been|being|get|gets|got|gotten|getting) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign)\b|\b(?:is|are|was|were|has|have|had)n['’]t +(?:(?:be|been|being|get|gets|got|gotten|getting) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated|harmless|benign)\b/gi,
           " unresolved ",
         );
         const noun =
@@ -3332,6 +3455,16 @@ function hasPositiveFindingStatement(text) {
             ? match[0].slice(0, matchedNoun.index)
             : "";
           const tail = predicate + after;
+          // A short regex match may end at an auxiliary (e.g. "was"). Read the
+          // remaining predicate before treating that word as a finding assertion.
+          // Negated resolutions have already become "unresolved" above.
+          if (
+            !counted &&
+            /^ +(?:(?:is|are|was|were|has|have|had|do|does|did|be|been|being|get|gets|got|gotten|getting|can|could|may|might|will|would|must|should|still|now|[\p{L}]+ly) +)+(?:not|never) +(?:(?:be|been|being|get|gets|got|gotten|getting) +)*(?:found|[\p{L}]+ed) *$/iu.test(
+              tail,
+            )
+          )
+            return false;
           // Absence/resolution is evidence only for an unqualified completed assertion.
           if (
             /^ +(?:do|does|did) +not +(?:exist|exists|remain|remains) *$/iu.test(
@@ -3346,7 +3479,7 @@ function hasPositiveFindingStatement(text) {
           )
             return false;
           const recurrence =
-            /\b(?:reappears?|reappeared|recurs?|recurred|reopens?|reopened|found +again|(?:is|are) +(?:open|outstanding|unresolved)|(?:still +)?(?:persists?|remains?|exists?))\b/iu.test(
+            /\b(?:reappears?|reappeared|recurs?|recurred|reopens?|reopened|found +again|(?:is|are) +(?:(?:still|now|[\p{L}]+ly) +)*(?:open|outstanding|unresolved)|(?:still +)?(?:persists?|remains?|exists?))\b/iu.test(
               tail,
             ) &&
             !/\b(?:not|never) +(?:reappear|reappeared|recur|recurred|reopen|reopened|persist|remain|exist)\b/iu.test(
