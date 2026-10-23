@@ -131,3 +131,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 
 - [x] Reject code-indented table blocks before line trimming; cover code/security
       negative-clock reuse and false/false clearing, with three-space controls.
+
+- [x] Preserve native Markdown block boundaries and contiguous table rows; cover
+      malformed code/security negative clocks and clean clearing with valid-spacing
+      controls in actual-gate regressions.

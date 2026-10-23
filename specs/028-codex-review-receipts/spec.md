@@ -114,3 +114,5 @@ clock. All stale, malformed, section-specific, strict-later receipt, security an
 unresolved-thread requirements remain in force.
 
 Canonical native table blocks permit at most three leading ASCII spaces. Four-space, tab, or other leading whitespace cannot be normalized into canonical clock or clearing authority; negative envelopes retain observation time.
+
+Canonical content retains separate heading/intro/table blocks and contiguous table rows. Internal blank or removed-comment lines, missing paragraph boundaries and non-ASCII whitespace-only lines cannot provide canonical completion or clearing authority. Extra genuine blank lines between native blocks remain supported.

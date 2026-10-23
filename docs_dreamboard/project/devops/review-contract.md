@@ -294,7 +294,11 @@ unique live protocol markers, closed typed JSON, the exact native heading and
 introductory text, one canonical visible row per active section, matching raw
 SHA and completion fields, and the known native help footer. Source table lines
 permit at most three leading ASCII spaces; code indentation or other whitespace
-cannot be trimmed into canonical evidence. The supported
+cannot be trimmed into canonical evidence. Heading, intro and contiguous table
+retain their block boundaries: blank lines or removed-comment lines inside the
+table, missing paragraph boundaries, and non-ASCII whitespace-only lines cannot
+supply canonical authority. Extra blank lines between native blocks are supported.
+This follows [GFM table boundaries](https://github.github.com/gfm/#tables-extension-). The supported
 review-trigger label is `Manual request`; unknown labels fail closed and need a
 new supported native assessment. Nonprotocol HTML comments may be removed only
 while preserving line breaks and source indentation. Multiline JSON remains

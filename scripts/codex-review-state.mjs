@@ -165,9 +165,20 @@ export const parseCodexState = (
   const rawLines = visible.split(/\r?\n/);
   // Markdown code indentation must never become canonical table evidence
   // through trimming. Keep only the native block's zero-to-three ASCII spaces.
-  if (rawLines.some((line) => line.trim() && !/^ {0,3}\S/.test(line)))
+  if (
+    rawLines.some((line) =>
+      line.trim() ? !/^ {0,3}\S/.test(line) : !/^[ \t]*$/.test(line),
+    )
+  )
     return false;
-  const lines = rawLines.map((line) => line.trim()).filter(Boolean);
+  // Blank lines end GFM tables. Keep the native heading, intro and contiguous
+  // table as separate blocks instead of removing arbitrary empty lines.
+  const blocks = rawLines
+    .map((line) => line.trim())
+    .join("\n")
+    .split(/\n{2,}/);
+  if (blocks.length !== 3) return false;
+  const lines = [blocks[0], blocks[1], ...blocks[2].split("\n")];
   if (
     lines[0] !== "## Codex Review Summary" ||
     lines[1] !==

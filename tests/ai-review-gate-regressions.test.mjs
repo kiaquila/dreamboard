@@ -3419,3 +3419,72 @@ for (const section of ["code_review", "security_review"])
           result.stderr || result.stdout,
         );
       });
+
+for (const section of ["code_review", "security_review"])
+  for (const presentation of [
+    "blank-after-header",
+    "blank-before-row",
+    "missing-paragraph-boundaries",
+    "nbsp-blank-before-table",
+    "comment-line-in-table",
+    "extra-paragraph-spacing",
+  ])
+    for (const altered of ["negative", "clean"])
+      test(`${section} history preserves Markdown blocks for ${altered} ${presentation}`, () => {
+        const makeBody = (negative, time) =>
+          section === "security_review"
+            ? securityHistoryBody(negative, time)
+            : cleanStateBody(head, (state) => ({
+                ...state,
+                code_review: {
+                  ...state.code_review,
+                  has_any_findings: negative,
+                  has_unresolved_findings: negative,
+                },
+              })).replaceAll("2026-10-20T12:02:00Z", time);
+        const alter = (body) => {
+          if (presentation === "blank-after-header")
+            return body.replace("\n| ---", "\n\n| ---");
+          if (presentation === "blank-before-row")
+            return body.replace("\n| 📝", "\n\n| 📝");
+          if (presentation === "missing-paragraph-boundaries")
+            return body.replaceAll("\n\n", "\n");
+          if (presentation === "nbsp-blank-before-table")
+            return body.replace("\n\n| Review", "\n\u00a0\n| Review");
+          if (presentation === "comment-line-in-table")
+            return body.replace("\n| 📝", "\n<!-- explanation -->\n| 📝");
+          return body.replaceAll("\n\n", "\n\n\n");
+        };
+        const negative = makeBody(true, "2026-10-20T12:02:00Z");
+        const clean = makeBody(false, "2026-10-20T12:04:00Z");
+        const events = [
+          { ...activation, created_at: "2026-10-20T12:00:00Z" },
+          comment(altered === "negative" ? alter(negative) : negative, {
+            id: 9800,
+            created_at: "2026-10-20T12:02:00Z",
+            updated_at: "2026-10-20T12:05:00Z",
+          }),
+          comment(altered === "clean" ? alter(clean) : clean, {
+            id: 9801,
+            created_at: "2026-10-20T12:04:00Z",
+          }),
+          {
+            ...comment(`@codex review ${head}`, {
+              id: 9802,
+              created_at: "2026-10-20T12:07:00Z",
+            }),
+            user: { login: "kiaquila" },
+            author_association: "OWNER",
+          },
+          comment(presentationReceipt(head, ":rocket:"), {
+            id: 9803,
+            created_at: "2026-10-20T12:08:00Z",
+          }),
+        ];
+        const result = runGate({ comments: events, timeline: events });
+        assert.equal(
+          result.status === 0,
+          presentation === "extra-paragraph-spacing",
+          result.stderr || result.stdout,
+        );
+      });
