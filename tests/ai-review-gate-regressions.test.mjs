@@ -3941,3 +3941,107 @@ test("clean structured snapshot with a future completed companion cannot approve
   });
   assert.notEqual(result.status, 0, result.stdout + result.stderr);
 });
+
+for (const pair of nativeCorpus.lifecyclePairs) {
+  const completion = Date.parse(
+    pair.lifecycle.body.match(/datetime="([^"<>]+)"/)[1],
+  );
+  const lateAt = new Date(completion + 1000).toISOString();
+  const late = { ...pair.receipt, created_at: lateAt, updated_at: lateAt };
+  const pairGate = (comments, reviews = []) =>
+    runGate({
+      head: pair.head,
+      eventHead: pair.head,
+      comments,
+      reviews,
+      timeline: [
+        {
+          event: "committed",
+          sha: pair.head,
+          created_at: new Date(
+            Date.parse(pair.lifecycle.created_at) - 60000,
+          ).toISOString(),
+        },
+      ],
+    });
+  const canonicalClear = (at) => {
+    const state = JSON.parse(
+      pair.lifecycle.body.match(/codex-review-state:v1 (.+?) -->/)[1],
+    );
+    state.code_review.has_any_findings = false;
+    state.code_review.has_unresolved_findings = false;
+    return {
+      ...pair.lifecycle,
+      id: 999991,
+      created_at: at,
+      updated_at: at,
+      body: pair.lifecycle.body
+        .replace(
+          /codex-review-state:v1 (.+?) -->/,
+          "codex-review-state:v1 " + JSON.stringify(state) + " -->",
+        )
+        .replace(
+          /<relative-time datetime="[^"<>]+">[^<>]+<\/relative-time>/,
+          '<relative-time datetime="' + at + '">' + at + "</relative-time>",
+        ),
+    };
+  };
+  test(`actual gate keeps an unpaired null lifecycle pending despite late receipt or formal approval: ${pair.repo}`, () => {
+    const comments = [pair.lifecycle, late];
+    const result = pairGate(comments);
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+    const formal = pairGate(comments, [
+      {
+        id: 999992,
+        user: { login: bot },
+        commit_id: pair.head,
+        state: "APPROVED",
+        body: "Codex Review: approved",
+        submitted_at: new Date(completion + 120000).toISOString(),
+      },
+    ]);
+    assert.notEqual(formal.status, 0, formal.stdout + formal.stderr);
+  });
+  test(`actual gate cannot backdate an unpaired null lifecycle before its observation: ${pair.repo}`, () => {
+    const delayed = {
+      ...pair.lifecycle,
+      updated_at: new Date(completion + 120000).toISOString(),
+    };
+    const intermediate = canonicalClear(
+      new Date(completion + 60000).toISOString(),
+    );
+    const lateAfterObservationAt = new Date(completion + 180000).toISOString();
+    const lateAfterObservation = {
+      ...late,
+      created_at: lateAfterObservationAt,
+      updated_at: lateAfterObservationAt,
+    };
+    const blocked = pairGate([delayed, intermediate, lateAfterObservation]);
+    assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+    const recovered = pairGate([
+      delayed,
+      intermediate,
+      lateAfterObservation,
+      canonicalClear(new Date(completion + 240000).toISOString()),
+    ]);
+    assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+  });
+  test(`actual gate recovers unpaired null lifecycle only after newer canonical own clear: ${pair.repo}`, () => {
+    const result = pairGate([
+      pair.lifecycle,
+      late,
+      canonicalClear(new Date(completion + 60000).toISOString()),
+    ]);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+  });
+  test(`actual gate keeps same-second canonical clear conservative for unpaired null lifecycle: ${pair.repo}`, () => {
+    const result = pairGate([
+      pair.lifecycle,
+      late,
+      canonicalClear(
+        new Date(Math.floor(completion / 1000) * 1000 + 999).toISOString(),
+      ),
+    ]);
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  });
+}

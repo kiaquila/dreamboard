@@ -776,6 +776,9 @@ while (Date.now() < deadline) {
     if (formalClassification?.outcome === "fail") {
       throw new Error(formalClassification.reason);
     }
+    if (matchedComment?.classification.unpairedLifecycle) {
+      throw new Error(matchedComment.classification.reason);
+    }
     const useFormal =
       formalClassification?.outcome === "pass" &&
       (!matchedComment ||

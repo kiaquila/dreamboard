@@ -30,3 +30,15 @@ The reviewed advisories are
 [fast-uri scheme injection](https://github.com/advisories/GHSA-333x-w4r6-6crp)
 and [undici EventSource memory exhaustion](https://github.com/advisories/GHSA-4qv8-2p9j-2685).
 All unrelated seven-day dependency policy remains in force.
+
+## Lifecycle correlation
+
+A receipt created after a canonical null/null lifecycle's own completion cannot
+approve that lifecycle. Retain the unpaired lifecycle as pending before static
+receipt ordering and formal approval selection. Preserve valid immutable
+in-window receipt pairing and recovery through a strictly newer canonical own
+clean completion. A same-second clear cannot establish a newer completion.
+
+An unpaired lifecycle has no historical clock authority: canonical recovery
+must complete strictly after its observed edit second. An intermediate clear
+after the old lifecycle completion but before that edit cannot recover it.

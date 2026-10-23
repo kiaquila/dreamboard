@@ -356,3 +356,14 @@ companion timestamp keeps explicit findings at observation time and prevents
 positive snapshot selection. A genuinely newer canonical own-section clean
 completion can recover. Completed nullable companion flags never erase another
 section's explicit typed finding or independently grant approval.
+
+A canonical eligible completed null/null lifecycle without an immutable clean
+receipt in its own creation-to-completion window remains pending. Later static
+receipts and formal approvals cannot overrule missing correlation. Only valid
+in-window pairing or a strictly newer eligible canonical own-section clean
+completion can retire that pending lifecycle. Equal-second completions remain
+conservative, while all existing negative-history and thread checks still apply.
+
+An unpaired lifecycle has no historical clock authority: canonical recovery
+must complete strictly after its observed edit second. An intermediate clear
+after the old lifecycle completion but before that edit cannot recover it.

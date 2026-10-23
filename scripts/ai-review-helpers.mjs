@@ -390,6 +390,22 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       );
     });
   });
+  // A later static response cannot repair a missing lifecycle correlation.
+  // Keep an unpaired canonical completion pending until a genuinely newer
+  // canonical own-section clean completion supplies independent authority.
+  const unpairedLifecycle = authoritativeCandidates
+    .filter(
+      (entry) =>
+        eligibleState(entry) &&
+        isCompletedCodexLifecycle(getBody(entry), headSha) &&
+        !stateComments.some(
+          (clear) =>
+            hasCleanCodexState(getBody(clear), headSha) &&
+            Math.floor(codexCodeReviewCompletionTime(getBody(clear)) / 1000) >
+              Math.floor(codexCommentTimestamp(entry) / 1000),
+        ),
+    )
+    .sort((a, b) => codexCommentTimestamp(b) - codexCommentTimestamp(a))[0];
   const latestTimestamp = Math.max(
     0,
     ...authoritativeCandidates.map(evidenceTime),
@@ -405,12 +421,14 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   // Creation order cannot prove edit order. Resolve the whole timestamp group
   // conservatively, so the result is independent of API order and duplicates.
   const latestCodexComment =
+    unpairedLifecycle ||
     (tied.some((entry) => isCodexStateBody(getBody(entry)))
       ? tied.find((entry) => classify(entry).outcome !== "pass") || tied.at(-1)
       : canOrder
         ? tied.sort((a, b) => position(a) - position(b)).at(-1)
         : tied.find((entry) => classify(entry).outcome !== "pass") ||
-          tied.at(-1)) || null;
+          tied.at(-1)) ||
+    null;
 
   if (!latestCodexComment) {
     return null;
@@ -436,6 +454,12 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     summaryClassification.outcome = "pending";
     summaryClassification.reason =
       "Static review predates the current request or head activation.";
+  }
+  if (unpairedLifecycle) {
+    summaryClassification.outcome = "pending";
+    summaryClassification.reason =
+      "Completed native lifecycle has no matching immutable clean receipt.";
+    summaryClassification.unpairedLifecycle = true;
   }
   summaryClassification.evidenceTimestamp = evidenceTime(latestCodexComment);
 
