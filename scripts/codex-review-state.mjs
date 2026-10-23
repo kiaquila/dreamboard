@@ -1000,8 +1000,22 @@ function activeMarkdownEmphasis(text) {
   }
   for (const match of text.matchAll(/\*+|_+|~{2,}/g)) {
     if (escaped(match.index)) continue;
-    const before = [...text.slice(0, match.index)].at(-1) || "";
-    const after = [...text.slice(match.index + match[0].length)][0] || "";
+    const beforeIndex =
+      match.index -
+      (match.index >= 2 &&
+      /[\uDC00-\uDFFF]/.test(text[match.index - 1]) &&
+      /[\uD800-\uDBFF]/.test(text[match.index - 2])
+        ? 2
+        : 1);
+    const before =
+      beforeIndex >= 0
+        ? String.fromCodePoint(text.codePointAt(beforeIndex))
+        : "";
+    const afterIndex = match.index + match[0].length;
+    const after =
+      afterIndex < text.length
+        ? String.fromCodePoint(text.codePointAt(afterIndex))
+        : "";
     const left =
       !whitespace(after) &&
       (!punctuation(after) || whitespace(before) || punctuation(before));
@@ -1020,50 +1034,57 @@ function activeMarkdownEmphasis(text) {
         match[0][0] === "_" ? right && (!left || punctuation(after)) : right,
     });
   }
+  const eligibleOpeners = new Map();
   for (let closeIndex = 0; closeIndex < runs.length; closeIndex += 1) {
     const closer = runs[closeIndex];
-    if (!closer.close) continue;
-    for (
-      let openIndex = closeIndex - 1;
-      openIndex >= 0 &&
-      closer.length - closer.usedClose >= (closer.character === "~" ? 2 : 1);
-      openIndex -= 1
-    ) {
-      const opener = runs[openIndex];
-      if (
-        !opener.open ||
-        opener.character !== closer.character ||
-        /\r?\n[ \t\f\v]*\r?\n/.test(text.slice(opener.start, closer.start))
-      )
-        continue;
-      let availableOpen = opener.length - opener.usedOpen - opener.usedClose;
-      let availableClose = closer.length - closer.usedOpen - closer.usedClose;
-      if (availableOpen < (closer.character === "~" ? 2 : 1)) continue;
-      if (
-        closer.character !== "~" &&
-        (opener.close || closer.open) &&
-        (availableOpen + availableClose) % 3 === 0 &&
-        (availableOpen % 3 !== 0 || availableClose % 3 !== 0)
-      )
-        continue;
-      while (
-        availableOpen >= (closer.character === "~" ? 2 : 1) &&
-        availableClose >= (closer.character === "~" ? 2 : 1)
+    const candidates = eligibleOpeners.get(closer.character) || [];
+    if (closer.close)
+      for (
+        let candidate = candidates.length - 1;
+        candidate >= 0 &&
+        closer.length - closer.usedClose >= (closer.character === "~" ? 2 : 1);
+        candidate -= 1
       ) {
-        const count = availableOpen >= 2 && availableClose >= 2 ? 2 : 1;
-        for (let j = 0; j < count; j += 1) {
-          removed.add(opener.start + opener.length - opener.usedOpen - 1 - j);
-          removed.add(closer.start + closer.usedClose + j);
+        const openIndex = candidates[candidate];
+        const opener = runs[openIndex];
+        if (
+          !opener.open ||
+          opener.character !== closer.character ||
+          /\r?\n[ \t\f\v]*\r?\n/.test(text.slice(opener.start, closer.start))
+        )
+          continue;
+        let availableOpen = opener.length - opener.usedOpen - opener.usedClose;
+        let availableClose = closer.length - closer.usedOpen - closer.usedClose;
+        if (availableOpen < (closer.character === "~" ? 2 : 1)) continue;
+        if (
+          closer.character !== "~" &&
+          (opener.close || closer.open) &&
+          (availableOpen + availableClose) % 3 === 0 &&
+          (availableOpen % 3 !== 0 || availableClose % 3 !== 0)
+        )
+          continue;
+        while (
+          availableOpen >= (closer.character === "~" ? 2 : 1) &&
+          availableClose >= (closer.character === "~" ? 2 : 1)
+        ) {
+          const count = availableOpen >= 2 && availableClose >= 2 ? 2 : 1;
+          for (let j = 0; j < count; j += 1) {
+            removed.add(opener.start + opener.length - opener.usedOpen - 1 - j);
+            removed.add(closer.start + closer.usedClose + j);
+          }
+          opener.usedOpen += count;
+          closer.usedClose += count;
+          for (let nested = openIndex + 1; nested < closeIndex; nested += 1) {
+            runs[nested].open = false;
+            runs[nested].close = false;
+          }
+          availableOpen -= count;
+          availableClose -= count;
         }
-        opener.usedOpen += count;
-        closer.usedClose += count;
-        for (let nested = openIndex + 1; nested < closeIndex; nested += 1) {
-          runs[nested].open = false;
-          runs[nested].close = false;
-        }
-        availableOpen -= count;
-        availableClose -= count;
       }
+    if (closer.open) {
+      candidates.push(closeIndex);
+      eligibleOpeners.set(closer.character, candidates);
     }
   }
   return text
@@ -1136,7 +1157,7 @@ function hasPositiveFindingStatement(text) {
           " unresolved ",
         );
         const noun =
-          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)(?![\\p{L}\\p{N}_\\p{Pd}])(?! +(?:tests?|reports?)\\b)";
+          "(?<![\\p{L}\\p{N}_\\p{Pd}])(?:issues?|findings?|problems?|bugs?|flaws?|defects?|regressions?|vulnerabilit(?:y|ies)|security +risks?)(?![\\p{L}\\p{N}_\\p{Pd}])(?! +(?:tests?|reports?|fix(?:es)?|fix(?:es)?|fix(?:es)?)\\b)";
         const headingNoun = noun.replace(
           "(?![\\p{L}\\p{N}_\\p{Pd}])",
           "(?![\\p{L}\\p{N}_-])",
@@ -1174,6 +1195,12 @@ function hasPositiveFindingStatement(text) {
             ? match[0].slice(0, matchedNoun.index)
             : "";
           const tail = predicate + after;
+          if (
+            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +/iu.test(
+              modifiers,
+            )
+          )
+            return false;
           // Absence/resolution is evidence only for an unqualified completed assertion.
           if (
             /^ +(?:do|does|did) +not +(?:exist|exists|remain|remains) *$/iu.test(
@@ -1278,6 +1305,7 @@ function hasPositiveFindingStatement(text) {
           ")";
 
         const patterns = [
+          "\\b(?:can|could|may|might) +bypass +authentication\\b",
           "\\b(?:is|are) +vulnerable +to\\b",
           "\\bauthentication +(?:can|could|may|might) +be +bypassed\\b",
           "\\b(?:most|every|numerous) +(?:[\\p{L}-]+ +)*?" +
