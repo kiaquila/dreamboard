@@ -254,6 +254,26 @@ export const parseCodexState = (
   return { state, times };
 };
 
+// A companion may be carried from before this comment's creation, but no
+// completed section can come from after the server-observed snapshot. Preserve
+// GitHub whole-second precision without adding a companion creation lower bound.
+const completedTimesWithinObservation = (parsed, observed) =>
+  Number.isFinite(observed) &&
+  Object.entries(parsed.state).every(
+    ([section, review]) =>
+      review.status !== "completed" ||
+      (Number.isFinite(parsed.times[section]) &&
+        parsed.times[section] < observed + 1000),
+  );
+
+export const codexStateCompletionTimesAreValid = (entry, head) => {
+  const parsed = parseCodexState(entry.body || "", head, {
+    sectionHeads: true,
+  });
+  const observed = Date.parse(entry.updated_at || entry.created_at || "");
+  return Boolean(parsed && completedTimesWithinObservation(parsed, observed));
+};
+
 export const hasCleanCodexState = (body, head) => {
   const parsed = parseCodexState(body, head);
   return Boolean(
@@ -305,6 +325,8 @@ export const hasCodexNegativeHistory = (
     const observed = Date.parse(entry.updated_at || entry.created_at || "");
     const created = Date.parse(entry.created_at || "");
     if (!Number.isFinite(observed)) continue;
+    const bounded =
+      !negativeOnly && completedTimesWithinObservation(parsed, observed);
     for (const section of Object.keys(sections)) {
       const review = parsed.state[section];
       if (review.commit_sha !== head) continue;
@@ -316,7 +338,7 @@ export const hasCodexNegativeHistory = (
           negative: true,
           observed: Math.floor(observed / 1000),
           resolved:
-            !negativeOnly &&
+            bounded &&
             review.status === "completed" &&
             review.has_unresolved_findings === false &&
             Number.isFinite(parsed.times[section]) &&
@@ -325,7 +347,8 @@ export const hasCodexNegativeHistory = (
               Math.floor(created / 1000) &&
             parsed.times[section] < observed + 1000,
           time: Math.floor(
-            (review.status === "completed" &&
+            (bounded &&
+            review.status === "completed" &&
             Number.isFinite(parsed.times[section]) &&
             Number.isFinite(created) &&
             Math.floor(parsed.times[section] / 1000) >=
@@ -335,7 +358,7 @@ export const hasCodexNegativeHistory = (
               : observed) / 1000,
           ),
         });
-      else if (!negativeOnly && cleanReview(review, head)) {
+      else if (bounded && cleanReview(review, head)) {
         const completed = parsed.times[section];
         if (
           Number.isFinite(completed) &&
@@ -406,6 +429,7 @@ export const codexNegativeCompletionTime = (entry, head) => {
   const created = Date.parse(entry.created_at || "");
   if (
     !parsed ||
+    !completedTimesWithinObservation(parsed, observed) ||
     Object.values(parsed.state).some((review) => review.status === "running")
   )
     return NaN;

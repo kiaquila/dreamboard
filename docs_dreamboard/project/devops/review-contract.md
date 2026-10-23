@@ -344,3 +344,15 @@ clearing remains ambiguous. All native inline, formal, thread, invalidation,
 current-head and unchanged protected-main guards continue to apply.
 
 Metadata liveness is validated in the original HTML context after masking hidden comments. Same-line separators and padded comment prefixes cannot discard negative flags; actual first-element code indentation remains ineligible. This history-only normalization never grants whole-PR approval.
+
+## Completed companion clock bounds
+
+A canonical snapshot supplies historical completion or clearing authority only
+when every completed section is at or before its server-observed edit, allowing
+GitHub's subsecond precision within that same second. This includes foreign-head
+companions. Carried companion rows may predate the current comment's creation;
+the owning section still has its own creation lower bound. An impossible
+companion timestamp keeps explicit findings at observation time and prevents
+positive snapshot selection. A genuinely newer canonical own-section clean
+completion can recover. Completed nullable companion flags never erase another
+section's explicit typed finding or independently grant approval.

@@ -1,6 +1,7 @@
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - sharp@0.35.5
-  - undici@7.29.1
+  - fast-uri@3.1.9
+  - undici@7.30.1
 packages:
   - .

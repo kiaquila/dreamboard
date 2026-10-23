@@ -3,6 +3,7 @@ import {
   codexNegativeCompletionTime,
   isCodexStateBody,
   codexCodeReviewCompletionTime,
+  codexStateCompletionTimesAreValid,
   isCompletedCodexLifecycle,
 } from "./codex-review-state.mjs";
 import { isKnownCodexHelpFooter } from "./codex-review-help.mjs";
@@ -231,6 +232,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       events[activationIndex]?.created_at || "",
     );
     if (
+      !codexStateCompletionTimesAreValid(entry, headSha) ||
       !Number.isFinite(completedAt) ||
       !Number.isFinite(Date.parse(entry.created_at || "")) ||
       Math.floor(completedAt / 1000) <

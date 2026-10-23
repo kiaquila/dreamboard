@@ -3740,3 +3740,204 @@ test("a real failed native review cannot be erased by a later code receipt", () 
   });
   assert.equal(result.status, 1);
 });
+
+// Completed companion rows must fit the server observation before any owning
+// row gains historical authority. These exercise the production gate CLI.
+const companionClockTime = (minute) => `2026-10-20T21:${minute}:00Z`;
+const companionClockBody = (
+  section,
+  ownTime,
+  otherTime,
+  otherHead = head,
+  nullableCompanion = false,
+) => {
+  const companion =
+    section === "code_review" ? "security_review" : "code_review";
+  const state = {
+    code_review: {
+      commit_sha: head,
+      has_any_findings: false,
+      has_unresolved_findings: false,
+      status: "completed",
+    },
+    security_review: {
+      commit_sha: head,
+      has_any_findings: false,
+      has_unresolved_findings: false,
+      status: "completed",
+    },
+  };
+  if (section) {
+    state[section].has_any_findings = true;
+    state[section].has_unresolved_findings = true;
+    state[companion].commit_sha = otherHead;
+    if (nullableCompanion) {
+      state[companion].has_any_findings = null;
+      state[companion].has_unresolved_findings = null;
+    }
+  }
+  const row = (key, label, icon) => {
+    const time = key === (section || "code_review") ? ownTime : otherTime;
+    return `| ${icon} **${label}** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${state[key].commit_sha.slice(0, 7)}\` | Manual request |`;
+  };
+  return `<!-- codex-pull-request-review-summary -->
+<!-- codex-review-state:v1 ${JSON.stringify(state)} -->
+
+## Codex Review Summary
+
+This comment shows the latest Codex review activity on this pull request.
+
+| Review | Status | Commit | Review trigger |
+| --- | --- | --- | --- |
+${row("code_review", "Code Review", "📝")}
+${row("security_review", "Security Review", "🔒")}`;
+};
+const runCompanionClock = (
+  section,
+  otherTime,
+  clearTime,
+  otherHead = head,
+  nullableCompanion = false,
+  laterRequest = false,
+) => {
+  const negative = comment(
+    companionClockBody(
+      section,
+      companionClockTime("47"),
+      otherTime,
+      otherHead,
+      nullableCompanion,
+    ),
+    {
+      id: 901,
+      created_at: companionClockTime("47"),
+      updated_at: companionClockTime("55"),
+    },
+  );
+  const clear =
+    clearTime &&
+    comment(companionClockBody(null, clearTime, clearTime), {
+      id: 902,
+      created_at: clearTime,
+      updated_at: clearTime,
+    });
+  const currentReceipt = comment(receipt, {
+    id: 903,
+    created_at: companionClockTime("58"),
+    updated_at: companionClockTime("58"),
+  });
+  const timeline = [{ ...activation, created_at: companionClockTime("45") }];
+  if (laterRequest)
+    timeline.push({
+      id: 904,
+      event: "commented",
+      user: { login: "owner", type: "User" },
+      author_association: "OWNER",
+      body: `@codex review ${head}`,
+      created_at: companionClockTime("51"),
+    });
+  return runGate({
+    comments: [negative, ...(clear ? [clear] : []), currentReceipt],
+    timeline,
+    reviews: laterRequest
+      ? [
+          {
+            id: 905,
+            user: { login: bot },
+            commit_id: head,
+            state: "APPROVED",
+            body: "",
+            submitted_at: companionClockTime("57"),
+          },
+        ]
+      : [],
+  });
+};
+for (const section of ["code_review", "security_review"]) {
+  for (const otherHead of [head, "b".repeat(40)]) {
+    test(`companion future clock keeps ${section} observed for ${otherHead.slice(0, 7)}`, () => {
+      const future = "2026-10-20T22:40:00Z";
+      const blocked = runCompanionClock(
+        section,
+        future,
+        companionClockTime("50"),
+        otherHead,
+      );
+      assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+      assert.match(blocked.stderr, /findings remain uncleared/);
+      const recovered = runCompanionClock(
+        section,
+        future,
+        companionClockTime("56"),
+        otherHead,
+      );
+      assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+      const carried = runCompanionClock(
+        section,
+        companionClockTime("46"),
+        companionClockTime("50"),
+        otherHead,
+      );
+      assert.equal(carried.status, 0, carried.stdout + carried.stderr);
+    });
+  }
+  test(`nullable companion cannot erase historical ${section} after a new request or formal approval`, () => {
+    const blocked = runCompanionClock(
+      section,
+      companionClockTime("46"),
+      null,
+      head,
+      true,
+      true,
+    );
+    assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+    assert.match(blocked.stderr, /findings remain uncleared/);
+    const recovered = runCompanionClock(
+      section,
+      companionClockTime("46"),
+      companionClockTime("56"),
+      head,
+      true,
+      true,
+    );
+    assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+  });
+  test(`companion observation precision protects ${section}`, () => {
+    const sameSecond = runCompanionClock(
+      section,
+      "2026-10-20T21:55:00.999Z",
+      companionClockTime("50"),
+    );
+    assert.equal(sameSecond.status, 0, sameSecond.stdout + sameSecond.stderr);
+    const nextSecond = runCompanionClock(
+      section,
+      "2026-10-20T21:55:01Z",
+      companionClockTime("50"),
+    );
+    assert.notEqual(
+      nextSecond.status,
+      0,
+      nextSecond.stdout + nextSecond.stderr,
+    );
+  });
+}
+test("clean structured snapshot with a future completed companion cannot approve", () => {
+  const result = runGate({
+    comments: [
+      comment(
+        companionClockBody(
+          null,
+          companionClockTime("51"),
+          "2026-10-20T22:40:00Z",
+        ),
+        {
+          id: 906,
+          created_at: companionClockTime("47"),
+          updated_at: companionClockTime("55"),
+        },
+      ),
+    ],
+    timeline: [{ ...activation, created_at: companionClockTime("45") }],
+  });
+  assert.notEqual(result.status, 0, result.stdout + result.stderr);
+});
