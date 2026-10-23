@@ -3695,3 +3695,48 @@ for (const section of ["code_review", "security_review"])
           result.stderr || result.stdout,
         );
       });
+
+const nativeCorpus = JSON.parse(
+  readFileSync(new URL("./fixtures/native-codex-corpus.json", import.meta.url)),
+);
+for (const pair of nativeCorpus.lifecyclePairs) {
+  test(`actual gate accepts native receipt before null lifecycle: ${pair.repo}`, () => {
+    const result = runGate({
+      head: pair.head,
+      eventHead: pair.head,
+      comments: [pair.receipt, pair.lifecycle],
+      timeline: [
+        {
+          event: "committed",
+          sha: pair.head,
+          created_at: pair.lifecycle.created_at,
+        },
+      ],
+    });
+    assert.equal(result.status, 0, result.stderr);
+  });
+}
+test("a real failed native review cannot be erased by a later code receipt", () => {
+  const failed = nativeCorpus.failedSummary;
+  const failedHead = JSON.parse(
+    failed.body.match(/state:v1 (\{[^\n]*\}) -->/)[1],
+  ).code_review.commit_sha;
+  const result = runGate({
+    head: failedHead,
+    eventHead: failedHead,
+    comments: [
+      failed,
+      comment(receipt.replace(head.slice(0, 10), failedHead.slice(0, 10)), {
+        created_at: "2026-10-23T12:00:00Z",
+      }),
+    ],
+    timeline: [
+      {
+        event: "committed",
+        sha: failedHead,
+        created_at: "2026-10-22T12:00:00Z",
+      },
+    ],
+  });
+  assert.equal(result.status, 1);
+});

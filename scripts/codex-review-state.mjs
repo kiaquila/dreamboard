@@ -16,7 +16,7 @@ const validReview = (review, head) =>
   cleanKeys(review, fields) &&
   /^[a-f0-9]{40}$/.test(review.commit_sha || "") &&
   review.commit_sha === head &&
-  ["completed", "running"].includes(review.status) &&
+  ["completed", "running", "failed"].includes(review.status) &&
   [review.has_any_findings, review.has_unresolved_findings].every(
     (flag) => flag === null || typeof flag === "boolean",
   );
@@ -243,7 +243,7 @@ export const parseCodexState = (
           : "🔄 **Running** since",
       ) ||
       !row[2] ||
-      row[5] !== "Manual request" ||
+      !["Manual request", "PR opened"].includes(row[5]) ||
       row[1] !== label ||
       !(sectionHeads ? state[section].commit_sha : head).startsWith(row[4]) ||
       (row[2] && (row[2] !== row[3] || !Number.isFinite(Date.parse(row[2]))))
@@ -261,6 +261,20 @@ export const hasCleanCodexState = (body, head) => {
     cleanReview(parsed.state.code_review, head) &&
     (inactiveReview(parsed.state.security_review) ||
       cleanReview(parsed.state.security_review, head)),
+  );
+};
+
+// A completed code lifecycle with unknown finding flags is not an approval.
+// It may accompany an independent clean receipt. Active security, mixed flags,
+// negatives and any noncanonical presentation must remain review evidence.
+export const isCompletedCodexLifecycle = (body, head) => {
+  const parsed = parseCodexState(body, head);
+  return Boolean(
+    parsed &&
+    parsed.state.code_review.status === "completed" &&
+    parsed.state.code_review.has_any_findings === null &&
+    parsed.state.code_review.has_unresolved_findings === null &&
+    inactiveReview(parsed.state.security_review),
   );
 };
 

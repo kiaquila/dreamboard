@@ -2,30 +2,21 @@
 
 ## Backend Trigger Constraints
 
-All three supported review backends require a **human-authored** trigger
-on `pull_request: synchronize` events. Bot-posted trigger comments from
-GitHub Actions (`github-actions[bot]`) are rejected silently or with an
-explicit error by every backend:
+The gate passively consumes native reviewer output. GitHub Actions bot comments
+cannot request Codex reviews on behalf of a connected human. Codex's own
+**Automatic review** and **Review trigger** settings determine whether opening,
+marking ready or subsequent pushes start native review. These settings are
+external to the repository; a gate rerun cannot enable them. See the
+[official GitHub integration guide](https://learn.chatgpt.com/docs/third-party/github).
+When automatic review has not produced current-head evidence, the owner can
+post the ordinary `@codex review` request. Gemini and Claude retain their
+backend-specific human-trigger constraints.
 
-- **Codex** — the connector replies "trigger did not come from a
-  connected human Codex account" and the `AI Review` gate fails fast.
-- **Gemini** — `gemini-code-assist[bot]` silently ignores bot-posted
-  `/gemini review` comments; the gate times out after 20 minutes.
-- **Claude** — `claude-review.yml` gates on `author_association in
-(OWNER, MEMBER, COLLABORATOR)` and drops anything authored by a bot.
-
-Codex Cloud's on-open auto-review (on `opened` and `ready_for_review`)
-and Gemini Code Assist's on-open auto-review cover the initial review
-for free, but every new push on an already-open PR needs a manual
-trigger. The canonical recovery path is
-`pnpm run review:switch -- --to <agent>`, which flips the repository
-variable, posts the correct native trigger comment as the current `gh`
-user (human-authored, therefore trusted), and reruns the latest
-PR-linked `AI Review` run for that HEAD. If the previous backend is still active,
-the helper cancels it, waits up to 60 seconds for completion, and requeues it
-under the newly selected policy. Selection checks the Actions API pull-request
-association, not only the SHA, and reads every result page. It rechecks HEAD and attempt identity before
-rerunning; cancellation timeouts or identity changes stop the operation.
+A native clean receipt or explicit clean structured state is sufficient. A
+separate audit task, copied verdict, provider switch or protection bypass is
+not part of the native-review recovery path. Rerunning the existing PR-linked
+check reevaluates persisted native evidence without creating a replacement
+status.
 
 See `docs_dreamboard/project/devops/ai-runner.md` for the full matrix.
 
@@ -39,8 +30,9 @@ See `docs_dreamboard/project/devops/ai-runner.md` for the full matrix.
 
 The active operating path uses Codex without Gemini or new API keys. In Codex
 repository settings, enable **Automatic review**, select **All PRs**, and use
-**On PR open**. Do not inherit disabled personal preferences. Existing PRs and
-later pushes need an authenticated owner command:
+**Review trigger** appropriate to the desired update policy. Do not inherit
+disabled personal preferences. If native review has not started, request it
+with an authenticated owner command:
 `pnpm run review:switch -- --to codex --pr <number>`. This posts the native
 request and reevaluates the PR-linked gate; it does not dispatch a replacement
 check or treat a bot-authored trigger as a human request.
@@ -206,17 +198,38 @@ and "Swish!"
 This does not permit arbitrary numeric shortcodes, encouragements, or text
 after a known suffix. Contradictory verdicts still fail closed.
 
-When introducing changes to the gate itself, the PR still executes the old
-trusted-main scripts. Obtain real native Codex review for the exact HEAD. If
-its clean-result format is unsupported by main, a separate native Codex task
-may independently audit the full diff between the exact base and HEAD git
-objects and return a genuine legacy-format assessment with the full HEAD SHA.
-The task must inspect the source itself and report all material findings;
-copying or translating an earlier verdict is not an assessment. Verify live
-HEAD, required checks, and unresolved threads externally if the task lacks
-GitHub API access. This keeps Codex selected without Gemini or key changes.
-Validate the new trusted-main parser after merge. Do not switch checkout to PR
-code, fabricate a status, or bypass protection.
+When introducing gate changes, the PR still executes trusted-main scripts.
+Obtain ordinary native Codex review for the exact HEAD and verify the candidate
+parser offline against actual API evidence with no trusted token. Merge only
+when the unchanged required checks pass through their normal workflows.
+
+## Collected native response families
+
+The [2026-10-23 compatibility audit](native-codex-compatibility-audit.md) covers
+24 personal repositories and records sources for the complete observed
+presentation catalog in `tests/fixtures/native-codex-corpus.json`. The parser
+accepts 18 observed nonempty closings plus an empty closing, receipt v1,
+SHA-bound legacy replies, known help templates and the exact native task link.
+Unbound legacy replies still require timeline binding. Unknown wording remains
+pending; the corpus describes observed output, not a promise about future
+connector versions.
+
+The canonical summary accepts the observed `Manual request` and `PR opened`
+triggers. A completed code snapshot with **both finding flags null** and
+**inactive security** is lifecycle-only. It supplies no approval by itself.
+When a separate immutable, explicit clean SHA-bound receipt was created after
+the current activation/request and between summary creation and code completion,
+the lifecycle snapshot does not replace that receipt. The completion can follow
+the receipt by seconds; no guessed grace period or conversion of null to false
+is used. This is exercised with real unmodified pairs from dreamboard,
+pallete-maker and unicorn-hub.
+
+Running reviews, mixed flags, active security, malformed/unknown snapshots and
+contradictory prose retain their veto. Native `failed` typed records retain
+negative findings through the existing negative-history latch; failed status
+cannot provide positive proof. Other current-head findings, dismissals,
+withdrawals, deletions, unresolved threads and the final live-head check remain
+independent requirements.
 
 ## Strict native structured state
 
