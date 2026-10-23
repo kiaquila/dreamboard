@@ -305,7 +305,10 @@ while preserving line breaks and source indentation. Multiline JSON remains
 supported for historical evidence with duplicate-key and scalar checks intact.
 
 A strict leading native envelope with explicit current-head negative flags can
-retain those negative facts even when later presentation is unknown. It cannot
+retain those negative facts even when later presentation is unknown. Later prose
+before a heading, a missing or code/quote-framed heading, or a protocol example
+cannot erase that live leading record. Whole-comment code/quote framing and
+code-indented leading records remain ineligible. It cannot
 supply any completion clock, clean evidence or resolved-code recovery. Its
 server observation time orders the negative, regardless of whether appended
 English, Markdown, HTML, code or punctuation appears active, harmless or resolved.

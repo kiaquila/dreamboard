@@ -55,17 +55,16 @@ export const parseCodexState = (
   const rawHeading = String(body || "").match(
     /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
   )?.[0];
-  if (!/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading || ""))
+  if (
+    !negativeEnvelope &&
+    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading || "")
+  )
     return false;
 
   if (
+    !negativeEnvelope &&
     /^(?: {4}|[ \t]*\t)[ \t\uFEFF]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
-      (negativeEnvelope
-        ? String(body || "").split(
-            /^ {0,3}## Codex Review Summary[ \t]*\r?$/m,
-          )[0]
-        : String(body || "")
-      ).replace(/^\uFEFF/, ""),
+      String(body || "").replace(/^\uFEFF/, ""),
     )
   )
     return false;
@@ -96,7 +95,10 @@ export const parseCodexState = (
   const effectiveHeading = source.match(
     /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
   )?.[0];
-  if (!/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(effectiveHeading || ""))
+  if (
+    !negativeEnvelope &&
+    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(effectiveHeading || "")
+  )
     return false;
   const match = source.match(
     sectionHeads
@@ -104,6 +106,14 @@ export const parseCodexState = (
       : /^<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 (\{[^\r\n]+\}) -->\n([\s\S]*)$/,
   );
   if (!match) return false;
+  if (negativeEnvelope) {
+    // The leading machine record must remain live. Later presentation, even a
+    // missing/moved heading or a protocol example, cannot erase its negatives.
+    const prefix = source.slice(0, source.indexOf(statePrefix));
+    const newline = prefix.lastIndexOf("\n");
+    if (newline >= 0 && !/^ {0,3}$/.test(prefix.slice(newline + 1)))
+      return false;
+  }
   const raw = match[1];
   let state;
   try {
@@ -140,7 +150,6 @@ export const parseCodexState = (
     return false;
   let visible = match[2].trim();
   if (negativeEnvelope) {
-    if (!/^## Codex Review Summary(?:\r?\n|$)/.test(visible)) return false;
     // A live typed negative survives ambiguous presentation. Only complete
     // canonical bodies can establish section clocks, clearing or recovery.
     // Never infer harmlessness from free-form English or Markdown rendering.

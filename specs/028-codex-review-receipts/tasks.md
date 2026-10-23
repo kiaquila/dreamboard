@@ -135,3 +135,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Preserve native Markdown block boundaries and contiguous table rows; cover
       malformed code/security negative clocks and clean clearing with valid-spacing
       controls in actual-gate regressions.
+
+- [x] Retain live leading typed negatives independently of later heading or
+      presentation ordering; verify older/equal clean proof stays blocked and
+      strictly newer canonical evidence recovers both sections.

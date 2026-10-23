@@ -3305,6 +3305,12 @@ for (const section of ["code_review", "security_review"])
     "Unrecognized presentation: 日本語.",
     "unknown-trigger",
     "comment-in-clock",
+    "prose-before-heading",
+    "missing-heading",
+    "quoted-heading",
+    "fenced-heading",
+    "indented-heading",
+    "protocol-example-before-heading",
   ])
     for (const clearAt of ["03", "05", "06"])
       test(`opaque ${section} presentation ${presentation} requires strictly newer canonical ${clearAt}`, () => {
@@ -3329,6 +3335,36 @@ for (const section of ["code_review", "security_review"])
           oldBody = oldBody.replaceAll(
             "12:02:00Z",
             "12:<!-- explanation -->02:00Z",
+          );
+        else if (presentation === "prose-before-heading")
+          oldBody = oldBody.replace(
+            "## Codex Review Summary",
+            "Fresh finding still applies.\n\n## Codex Review Summary",
+          );
+        else if (presentation === "missing-heading")
+          oldBody = oldBody.replace(
+            "## Codex Review Summary",
+            "Updated activity",
+          );
+        else if (presentation === "quoted-heading")
+          oldBody = oldBody.replace(
+            "## Codex Review Summary",
+            "> ## Codex Review Summary",
+          );
+        else if (presentation === "fenced-heading")
+          oldBody = oldBody.replace(
+            "## Codex Review Summary",
+            "```\n## Codex Review Summary\n```",
+          );
+        else if (presentation === "indented-heading")
+          oldBody = oldBody.replace(
+            "## Codex Review Summary",
+            "    ## Codex Review Summary",
+          );
+        else if (presentation === "protocol-example-before-heading")
+          oldBody = oldBody.replace(
+            "## Codex Review Summary",
+            "    <!-- codex-review-state:v1 {} -->\n\n## Codex Review Summary",
           );
         else oldBody += "\n" + presentation;
         const old = comment(oldBody, {
