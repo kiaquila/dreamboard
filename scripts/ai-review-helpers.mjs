@@ -1,8 +1,10 @@
 import {
   hasCleanCodexState,
+  hasCleanCodexCodeState,
   codexNegativeCompletionTime,
   isCodexStateBody,
   codexCodeReviewCompletionTime,
+  codexStateCompletionTimesAreValid,
   isCompletedCodexLifecycle,
 } from "./codex-review-state.mjs";
 import { isKnownCodexHelpFooter } from "./codex-review-help.mjs";
@@ -231,6 +233,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       events[activationIndex]?.created_at || "",
     );
     if (
+      !codexStateCompletionTimesAreValid(entry, headSha) ||
       !Number.isFinite(completedAt) ||
       !Number.isFinite(Date.parse(entry.created_at || "")) ||
       Math.floor(completedAt / 1000) <
@@ -255,6 +258,22 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     return (
       statePosition(entry) > boundaryIndex &&
       time === Date.parse(entry.created_at)
+    );
+  };
+  // When the timeline is unavailable, persisted canonical lifecycle still
+  // supplies a conservative pending signal. This grants no activation or
+  // positive state authority; only the existing SHA-bound receipt path can pass.
+  const eligibleLifecycle = (entry) => {
+    if (activationIndex >= 0) return eligibleState(entry);
+    const completed = codexCodeReviewCompletionTime(getBody(entry));
+    const created = Date.parse(entry.created_at || "");
+    const observed = codexCommentTimestamp(entry);
+    return (
+      codexStateCompletionTimesAreValid(entry, headSha) &&
+      Number.isFinite(created) &&
+      Number.isFinite(completed) &&
+      Math.floor(completed / 1000) >= Math.floor(created / 1000) &&
+      completed < observed + 1000
     );
   };
   const evidenceTime = (entry) =>
@@ -369,7 +388,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   // Other states (including running/security/unknown text) keep their veto.
   const authoritativeCandidates = candidates.filter((entry) => {
     if (
-      !eligibleState(entry) ||
+      !eligibleLifecycle(entry) ||
       !isCompletedCodexLifecycle(getBody(entry), headSha)
     )
       return true;
@@ -388,6 +407,24 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       );
     });
   });
+  // A later static response cannot repair a missing lifecycle correlation.
+  // Keep an unpaired canonical completion pending until a genuinely newer
+  // canonical own-section clean completion supplies independent authority.
+  const unpairedLifecycle = authoritativeCandidates
+    .filter(
+      (entry) =>
+        eligibleLifecycle(entry) &&
+        isCompletedCodexLifecycle(getBody(entry), headSha) &&
+        !allComments.some(
+          (clear) =>
+            isCodexBotComment(clear) &&
+            eligibleLifecycle(clear) &&
+            hasCleanCodexCodeState(getBody(clear), headSha) &&
+            Math.floor(codexCodeReviewCompletionTime(getBody(clear)) / 1000) >
+              Math.floor(codexCommentTimestamp(entry) / 1000),
+        ),
+    )
+    .sort((a, b) => codexCommentTimestamp(b) - codexCommentTimestamp(a))[0];
   const latestTimestamp = Math.max(
     0,
     ...authoritativeCandidates.map(evidenceTime),
@@ -403,12 +440,14 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   // Creation order cannot prove edit order. Resolve the whole timestamp group
   // conservatively, so the result is independent of API order and duplicates.
   const latestCodexComment =
+    unpairedLifecycle ||
     (tied.some((entry) => isCodexStateBody(getBody(entry)))
       ? tied.find((entry) => classify(entry).outcome !== "pass") || tied.at(-1)
       : canOrder
         ? tied.sort((a, b) => position(a) - position(b)).at(-1)
         : tied.find((entry) => classify(entry).outcome !== "pass") ||
-          tied.at(-1)) || null;
+          tied.at(-1)) ||
+    null;
 
   if (!latestCodexComment) {
     return null;
@@ -434,6 +473,12 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     summaryClassification.outcome = "pending";
     summaryClassification.reason =
       "Static review predates the current request or head activation.";
+  }
+  if (unpairedLifecycle) {
+    summaryClassification.outcome = "pending";
+    summaryClassification.reason =
+      "Completed native lifecycle has no matching immutable clean receipt.";
+    summaryClassification.unpairedLifecycle = true;
   }
   summaryClassification.evidenceTimestamp = evidenceTime(latestCodexComment);
 

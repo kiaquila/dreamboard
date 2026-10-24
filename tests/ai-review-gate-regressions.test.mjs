@@ -3740,3 +3740,452 @@ test("a real failed native review cannot be erased by a later code receipt", () 
   });
   assert.equal(result.status, 1);
 });
+
+// Completed companion rows must fit the server observation before any owning
+// row gains historical authority. These exercise the production gate CLI.
+const companionClockTime = (minute) => `2026-10-20T21:${minute}:00Z`;
+const companionClockBody = (
+  section,
+  ownTime,
+  otherTime,
+  otherHead = head,
+  nullableCompanion = false,
+) => {
+  const companion =
+    section === "code_review" ? "security_review" : "code_review";
+  const state = {
+    code_review: {
+      commit_sha: head,
+      has_any_findings: false,
+      has_unresolved_findings: false,
+      status: "completed",
+    },
+    security_review: {
+      commit_sha: head,
+      has_any_findings: false,
+      has_unresolved_findings: false,
+      status: "completed",
+    },
+  };
+  if (section) {
+    state[section].has_any_findings = true;
+    state[section].has_unresolved_findings = true;
+    state[companion].commit_sha = otherHead;
+    if (nullableCompanion) {
+      state[companion].has_any_findings = null;
+      state[companion].has_unresolved_findings = null;
+    }
+  }
+  const row = (key, label, icon) => {
+    const time = key === (section || "code_review") ? ownTime : otherTime;
+    return `| ${icon} **${label}** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${state[key].commit_sha.slice(0, 7)}\` | Manual request |`;
+  };
+  return `<!-- codex-pull-request-review-summary -->
+<!-- codex-review-state:v1 ${JSON.stringify(state)} -->
+
+## Codex Review Summary
+
+This comment shows the latest Codex review activity on this pull request.
+
+| Review | Status | Commit | Review trigger |
+| --- | --- | --- | --- |
+${row("code_review", "Code Review", "📝")}
+${row("security_review", "Security Review", "🔒")}`;
+};
+const runCompanionClock = (
+  section,
+  otherTime,
+  clearTime,
+  otherHead = head,
+  nullableCompanion = false,
+  laterRequest = false,
+) => {
+  const negative = comment(
+    companionClockBody(
+      section,
+      companionClockTime("47"),
+      otherTime,
+      otherHead,
+      nullableCompanion,
+    ),
+    {
+      id: 901,
+      created_at: companionClockTime("47"),
+      updated_at: companionClockTime("55"),
+    },
+  );
+  const clear =
+    clearTime &&
+    comment(companionClockBody(null, clearTime, clearTime), {
+      id: 902,
+      created_at: clearTime,
+      updated_at: clearTime,
+    });
+  const currentReceipt = comment(receipt, {
+    id: 903,
+    created_at: companionClockTime("58"),
+    updated_at: companionClockTime("58"),
+  });
+  const timeline = [{ ...activation, created_at: companionClockTime("45") }];
+  if (laterRequest)
+    timeline.push({
+      id: 904,
+      event: "commented",
+      user: { login: "owner", type: "User" },
+      author_association: "OWNER",
+      body: `@codex review ${head}`,
+      created_at: companionClockTime("51"),
+    });
+  return runGate({
+    comments: [negative, ...(clear ? [clear] : []), currentReceipt],
+    timeline,
+    reviews: laterRequest
+      ? [
+          {
+            id: 905,
+            user: { login: bot },
+            commit_id: head,
+            state: "APPROVED",
+            body: "",
+            submitted_at: companionClockTime("57"),
+          },
+        ]
+      : [],
+  });
+};
+for (const section of ["code_review", "security_review"]) {
+  for (const otherHead of [head, "b".repeat(40)]) {
+    test(`companion future clock keeps ${section} observed for ${otherHead.slice(0, 7)}`, () => {
+      const future = "2026-10-20T22:40:00Z";
+      const blocked = runCompanionClock(
+        section,
+        future,
+        companionClockTime("50"),
+        otherHead,
+      );
+      assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+      assert.match(blocked.stderr, /findings remain uncleared/);
+      const recovered = runCompanionClock(
+        section,
+        future,
+        companionClockTime("56"),
+        otherHead,
+      );
+      assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+      const carried = runCompanionClock(
+        section,
+        companionClockTime("46"),
+        companionClockTime("50"),
+        otherHead,
+      );
+      assert.equal(carried.status, 0, carried.stdout + carried.stderr);
+    });
+  }
+  test(`nullable companion cannot erase historical ${section} after a new request or formal approval`, () => {
+    const blocked = runCompanionClock(
+      section,
+      companionClockTime("46"),
+      null,
+      head,
+      true,
+      true,
+    );
+    assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+    assert.match(blocked.stderr, /findings remain uncleared/);
+    const recovered = runCompanionClock(
+      section,
+      companionClockTime("46"),
+      companionClockTime("56"),
+      head,
+      true,
+      true,
+    );
+    assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+  });
+  test(`companion observation precision protects ${section}`, () => {
+    const sameSecond = runCompanionClock(
+      section,
+      "2026-10-20T21:55:00.999Z",
+      companionClockTime("50"),
+    );
+    assert.equal(sameSecond.status, 0, sameSecond.stdout + sameSecond.stderr);
+    const nextSecond = runCompanionClock(
+      section,
+      "2026-10-20T21:55:01Z",
+      companionClockTime("50"),
+    );
+    assert.notEqual(
+      nextSecond.status,
+      0,
+      nextSecond.stdout + nextSecond.stderr,
+    );
+  });
+}
+test("clean structured snapshot with a future completed companion cannot approve", () => {
+  const result = runGate({
+    comments: [
+      comment(
+        companionClockBody(
+          null,
+          companionClockTime("51"),
+          "2026-10-20T22:40:00Z",
+        ),
+        {
+          id: 906,
+          created_at: companionClockTime("47"),
+          updated_at: companionClockTime("55"),
+        },
+      ),
+    ],
+    timeline: [{ ...activation, created_at: companionClockTime("45") }],
+  });
+  assert.notEqual(result.status, 0, result.stdout + result.stderr);
+});
+
+for (const pair of nativeCorpus.lifecyclePairs) {
+  const completion = Date.parse(
+    pair.lifecycle.body.match(/datetime="([^"<>]+)"/)[1],
+  );
+  const lateAt = new Date(completion + 1000).toISOString();
+  const late = { ...pair.receipt, created_at: lateAt, updated_at: lateAt };
+  const pairGate = (comments, reviews = []) =>
+    runGate({
+      head: pair.head,
+      eventHead: pair.head,
+      comments,
+      reviews,
+      timeline: [
+        {
+          event: "committed",
+          sha: pair.head,
+          created_at: new Date(
+            Date.parse(pair.lifecycle.created_at) - 60000,
+          ).toISOString(),
+        },
+      ],
+    });
+  const canonicalClear = (at) => {
+    const state = JSON.parse(
+      pair.lifecycle.body.match(/codex-review-state:v1 (.+?) -->/)[1],
+    );
+    state.code_review.has_any_findings = false;
+    state.code_review.has_unresolved_findings = false;
+    return {
+      ...pair.lifecycle,
+      id: 999991,
+      created_at: at,
+      updated_at: at,
+      body: pair.lifecycle.body
+        .replace(
+          /codex-review-state:v1 (.+?) -->/,
+          "codex-review-state:v1 " + JSON.stringify(state) + " -->",
+        )
+        .replace(
+          /<relative-time datetime="[^"<>]+">[^<>]+<\/relative-time>/,
+          '<relative-time datetime="' + at + '">' + at + "</relative-time>",
+        ),
+    };
+  };
+  test(`actual gate keeps an unpaired null lifecycle pending despite late receipt or formal approval: ${pair.repo}`, () => {
+    const comments = [pair.lifecycle, late];
+    const result = pairGate(comments);
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+    const formal = pairGate(comments, [
+      {
+        id: 999992,
+        user: { login: bot },
+        commit_id: pair.head,
+        state: "APPROVED",
+        body: "Codex Review: approved",
+        submitted_at: new Date(completion + 120000).toISOString(),
+      },
+    ]);
+    assert.notEqual(formal.status, 0, formal.stdout + formal.stderr);
+  });
+  test(`actual gate cannot backdate an unpaired null lifecycle before its observation: ${pair.repo}`, () => {
+    const delayed = {
+      ...pair.lifecycle,
+      updated_at: new Date(completion + 120000).toISOString(),
+    };
+    const intermediate = canonicalClear(
+      new Date(completion + 60000).toISOString(),
+    );
+    const lateAfterObservationAt = new Date(completion + 180000).toISOString();
+    const lateAfterObservation = {
+      ...late,
+      created_at: lateAfterObservationAt,
+      updated_at: lateAfterObservationAt,
+    };
+    const blocked = pairGate([delayed, intermediate, lateAfterObservation]);
+    assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+    const recovered = pairGate([
+      delayed,
+      intermediate,
+      lateAfterObservation,
+      canonicalClear(new Date(completion + 240000).toISOString()),
+    ]);
+    assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+  });
+  test(`actual gate recovers unpaired null lifecycle only after newer canonical own clear: ${pair.repo}`, () => {
+    const result = pairGate([
+      pair.lifecycle,
+      late,
+      canonicalClear(new Date(completion + 60000).toISOString()),
+    ]);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+  });
+  test(`actual gate keeps same-second canonical clear conservative for unpaired null lifecycle: ${pair.repo}`, () => {
+    const result = pairGate([
+      pair.lifecycle,
+      late,
+      canonicalClear(
+        new Date(Math.floor(completion / 1000) * 1000 + 999).toISOString(),
+      ),
+    ]);
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  });
+}
+
+for (const pair of nativeCorpus.lifecyclePairs) {
+  test(`actual gate keeps REST unpaired lifecycle pending during timeline failure: ${pair.repo}`, () => {
+    const completed = Date.parse(
+      pair.lifecycle.body.match(/datetime="([^"<>]+)"/)[1],
+    );
+    const at = new Date(completed + 60000).toISOString();
+    const late = { ...pair.receipt, created_at: at, updated_at: at };
+    const result = runGate({
+      head: pair.head,
+      eventHead: pair.head,
+      comments: [pair.lifecycle, late],
+      timelineUnavailable: true,
+      reviews: [
+        {
+          id: 999993,
+          user: { login: bot },
+          commit_id: pair.head,
+          state: "APPROVED",
+          body: "Codex Review: approved",
+          submitted_at: new Date(completed + 120000).toISOString(),
+        },
+      ],
+    });
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  });
+}
+
+for (const section of ["code_review", "security_review"]) {
+  test(`actual gate uses the observed whole-second end for ${section}`, () => {
+    const evaluate = (completed) => {
+      const times = {
+        code_review: companionClockTime("51"),
+        security_review: companionClockTime("51"),
+      };
+      times[section] = completed;
+      return runGate({
+        comments: [
+          comment(
+            companionClockBody(null, times.code_review, times.security_review),
+            {
+              id: 907,
+              created_at: companionClockTime("47"),
+              updated_at: "2026-10-20T21:55:00.500Z",
+            },
+          ),
+        ],
+        timeline: [{ ...activation, created_at: companionClockTime("45") }],
+      });
+    };
+    const within = evaluate("2026-10-20T21:55:00.999999Z");
+    assert.equal(within.status, 0, within.stdout + within.stderr);
+    const future = evaluate("2026-10-20T21:55:01.100Z");
+    assert.notEqual(future.status, 0, future.stdout + future.stderr);
+  });
+}
+for (const value of ["2026-09-31T10:01:00Z", "October 1, 2026 10:01:00 GMT"]) {
+  test(`actual gate rejects a noncanonical carried security clock: ${value}`, () => {
+    const result = runGate({
+      comments: [
+        comment(companionClockBody(null, companionClockTime("51"), value), {
+          id: 908,
+          created_at: companionClockTime("47"),
+          updated_at: companionClockTime("55"),
+        }),
+      ],
+      timeline: [{ ...activation, created_at: companionClockTime("45") }],
+    });
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  });
+}
+test("actual gate preserves a genuine microsecond carried security clock", () => {
+  const result = runGate({
+    comments: [
+      comment(
+        companionClockBody(
+          null,
+          companionClockTime("51"),
+          "2026-09-30T10:01:00.123456Z",
+        ),
+        {
+          id: 909,
+          created_at: companionClockTime("47"),
+          updated_at: companionClockTime("55"),
+        },
+      ),
+    ],
+    timeline: [{ ...activation, created_at: companionClockTime("45") }],
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+const independentChannels = JSON.parse(
+  readFileSync(
+    new URL("./fixtures/codex-independent-channels.json", import.meta.url),
+    "utf8",
+  ),
+);
+for (const [name, entries, expected] of [
+  ["security finding remains blocking", [independentChannels.codeClear], false],
+  [
+    "security clear cannot substitute for missing own code clear",
+    [independentChannels.securityClear],
+    false,
+  ],
+  [
+    "equal-second code clear remains conservative",
+    [independentChannels.equalCodeClear, independentChannels.securityClear],
+    false,
+  ],
+  [
+    "independently newer code and security clears recover",
+    [independentChannels.codeClear, independentChannels.securityClear],
+    true,
+  ],
+]) {
+  test(`actual gate retires null lifecycle by its own code channel: ${name}`, () => {
+    const result = runGate({
+      head: independentChannels.sha,
+      eventHead: independentChannels.sha,
+      comments: [
+        independentChannels.lifecycle,
+        ...entries,
+        independentChannels.receipt,
+      ],
+      timeline: [
+        {
+          event: "committed",
+          sha: independentChannels.sha,
+          created_at: "2026-10-15T00:30:00Z",
+        },
+        {
+          event: "commented",
+          id: 919,
+          body: `@codex review ${independentChannels.sha}`,
+          user: { login: "kiaquila", type: "User" },
+          author_association: "OWNER",
+          created_at: "2026-10-15T01:00:00Z",
+        },
+      ],
+    });
+    assert.equal(result.status === 0, expected, result.stdout + result.stderr);
+  });
+}

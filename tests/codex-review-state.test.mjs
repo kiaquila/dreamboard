@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hasCleanCodexState } from "../scripts/codex-review-state.mjs";
+import {
+  hasCleanCodexState,
+  codexCodeReviewCompletionTime,
+} from "../scripts/codex-review-state.mjs";
 import {
   pickAuthoritativeCodexSkipModeComment,
   classifyCodexSummaryComment,
@@ -345,5 +348,28 @@ test("unedited same-second static receipt uses proven timeline order", () => {
       headSha: head,
     })?.classification.outcome,
     "pass",
+  );
+});
+
+for (const value of [
+  "2026-09-31T10:01:00Z",
+  "October 1, 2026 10:01:00 GMT",
+  "2026-10-20T24:00:00Z",
+]) {
+  test(`canonical own code time rejects normalized or prose date: ${value}`, () => {
+    const body = clean.replaceAll("2026-10-20T12:02:00Z", value);
+    assert.equal(hasCleanCodexState(body, head), false);
+    assert.equal(Number.isNaN(codexCodeReviewCompletionTime(body)), true);
+  });
+}
+test("canonical own code time preserves native microseconds", () => {
+  const body = clean.replaceAll(
+    "2026-10-20T12:02:00Z",
+    "2026-10-20T12:02:00.123456Z",
+  );
+  assert.equal(hasCleanCodexState(body, head), true);
+  assert.equal(
+    codexCodeReviewCompletionTime(body),
+    Date.parse("2026-10-20T12:02:00.123Z"),
   );
 });

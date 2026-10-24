@@ -344,3 +344,35 @@ clearing remains ambiguous. All native inline, formal, thread, invalidation,
 current-head and unchanged protected-main guards continue to apply.
 
 Metadata liveness is validated in the original HTML context after masking hidden comments. Same-line separators and padded comment prefixes cannot discard negative flags; actual first-element code indentation remains ineligible. This history-only normalization never grants whole-PR approval.
+
+## Completed companion clock bounds
+
+A canonical snapshot supplies historical completion or clearing authority only
+when every completed section is at or before its server-observed edit, allowing
+GitHub's subsecond precision within that same second. This includes foreign-head
+companions. Carried companion rows may predate the current comment's creation;
+the owning section still has its own creation lower bound. An impossible
+companion timestamp keeps explicit findings at observation time and prevents
+positive snapshot selection. A genuinely newer canonical own-section clean
+completion can recover. Completed nullable companion flags never erase another
+section's explicit typed finding or independently grant approval.
+
+A canonical eligible completed null/null lifecycle without an immutable clean
+receipt in its own creation-to-completion window remains pending. Later static
+receipts and formal approvals cannot overrule missing correlation. Only valid
+in-window pairing or a strictly newer eligible canonical own-section clean
+completion can retire that pending lifecycle. Equal-second completions remain
+conservative, while all existing negative-history and thread checks still apply.
+
+An unpaired lifecycle has no historical clock authority: canonical recovery
+must complete strictly after its observed edit second. An intermediate clear
+after the old lifecycle completion but before that edit cannot recover it.
+
+If the timeline cannot be retrieved, persisted canonical current-head null
+lifecycle still supplies pending evidence. Its bounded receipt correlation and
+newer canonical recovery remain checked; absence of timeline grants no synthetic
+activation or positive structured-state authority.
+
+The observation limit is the exclusive end of its server second, including when the observation itself has fractional precision. Native completion rows require UTC ISO timestamps whose calendar components round-trip unchanged; JavaScript calendar rollover and text date parsing never grant authority. Genuine fractional UTC timestamps remain supported.
+
+Retiring pending null CODE lifecycle requires a newer canonical CODE-only clear after the lifecycle observation. An active Security finding does not invalidate that CODE clear, but still blocks merge until independently cleared. A Security-only completion carrying stale CODE cannot stand in for that own-channel clear.
