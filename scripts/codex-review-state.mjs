@@ -35,6 +35,19 @@ const summaryHelp = `[Your team has set up Codex to review pull requests in this
 Codex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.`;
 const normalize = (text) => text.replace(/\s+/g, " ").trim();
 
+// Native clocks use UTC ISO timestamps. Date.parse alone also accepts prose
+// and silently rolls impossible calendar dates into another month.
+const canonicalReviewTime = (value) => {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value || ""))
+    return NaN;
+  const time = Date.parse(value);
+  return Number.isFinite(time) &&
+    new Date(time).toISOString().slice(0, 19) === value.slice(0, 19)
+    ? time
+    : NaN;
+};
+const observationEnd = (observed) => (Math.floor(observed / 1000) + 1) * 1000;
+
 // A structured snapshot is authoritative only with one closed-schema machine
 // record and the matching native visible table. Prose and reactions are not proof.
 export const parseCodexState = (
@@ -246,10 +259,11 @@ export const parseCodexState = (
       !["Manual request", "PR opened"].includes(row[5]) ||
       row[1] !== label ||
       !(sectionHeads ? state[section].commit_sha : head).startsWith(row[4]) ||
-      (row[2] && (row[2] !== row[3] || !Number.isFinite(Date.parse(row[2]))))
+      (row[2] &&
+        (row[2] !== row[3] || !Number.isFinite(canonicalReviewTime(row[2]))))
     )
       return false;
-    times[section] = Date.parse(row[2]);
+    times[section] = canonicalReviewTime(row[2]);
   }
   return { state, times };
 };
@@ -263,7 +277,7 @@ const completedTimesWithinObservation = (parsed, observed) =>
     ([section, review]) =>
       review.status !== "completed" ||
       (Number.isFinite(parsed.times[section]) &&
-        parsed.times[section] < observed + 1000),
+        parsed.times[section] < observationEnd(observed)),
   );
 
 export const codexStateCompletionTimesAreValid = (entry, head) => {
@@ -282,6 +296,13 @@ export const hasCleanCodexState = (body, head) => {
     (inactiveReview(parsed.state.security_review) ||
       cleanReview(parsed.state.security_review, head)),
   );
+};
+
+// Retiring a code lifecycle is section-specific. A separately enforced
+// security finding cannot prevent an otherwise canonical own CODE clear.
+export const hasCleanCodexCodeState = (body, head) => {
+  const parsed = parseCodexState(body, head, { sectionHeads: true });
+  return Boolean(parsed && cleanReview(parsed.state.code_review, head));
 };
 
 // A completed code lifecycle with unknown finding flags is not an approval.
@@ -345,7 +366,7 @@ export const hasCodexNegativeHistory = (
             Number.isFinite(created) &&
             Math.floor(parsed.times[section] / 1000) >=
               Math.floor(created / 1000) &&
-            parsed.times[section] < observed + 1000,
+            parsed.times[section] < observationEnd(observed),
           time: Math.floor(
             (bounded &&
             review.status === "completed" &&
@@ -353,7 +374,7 @@ export const hasCodexNegativeHistory = (
             Number.isFinite(created) &&
             Math.floor(parsed.times[section] / 1000) >=
               Math.floor(created / 1000) &&
-            parsed.times[section] < observed + 1000
+            parsed.times[section] < observationEnd(observed)
               ? parsed.times[section]
               : observed) / 1000,
           ),
@@ -364,7 +385,7 @@ export const hasCodexNegativeHistory = (
           Number.isFinite(completed) &&
           Number.isFinite(created) &&
           Math.floor(completed / 1000) >= Math.floor(created / 1000) &&
-          completed < observed + 1000
+          completed < observationEnd(observed)
         )
           sections[section].push({
             negative: false,
@@ -418,7 +439,7 @@ export const codexCodeReviewCompletionTime = (body) => {
   const match = String(body || "").match(
     /^\| 📝 \*\*Code Review\*\* \| ✅ \*\*Completed\*\* <relative-time datetime="([^"<>]+)">/m,
   );
-  return Date.parse(match?.[1] || "");
+  return canonicalReviewTime(match?.[1] || "");
 };
 
 export const codexNegativeCompletionTime = (entry, head) => {
@@ -446,7 +467,7 @@ export const codexNegativeCompletionTime = (entry, head) => {
       Number.isFinite(parsed.times[section]) &&
       Number.isFinite(created) &&
       Math.floor(parsed.times[section] / 1000) >= Math.floor(created / 1000) &&
-      parsed.times[section] < observed + 1000
+      parsed.times[section] < observationEnd(observed)
         ? Math.floor(parsed.times[section] / 1000) * 1000
         : observed,
     ),

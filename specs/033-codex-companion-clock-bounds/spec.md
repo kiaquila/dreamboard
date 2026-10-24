@@ -10,7 +10,7 @@ lets an intermediate clean completion erase a still-observed finding.
 
 - Before granting historical clock or clearing authority, validate every
   completed section against the observed edit, including a foreign-head companion.
-- Keep GitHub whole-second precision: observed + 999 ms is valid; + 1000 ms is not.
+- Keep GitHub whole-second precision: completion within the observed server second is valid; the next second is not, even when the server timestamp itself has a fractional part.
 - Preserve carried companion rows that predate comment creation. The owning
   section retains its own existing creation lower bound.
 - Invalid companion timing leaves typed findings at observation time. A genuinely
@@ -46,3 +46,7 @@ after the old lifecycle completion but before that edit cannot recover it.
 Keep persisted unpaired lifecycle pending when timeline HTTP retrieval fails,
 before a later formal approval is considered. Do not synthesize activation or
 grant positive structured authority from this conservative fallback.
+
+Native row clocks must use UTC ISO timestamps with real calendar dates. Prose dates and calendar rollover cannot grant approval, historical timing or clearing authority. Preserve native microsecond timestamps and valid carried companions.
+
+Lifecycle retirement belongs to its own CODE channel: a newer canonical CODE clear can retire null CODE lifecycle while Security remains independently blocking. Only a separately newer Security clear retires its own finding. A Security-only edit carrying old CODE completion cannot retire null CODE lifecycle.

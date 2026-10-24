@@ -372,3 +372,7 @@ If the timeline cannot be retrieved, persisted canonical current-head null
 lifecycle still supplies pending evidence. Its bounded receipt correlation and
 newer canonical recovery remain checked; absence of timeline grants no synthetic
 activation or positive structured-state authority.
+
+The observation limit is the exclusive end of its server second, including when the observation itself has fractional precision. Native completion rows require UTC ISO timestamps whose calendar components round-trip unchanged; JavaScript calendar rollover and text date parsing never grant authority. Genuine fractional UTC timestamps remain supported.
+
+Retiring pending null CODE lifecycle requires a newer canonical CODE-only clear after the lifecycle observation. An active Security finding does not invalidate that CODE clear, but still blocks merge until independently cleared. A Security-only completion carrying stale CODE cannot stand in for that own-channel clear.

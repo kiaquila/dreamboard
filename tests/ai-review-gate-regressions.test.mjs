@@ -4072,3 +4072,120 @@ for (const pair of nativeCorpus.lifecyclePairs) {
     assert.notEqual(result.status, 0, result.stdout + result.stderr);
   });
 }
+
+for (const section of ["code_review", "security_review"]) {
+  test(`actual gate uses the observed whole-second end for ${section}`, () => {
+    const evaluate = (completed) => {
+      const times = {
+        code_review: companionClockTime("51"),
+        security_review: companionClockTime("51"),
+      };
+      times[section] = completed;
+      return runGate({
+        comments: [
+          comment(
+            companionClockBody(null, times.code_review, times.security_review),
+            {
+              id: 907,
+              created_at: companionClockTime("47"),
+              updated_at: "2026-10-20T21:55:00.500Z",
+            },
+          ),
+        ],
+        timeline: [{ ...activation, created_at: companionClockTime("45") }],
+      });
+    };
+    const within = evaluate("2026-10-20T21:55:00.999999Z");
+    assert.equal(within.status, 0, within.stdout + within.stderr);
+    const future = evaluate("2026-10-20T21:55:01.100Z");
+    assert.notEqual(future.status, 0, future.stdout + future.stderr);
+  });
+}
+for (const value of ["2026-09-31T10:01:00Z", "October 1, 2026 10:01:00 GMT"]) {
+  test(`actual gate rejects a noncanonical carried security clock: ${value}`, () => {
+    const result = runGate({
+      comments: [
+        comment(companionClockBody(null, companionClockTime("51"), value), {
+          id: 908,
+          created_at: companionClockTime("47"),
+          updated_at: companionClockTime("55"),
+        }),
+      ],
+      timeline: [{ ...activation, created_at: companionClockTime("45") }],
+    });
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  });
+}
+test("actual gate preserves a genuine microsecond carried security clock", () => {
+  const result = runGate({
+    comments: [
+      comment(
+        companionClockBody(
+          null,
+          companionClockTime("51"),
+          "2026-09-30T10:01:00.123456Z",
+        ),
+        {
+          id: 909,
+          created_at: companionClockTime("47"),
+          updated_at: companionClockTime("55"),
+        },
+      ),
+    ],
+    timeline: [{ ...activation, created_at: companionClockTime("45") }],
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+const independentChannels = JSON.parse(
+  readFileSync(
+    new URL("./fixtures/codex-independent-channels.json", import.meta.url),
+    "utf8",
+  ),
+);
+for (const [name, entries, expected] of [
+  ["security finding remains blocking", [independentChannels.codeClear], false],
+  [
+    "security clear cannot substitute for missing own code clear",
+    [independentChannels.securityClear],
+    false,
+  ],
+  [
+    "equal-second code clear remains conservative",
+    [independentChannels.equalCodeClear, independentChannels.securityClear],
+    false,
+  ],
+  [
+    "independently newer code and security clears recover",
+    [independentChannels.codeClear, independentChannels.securityClear],
+    true,
+  ],
+]) {
+  test(`actual gate retires null lifecycle by its own code channel: ${name}`, () => {
+    const result = runGate({
+      head: independentChannels.sha,
+      eventHead: independentChannels.sha,
+      comments: [
+        independentChannels.lifecycle,
+        ...entries,
+        independentChannels.receipt,
+      ],
+      timeline: [
+        {
+          event: "committed",
+          sha: independentChannels.sha,
+          created_at: "2026-10-15T00:30:00Z",
+        },
+        {
+          event: "commented",
+          id: 919,
+          body: `@codex review ${independentChannels.sha}`,
+          user: { login: "kiaquila", type: "User" },
+          author_association: "OWNER",
+          created_at: "2026-10-15T01:00:00Z",
+        },
+      ],
+    });
+    assert.equal(result.status === 0, expected, result.stdout + result.stderr);
+  });
+}

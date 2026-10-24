@@ -1,5 +1,6 @@
 import {
   hasCleanCodexState,
+  hasCleanCodexCodeState,
   codexNegativeCompletionTime,
   isCodexStateBody,
   codexCodeReviewCompletionTime,
@@ -418,7 +419,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
           (clear) =>
             isCodexBotComment(clear) &&
             eligibleLifecycle(clear) &&
-            hasCleanCodexState(getBody(clear), headSha) &&
+            hasCleanCodexCodeState(getBody(clear), headSha) &&
             Math.floor(codexCodeReviewCompletionTime(getBody(clear)) / 1000) >
               Math.floor(codexCommentTimestamp(entry) / 1000),
         ),
