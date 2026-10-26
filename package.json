@@ -22,10 +22,10 @@
     "worktree:new": "node scripts/new-worktree.mjs"
   },
   "devDependencies": {
-    "html-validate": "^11.16.2",
+    "html-validate": "^11.16.4",
     "pngjs": "7.0.0",
     "prettier": "^3.9.10",
-    "wrangler": "4.149.0"
+    "wrangler": "4.151.1"
   },
   "packageManager": "pnpm@10.33.0",
   "engines": {
