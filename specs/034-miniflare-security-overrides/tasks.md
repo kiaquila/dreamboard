@@ -5,4 +5,5 @@
 - [x] Retarget the Miniflare security overrides and regenerate the lockfile.
 - [x] Verify the patched graph plus local repository, HTML, build, and format checks.
 - [ ] Pass exact-head GitHub checks and obtain final-head Codex output.
-- [ ] Reply to and resolve the fixed P1 thread, then hand off without merging.
+- [ ] Reply to and resolve the fixed P1 thread.
+- [ ] Wait two minutes after final merge-ready verification, merge, and verify the result.

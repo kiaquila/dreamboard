@@ -140,15 +140,15 @@ or scope-wide exceptions are not part of the normal dependency workflow.
 When a direct dependency update changes the exact transitive parent selected by
 an existing targeted override, update that selector and regenerate the lockfile
 in the same pull request so the security remediation remains effective.
-Wrangler 4.151.1 selects Miniflare 5.20261012.1-beta. The explicit protected
-edges remain `miniflare@5.20261012.1-beta>sharp`, pinned to `sharp@0.35.5`, and
-`miniflare@5.20261012.1-beta>undici`, pinned to `undici@7.30.1`.
+Wrangler 4.152.0 selects Miniflare 5.20261019.2-beta. The explicit protected
+edges remain `miniflare@5.20261019.2-beta>sharp`, pinned to `sharp@0.35.5`, and
+`miniflare@5.20261019.2-beta>undici`, pinned to `undici@7.30.1`.
 The fast-uri override is `3.1.9`. Exact release-age exceptions for
 `fast-uri@3.1.9` and `undici@7.30.1` remediate the advisories updated on
 2026-10-23 without disabling the seven-day policy for other versions.
 Re-evaluate these pins whenever Wrangler changes its exact Miniflare parent;
 retarget them or document their retirement in the same PR.
-The repository-wide `fast-uri` override is pinned to `3.1.8` to remediate
+The repository-wide `fast-uri` override is pinned to `3.1.9` to remediate
 GHSA-hrr3-gc8f-f4qj in the transitive dependency graph.
 
 ## Gemini Operational Note
