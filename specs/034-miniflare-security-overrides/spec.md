@@ -12,3 +12,10 @@ overrides, and the seven-day release-age policy with its exact exceptions.
 Finish within PR #69. Pass local preflight and GitHub required checks, obtain a
 native Codex result for the final full HEAD SHA, resolve the fixed P1 thread,
 then complete the required pre-merge wait and merge verification.
+
+## Wrangler 4.156.1 update (PR #71)
+
+Wrangler 4.156.1 selects Miniflare 5.20261101.0-beta. The lockfile already
+resolves the reviewed versions of `sharp` and `undici`, but the overrides still
+target the previous Miniflare release. Retarget both selectors and keep
+`sharp@0.35.5`, `undici@7.30.1`, and the existing release-age exceptions.
