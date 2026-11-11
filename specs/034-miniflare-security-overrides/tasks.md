@@ -7,3 +7,10 @@
 - [ ] Pass exact-head GitHub checks and obtain final-head Codex output.
 - [ ] Reply to and resolve the fixed P1 thread.
 - [ ] Wait two minutes after final merge-ready verification, merge, and verify the result.
+
+## Wrangler 4.156.1 update (PR #71)
+
+- [x] Retarget the Miniflare selectors and update the supply-chain documentation.
+- [x] Verify the locked versions and frozen install.
+- [ ] Complete local preflight.
+- [ ] Verify all GitHub checks and resolve the fixed review thread.
