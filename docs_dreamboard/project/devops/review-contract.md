@@ -119,6 +119,12 @@ blocking and unresolved threads are still checked.
 The connector's `codex-pull-request-review-summary` / `codex-review-state:v1`
 comments require the strict native-state contract below; labels and reactions
 alone remain insufficient.
+Both observed native presentation shells are supported: the original Markdown
+`## Codex Review Summary` heading and the exact outer `<details>` wrapper whose
+`<summary><strong>Codex Review Summary</strong>` line carries the overall
+Completed, Running, or Failed state. The collapsible label must agree with the
+typed active sections. Attributes, unknown labels, malformed nesting, content
+after the outer close, and noncanonical inner tables remain ineligible.
 They never replace a receipt or formal review. Updated issue comments are read
 independently of timeline position. All unresolved Codex threads are checked
 before success; P0-P2 and untagged findings still block, including older commits.
