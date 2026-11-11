@@ -21,3 +21,28 @@ export const presentationReceipt = (
   closing = "The tiny confetti parade continues!",
 ) =>
   `<!-- codex-review-receipt:v1 -->\n\nCodex Review: Didn't find any major issues. ${closing}\n\n**Reviewed commit:** \`${head}\``;
+
+export const collapsibleStateBody = (
+  body,
+  status = "✅ Completed",
+  footer = "",
+) => {
+  const heading = "## Codex Review Summary";
+  const headingIndex = body.indexOf(heading);
+  if (headingIndex < 0) throw new Error("Missing Codex summary heading.");
+  const metadata = body.slice(0, headingIndex).trimEnd();
+  const presentation = body.slice(headingIndex + heading.length).trimStart();
+  return `${metadata}\n\n<details>\n<summary><strong>Codex Review Summary</strong>: ${status}</summary>\n\n${presentation}${footer ? `\n\n${footer}` : ""}\n\n</details>`;
+};
+
+export const summaryHelpFooter = `<details> <summary>ℹ️ About Codex in GitHub</summary>
+<br/>
+
+[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you
+- Open a pull request for review
+- Mark a draft as ready
+- Comment "@codex review" or "@codex security review".
+
+Codex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.
+
+</details>`;

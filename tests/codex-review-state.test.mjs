@@ -10,7 +10,9 @@ import {
 } from "../scripts/ai-review-helpers.mjs";
 import {
   cleanStateBody,
+  collapsibleStateBody,
   presentationReceipt,
+  summaryHelpFooter,
 } from "./fixtures/codex-state.mjs";
 const head = "a".repeat(40);
 const clean = cleanStateBody(head);
@@ -42,6 +44,34 @@ const pick = (events) =>
   });
 test("strict full-head native state supplies proof", () =>
   assert.equal(hasCleanCodexState(clean, head), true));
+test("strict collapsible native state supplies proof", () =>
+  assert.equal(
+    hasCleanCodexState(
+      collapsibleStateBody(clean, "✅ Completed", summaryHelpFooter),
+      head,
+    ),
+    true,
+  ));
+for (const [name, body] of [
+  [
+    "status mismatch",
+    collapsibleStateBody(clean, "🔄 Running", summaryHelpFooter),
+  ],
+  [
+    "summary attributes",
+    collapsibleStateBody(clean, "✅ Completed", summaryHelpFooter).replace(
+      "<summary>",
+      '<summary class="status">',
+    ),
+  ],
+  [
+    "trailing prose",
+    `${collapsibleStateBody(clean, "✅ Completed", summaryHelpFooter)}\nPassed`,
+  ],
+]) {
+  test(`rejects malformed collapsible state: ${name}`, () =>
+    assert.equal(hasCleanCodexState(body, head), false));
+}
 for (const [name, body] of [
   ["unknown key", cleanStateBody(head, (s) => ({ ...s, unknown: false }))],
   [
