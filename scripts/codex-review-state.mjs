@@ -23,6 +23,17 @@ const validReview = (review, head) =>
 const inactiveReview = (review) =>
   cleanKeys(review, fields) &&
   Object.values(review).every((value) => value === null);
+const collapsibleHeadingPattern =
+  /^<summary><strong>Codex Review Summary<\/strong>: (✅ Completed|🔄 Running|⚠️ Failed)<\/summary>[ \t]*\r?$/;
+
+const expectedCollapsibleStatus = (state) => {
+  const active = Object.values(state).filter(
+    (review) => review && !inactiveReview(review),
+  );
+  if (active.some((review) => review.status === "failed")) return "⚠️ Failed";
+  if (active.some((review) => review.status === "running")) return "🔄 Running";
+  return "✅ Completed";
+};
 
 export const isCodexStateBody = (body = "") =>
   /codex-pull-request-review-summary|codex-review-state/.test(body);
@@ -69,9 +80,13 @@ export const parseCodexState = (
   const rawHeading = String(body || "").match(
     /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
   )?.[0];
+  const rawCollapsibleHeading = String(body || "").match(
+    /^[^\r\n]*<summary><strong>Codex Review Summary<\/strong>:[^\r\n]*$/m,
+  )?.[0];
   if (
     !negativeEnvelope &&
-    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading || "")
+    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading || "") &&
+    !collapsibleHeadingPattern.test(rawCollapsibleHeading || "")
   )
     return false;
 
@@ -119,9 +134,13 @@ export const parseCodexState = (
   const effectiveHeading = source.match(
     /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
   )?.[0];
+  const effectiveCollapsibleHeading = source.match(
+    /^[^\r\n]*<summary><strong>Codex Review Summary<\/strong>:[^\r\n]*$/m,
+  )?.[0];
   if (
     !negativeEnvelope &&
-    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(effectiveHeading || "")
+    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(effectiveHeading || "") &&
+    !collapsibleHeadingPattern.test(effectiveCollapsibleHeading || "")
   )
     return false;
   const match = source.match(
@@ -195,6 +214,14 @@ export const parseCodexState = (
     // canonical bodies can establish section clocks, clearing or recovery.
     // Never infer harmlessness from free-form English or Markdown rendering.
     return { state, times: {} };
+  }
+  if (visible.startsWith("<details>")) {
+    const collapsible = visible.match(
+      /^<details>[ \t]*\r?\n(<summary><strong>Codex Review Summary<\/strong>: (✅ Completed|🔄 Running|⚠️ Failed)<\/summary>)[ \t]*\r?\n([\s\S]*)\r?\n<\/details>$/,
+    );
+    if (!collapsible || collapsible[2] !== expectedCollapsibleStatus(state))
+      return false;
+    visible = `## Codex Review Summary\n${collapsible[3]}`.trim();
   }
   if (
     /<!--\s*(?:codex-review-state|codex-pull-request-review-summary|codex-review-receipt)/i.test(

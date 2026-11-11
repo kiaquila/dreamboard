@@ -1,6 +1,8 @@
 import {
   cleanStateBody,
+  collapsibleStateBody,
   presentationReceipt,
+  summaryHelpFooter,
 } from "./fixtures/codex-state.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -145,6 +147,60 @@ for (const [name, body] of [
     assert.equal(result.status, 0, result.stderr);
   });
 }
+
+test("actual gate accepts a clean collapsible structured summary", () => {
+  const body = collapsibleStateBody(
+    cleanStateBody(head),
+    "✅ Completed",
+    summaryHelpFooter,
+  );
+  const evidence = comment(body, {
+    created_at: "2026-10-20T12:01:00Z",
+    updated_at: "2026-10-20T12:03:00Z",
+  });
+  const result = runGate({
+    comments: [evidence],
+    timeline: [
+      { ...activation, created_at: "2026-10-20T12:00:00Z" },
+      { ...evidence, event: "commented" },
+    ],
+  });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("actual gate pairs a collapsible null lifecycle with its clean receipt", () => {
+  const lifecycleBody = collapsibleStateBody(
+    cleanStateBody(head, (state) => ({
+      ...state,
+      code_review: {
+        ...state.code_review,
+        has_any_findings: null,
+        has_unresolved_findings: null,
+      },
+    })),
+    "✅ Completed",
+    summaryHelpFooter,
+  );
+  const lifecycle = comment(lifecycleBody, {
+    id: 2,
+    created_at: "2026-10-20T12:01:00Z",
+    updated_at: "2026-10-20T12:03:00Z",
+  });
+  const cleanReceipt = comment(receipt, {
+    id: 3,
+    created_at: "2026-10-20T12:01:30Z",
+    updated_at: "2026-10-20T12:01:30Z",
+  });
+  const result = runGate({
+    comments: [lifecycle, cleanReceipt],
+    timeline: [
+      { ...activation, created_at: "2026-10-20T12:00:00Z" },
+      { ...lifecycle, event: "commented" },
+      { ...cleanReceipt, event: "commented" },
+    ],
+  });
+  assert.equal(result.status, 0, result.stderr);
+});
 
 for (const [name, body, extra] of [
   ["wrong SHA", receipt.replace(head.slice(0, 10), "aaaaaaaaaa")],
