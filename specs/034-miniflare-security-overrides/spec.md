@@ -19,3 +19,9 @@ Wrangler 4.156.1 selects Miniflare 5.20261101.0-beta. The lockfile already
 resolves the reviewed versions of `sharp` and `undici`, but the overrides still
 target the previous Miniflare release. Retarget both selectors and keep
 `sharp@0.35.5`, `undici@7.30.1`, and the existing release-age exceptions.
+
+## Wrangler 4.158.0 update (PR #74)
+
+Wrangler 4.158.0 selects Miniflare 5.20261104.0-beta. Retarget both
+parent-qualified selectors to that release so future lockfile regeneration
+continues to enforce `sharp@0.35.5` and `undici@7.30.1`.

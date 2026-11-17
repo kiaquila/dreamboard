@@ -11,3 +11,9 @@
 Retarget both selectors, regenerate the lockfile, and update the current
 dependency versions in the supply-chain documentation. Verify the resolved
 versions with a frozen install and run preflight before requesting a new review.
+
+## Wrangler 4.158.0 update (PR #74)
+
+Retarget the Miniflare selectors, regenerate the lockfile, and update the exact
+protected dependency graph in durable documentation. Run the full local CI,
+then complete exact-head GitHub checks and native Codex review before merge.
