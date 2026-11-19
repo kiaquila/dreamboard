@@ -82,7 +82,7 @@ Any new button starts from the tokens. A different size is a spec change, not a 
 
 ## Footer
 
-The footer is a single quiet line in the Ember style: transparent background, DM Sans 12px with 0.06em tracking, muted colour, and the `ks-design` link underlined with a hairline that turns gold on hover. The footer text is a brand line and is intentionally not localised. Its placements share typography through `.site-footer`:
+The footer is a single quiet line in the Ember style: transparent background, DM Sans 12px with 0.06em tracking, muted colour, and the `ks-design.art` link underlined with a hairline that turns gold on hover. The footer text is a brand line and is intentionally not localised. Its placements share typography through `.site-footer`:
 
 - on the desktop landing, `#appFooter` (`.site-footer.sticky-footer`) is pinned to the viewport bottom in its fixed 45px slot, which every slide reserves as `padding-bottom`; it is hidden as soon as the editor is active
 - below 900px the global landing footer is hidden, and slides 1 and 4 each own a transparent `.hero-footer` in the same 45px slot; the photo and rules slides therefore carry no attribution, while the hero renderer dissolves the lowest dots before each label
@@ -133,32 +133,48 @@ The current static app now treats phone layouts as a separate editor mode:
 ## Brand Chrome
 
 The app has no wordmark of its own. Landing and editor both carry the studio
-chrome transplanted from `ember.ks-design.art`: a `ks·design · lab` tag and,
-on the landing only, a `study 02 — dream board` tag (renamed from `study 01`
-in spec 022), rendered as `.brand-mark` with `.brand-tag` children.
+logotype from `ks-design.art` (spec 036), and on the landing only a
+`study 02 — dream board` tag (renamed from `study 01` in spec 022). The
+logotype is `a.brand`; the study tag is still a `.brand-tag`, and both sit in
+`.brand-mark`.
 
-The mark is a faithful copy of the Ember original, not a re-interpretation:
+The logotype is a 1:1 copy of the studio header, not a re-interpretation. Its
+markup and every declaration in `.brand` / `.brand-dot` / `.brand-art` are taken
+from `https://ks-design.art`:
 
-- typeface is the Ember system stack (`--brand-font`), not the app's DM Sans
-- 11px, uppercase, `0.22em` letter-spacing, `--brand-muted` on the tag and
-  `--brand-ink` on the `strong` half
-- the dot between `ks` and `design` is the same indigo-to-cyan gradient
-  (`--brand-dot-a` / `--brand-dot-b`) with a `visually-hidden` space after it so
-  screen readers still hear two words
+- `ks design` in Manrope 700, `0.78rem`, uppercase, `0.14em` tracking,
+  `--brand-ink` (`#0b0b0c`, the studio `--ink`)
+- the dot standing in for the dot of the domain is the indigo-to-cyan gradient
+  (`--brand-dot-a` / `--brand-dot-b`), with a `visually-hidden` `.` after it so
+  screen readers hear `ks design.art`
+- `art` in Caveat 600 at `1.95em`, `line-height: 0` and `rotate(-5deg)`, so the
+  oversized cursive tilts out of the line box without making the mark taller
 
-Layout differs by shell because the space does:
+Manrope 700 and Caveat 600 come from the Google Fonts request `index.html`
+already makes; Caveat was already loaded for the editor font picker.
 
-- landing uses the Ember arrangement, both tags on one row, pushed apart
-- the editor sidebar shows the `ks·design · lab` tag alone (spec 022 dropped
-  the study tag from the editor), stacked and shrunk, because the rail shares
-  its width with the back control
-- below 360px the landing tags shrink so the row never wraps
-- the rotated portrait editor rail leaves roughly 104px for the mark, which no
-  readable size fits, so it shows the `ks·design · lab` tag alone
+Every logotype metric is in `em`, so one `font-size` on `.brand` rescales the
+whole mark. That is the only thing the responsive rules change:
 
-No tag is ever allowed to wrap. Any change to the tag text or to the rail width
-needs re-measuring: the widest tag against the space its shell actually gives
-it, at 320px in both orientations as well as at desktop.
+- landing and desktop editor rail: `0.78rem`, the studio size
+- below 900px: `0.72rem` on the landing, `0.68rem` in the editor rail
+- below 360px: `0.64rem` with tracking trimmed to `0.1em`
+- rotated portrait editor rail: `0.6rem`
+
+The logotype is a link to the start page, like the logotype on the studio site.
+A plain left click is intercepted and routed through `goToLanding()` so the
+editor keeps its live canvas instead of reloading into the stored draft;
+modified and middle clicks are left to the browser. It carries `7px 4px` of tap
+padding with a matching negative margin, so the hit area grows without changing
+the measured header height. The rotated portrait rail zeroes that padding: the
+rail is rotated, so the padding reads as horizontal space and would push the
+tilted `art` against the screen edge; the back button beside the mark carries
+the large target there.
+
+Neither the logotype nor the study tag is ever allowed to wrap. Any change to
+the tag text, the mark size or the rail width needs re-measuring against the
+space its shell actually gives it, at 320px in both orientations as well as at
+desktop.
 
 The landing hero heading is the document `h1`. Removing the old wordmark removed
 the only `h1`, and the hero title is the page's real top-level heading.

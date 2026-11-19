@@ -45,9 +45,13 @@
   --footer-line: rgba(27, 27, 27, 0.18);
   --footer-accent: #b07f2f;
 
-  /* Brand chrome, transplanted from ember.ks-design.art */
+  /* Brand chrome. The wordmark is the ks-design.art logotype 1:1; the study
+     tag keeps the quieter lab chrome it has always had. */
   --brand-font: ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
-  --brand-ink: #2a2722;
+  --brand-font-display:
+    "Manrope", ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
+  --brand-font-hand: "Caveat", "Bradley Hand", "Segoe Print", cursive;
+  --brand-ink: #0b0b0c;
   --brand-muted: #807b72;
   --brand-dot-a: #818cf8;
   --brand-dot-b: #22d3ee;
@@ -124,7 +128,7 @@ html[data-initial-view="editor"] .sticky-footer {
 }
 
 /* =========
-   BRAND MARK (ember.ks-design.art chrome)
+   BRAND MARK (ks-design.art logotype)
    ========= */
 
 .brand-mark {
@@ -152,18 +156,66 @@ html[data-initial-view="editor"] .sticky-footer {
   color: var(--brand-muted);
 }
 
-.brand-tag strong {
+/* The logotype, copied from the ks-design.art header: Manrope caps, the
+   gradient dot standing in for the dot of the domain, and "art" set in the
+   handwritten face at a slight tilt. Every metric is in `em`, so one
+   `font-size` on `.brand` rescales the whole mark. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--brand-font-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
   color: var(--brand-ink);
-  font-weight: 600;
+  text-decoration: none;
+
+  /* Widen the tap target without changing the measured header height. */
+  padding: 7px 4px;
+  margin: -7px -4px;
+  border-radius: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.brand:hover,
+.brand:focus-visible {
+  opacity: 0.72;
+}
+
+.brand:active {
+  opacity: 0.56;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--brand-ink);
+  outline-offset: 2px;
 }
 
 .brand-dot {
   display: inline-block;
-  width: 0.42em;
-  height: 0.42em;
+  width: 0.4em;
+  height: 0.4em;
   border-radius: 50%;
   background: var(--brand-dot);
-  margin: 0 0.3em 0 -0.07em;
+  margin: 0 0.08em 0 0.02em;
+}
+
+.brand-art {
+  display: inline-block;
+  margin-left: 0.02em;
+  font-family: var(--brand-font-hand);
+  font-weight: 600;
+  font-size: 1.95em;
+
+  /* Zero line height keeps the oversized cursive out of the line box, so the
+     mark stays as tall as the caps around it. */
+  line-height: 0;
+  letter-spacing: 0;
+  text-transform: none;
+  transform: rotate(-5deg) translateY(0.02em);
+  transform-origin: 0 100%;
 }
 
 .visually-hidden {
@@ -1446,12 +1498,15 @@ body.is-editor-active .app-container {
     letter-spacing: 0.16em;
   }
 
-  /* The editor rail is narrow: keep each tag on one line. Tracking is trimmed
-     below the Ember 0.22em so the study tag still has headroom at the tightest
-     landscape rail, where system-ui resolves to different metrics per OS. */
-  .sidebar-header .brand-tag {
-    font-size: 9px;
-    letter-spacing: 0.08em;
+  /* Phone headers are narrow: the wordmark steps down so it can share the
+     landing header row with the study tag without wrapping. */
+  .brand {
+    font-size: 0.72rem;
+  }
+
+  /* The editor rail is narrower still. */
+  .sidebar-header .brand {
+    font-size: 0.68rem;
   }
 
   .app-container {
@@ -1553,6 +1608,11 @@ body.is-editor-active .app-container {
   .landing-header .brand-tag {
     font-size: 9px;
     letter-spacing: 0.12em;
+  }
+
+  .landing-header .brand {
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
   }
 }
 
@@ -1683,9 +1743,14 @@ body.is-editor-active .app-container {
     gap: 2px;
   }
 
-  body.is-editor-active .sidebar .brand-tag {
-    font-size: 8px;
+  /* The rail is rotated, so the wordmark's tap padding reads as horizontal
+     space and pushes the tilted "art" against the screen edge. Drop it here:
+     the back button beside the mark carries the large target. */
+  body.is-editor-active .sidebar .brand {
+    font-size: 0.6rem;
     letter-spacing: 0.1em;
+    padding: 0;
+    margin: 0;
   }
 
   /* Rotated portrait leaves ~104px of rail for the mark, which is not enough

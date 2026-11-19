@@ -19,6 +19,7 @@ const canvasArea = document.querySelector(".canvas-area");
 const heroGoButton = document.getElementById("l-go-btn");
 const finalGoButton = document.getElementById("l-final-btn");
 const editorBackButton = document.getElementById("editorBackBtn");
+const brandHomeLinks = document.querySelectorAll("[data-brand-home]");
 const rotateHint = document.getElementById("editorRotateHint");
 const rotateHintCloseButton = document.getElementById("rotateHintCloseBtn");
 const fileInput = document.getElementById("fileInput");
@@ -678,6 +679,26 @@ omFontFamilyBtn.addEventListener("click", (e) => {
 heroGoButton?.addEventListener("click", goToEditor);
 finalGoButton?.addEventListener("click", goToEditor);
 editorBackButton?.addEventListener("click", goToLanding);
+
+// The logotype is a real link to the start page so it can be opened in a new
+// tab, but a plain click stays in the SPA: a reload would drop the live canvas
+// back to the last persisted draft.
+brandHomeLinks.forEach((link) => {
+  link.addEventListener("click", (event) => {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    goToLanding();
+  });
+});
 addTextButton?.addEventListener("click", addText);
 downloadButton?.addEventListener("click", exportBoard);
 omForward.addEventListener("click", () => changeZIndex("forward"));
