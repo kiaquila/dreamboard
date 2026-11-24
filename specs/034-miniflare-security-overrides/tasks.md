@@ -23,3 +23,12 @@
 - [x] Resolve the fixed P1 review thread.
 - [ ] Pass exact-head GitHub checks and obtain final-head Codex output.
 - [ ] Wait two minutes after final merge-ready verification, merge, and verify the result.
+
+## Wrangler 4.162.0 update (PR #77)
+
+- [x] Rebase the Dependabot branch onto protected main.
+- [x] Retarget both Miniflare selectors and update supply-chain documentation.
+- [x] Regenerate the lockfile and verify the protected dependency graph.
+- [x] Pass a frozen install and the full local preflight (911/911 tests).
+- [ ] Resolve the fixed P1 review thread and obtain final-head Codex output.
+- [ ] Confirm every required check is green, wait two minutes, merge, and verify.

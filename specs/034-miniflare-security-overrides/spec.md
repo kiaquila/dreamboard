@@ -25,3 +25,9 @@ target the previous Miniflare release. Retarget both selectors and keep
 Wrangler 4.158.0 selects Miniflare 5.20261104.0-beta. Retarget both
 parent-qualified selectors to that release so future lockfile regeneration
 continues to enforce `sharp@0.35.5` and `undici@7.30.1`.
+
+## Wrangler 4.162.0 update (PR #77)
+
+Wrangler 4.162.0 selects Miniflare 5.20261113.0-beta. Retarget both
+parent-qualified selectors to that release so subsequent lockfile regeneration
+continues to enforce `sharp@0.35.5` and `undici@7.30.1`.
