@@ -34,6 +34,11 @@ Local macOS helper scripts may also store the current selection under:
 If a selected backend is missing its requirements, the workflow fails closed
 with an explanatory comment instead of silently skipping.
 
+The GitHub-hosted Claude implementation and review workflows set
+`--permission-mode acceptEdits` explicitly. This keeps their `--allowedTools`
+rules as a strict boundary instead of inheriting the action's `auto` mode,
+which may approve otherwise unlisted tool calls after a safety review.
+
 ## Backend Trigger Constraints
 
 None of the supported review backends accept bot-posted trigger comments
