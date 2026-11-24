@@ -17,3 +17,10 @@ versions with a frozen install and run preflight before requesting a new review.
 Retarget the Miniflare selectors, regenerate the lockfile, and update the exact
 protected dependency graph in durable documentation. Run the full local CI,
 then complete exact-head GitHub checks and native Codex review before merge.
+
+## Wrangler 4.162.0 update (PR #77)
+
+Rebase onto protected main, retarget the Miniflare selectors, regenerate the
+lockfile, and update the exact protected dependency graph in durable
+documentation. Run frozen install and full preflight, then complete exact-head
+GitHub checks and native Codex review before merge.
