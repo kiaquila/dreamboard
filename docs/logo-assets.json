@@ -2,21 +2,21 @@
   "source": "kiaquila/ks:brand/ks-design-art-master.svg",
   "assetDirectory": "src/assets/brand",
   "master": "ks-design-art-master.svg",
-  "masterSha256": "94b074ef0b788b6de62a5430fbd6cc6007b820bb87bc75f25e13607937df895d",
+  "masterSha256": "18cf243a11cfaff83abd908fdf6ff5ff8d76e4ee322506570f5d0dc264b1e6c2",
   "nativeSize": {
-    "width": 121,
+    "width": 118,
     "height": 20
   },
   "variants": {
     "ks-design-art-on-light.svg": {
       "ink": "#0b0b0c",
-      "sha256": "94b074ef0b788b6de62a5430fbd6cc6007b820bb87bc75f25e13607937df895d",
-      "bytes": 14339
+      "sha256": "18cf243a11cfaff83abd908fdf6ff5ff8d76e4ee322506570f5d0dc264b1e6c2",
+      "bytes": 14254
     },
     "ks-design-art-on-dark.svg": {
       "ink": "#ffffff",
-      "sha256": "4d0ddfe89009850cb1d5128e9e230e73a28c26a65e1d8f843325b8b7b5390c86",
-      "bytes": 14339
+      "sha256": "ae2b6c25ed591e7af93d97a7e2fa7dd4f43898dc7b5dc264b64941bbff8bebc0",
+      "bytes": 14254
     }
   }
 }

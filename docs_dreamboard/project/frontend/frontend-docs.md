@@ -139,9 +139,9 @@ logotype is `a.brand`; the study tag is still a `.brand-tag`, and both sit in
 `.brand-mark`.
 
 Spec 037 replaces the independently rendered text with the canonical outlined
-`ks-design.art` SVG from KS. Both headers use an `img.brand-logo` inside
-`a.brand`, with `alt="ks-design.art"` and a fixed 121 × 20 CSS px size.
-Typography, spacing, the tilted handwritten `art`, the hyphen and the gradient
+SVG from KS. Spec 038 restores the original `ks design.art` lettering. Both headers use an `img.brand-logo` inside
+`a.brand`, with `alt="ks design.art"` and a fixed 118 × 20 CSS px size.
+Typography, spacing, the tilted handwritten `art`, the original space and the gradient
 dot are baked into the shared asset. The logo has no runtime font dependency.
 The editor font picker retains Caveat; the unused Manrope request is removed.
 
