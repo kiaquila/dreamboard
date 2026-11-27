@@ -138,28 +138,16 @@ logotype from `ks-design.art` (spec 036), and on the landing only a
 logotype is `a.brand`; the study tag is still a `.brand-tag`, and both sit in
 `.brand-mark`.
 
-The logotype is a 1:1 copy of the studio header, not a re-interpretation. Its
-markup and every declaration in `.brand` / `.brand-dot` / `.brand-art` are taken
-from `https://ks-design.art`:
+Spec 037 replaces the independently rendered text with the canonical outlined
+`ks-design.art` SVG from KS. Both headers use an `img.brand-logo` inside
+`a.brand`, with `alt="ks-design.art"` and a fixed 121 × 20 CSS px size.
+Typography, spacing, the tilted handwritten `art`, the hyphen and the gradient
+dot are baked into the shared asset. The logo has no runtime font dependency.
+The editor font picker retains Caveat; the unused Manrope request is removed.
 
-- `ks design` in Manrope 700, `0.78rem`, uppercase, `0.14em` tracking,
-  `--brand-ink` (`#0b0b0c`, the studio `--ink`)
-- the dot standing in for the dot of the domain is the indigo-to-cyan gradient
-  (`--brand-dot-a` / `--brand-dot-b`), with a `visually-hidden` `.` after it so
-  screen readers hear `ks design.art`
-- `art` in Caveat 600 at `1.95em`, `line-height: 0` and `rotate(-5deg)`, so the
-  oversized cursive tilts out of the line box without making the mark taller
-
-Manrope 700 and Caveat 600 come from the Google Fonts request `index.html`
-already makes; Caveat was already loaded for the editor font picker.
-
-Every logotype metric is in `em`, so one `font-size` on `.brand` rescales the
-whole mark. That is the only thing the responsive rules change:
-
-- landing and desktop editor rail: `0.78rem`, the studio size
-- below 900px: `0.72rem` on the landing, `0.68rem` in the editor rail
-- below 360px: `0.64rem` with tracking trimmed to `0.1em`
-- rotated portrait editor rail: `0.6rem`
+The portrait editor header wraps its controls below the full-width brand row
+instead of shrinking the mark. The existing whole-editor rotation is preserved.
+Logo opacity stays at 1 on hover and focus; the link retains its focus outline.
 
 The logotype is a link to the start page, like the logotype on the studio site.
 A plain left click is intercepted and routed through `goToLanding()` so the
@@ -254,3 +242,6 @@ The recommended target architecture for the next phase is:
 - stronger visual and interaction parity between landing and editor on small screens
 
 Until that migration happens, all changes should keep the static app functioning and deployable.
+
+The two theme exports are copied without edits; white ink is used on dark
+surfaces. See `docs/logo-assets.json` for their source paths and SHA-256 hashes.

@@ -156,18 +156,11 @@ html[data-initial-view="editor"] .sticky-footer {
   color: var(--brand-muted);
 }
 
-/* The logotype, copied from the ks-design.art header: Manrope caps, the
-   gradient dot standing in for the dot of the domain, and "art" set in the
-   handwritten face at a slight tilt. Every metric is in `em`, so one
-   `font-size` on `.brand` rescales the whole mark. */
+/* Canonical outlined SVG: keep its size at every breakpoint. */
 .brand {
   display: inline-flex;
   align-items: center;
-  font-family: var(--brand-font-display);
-  font-weight: 700;
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  flex-shrink: 0;
   white-space: nowrap;
   color: var(--brand-ink);
   text-decoration: none;
@@ -176,16 +169,6 @@ html[data-initial-view="editor"] .sticky-footer {
   padding: 7px 4px;
   margin: -7px -4px;
   border-radius: 6px;
-  transition: opacity 0.2s ease;
-}
-
-.brand:hover,
-.brand:focus-visible {
-  opacity: 0.72;
-}
-
-.brand:active {
-  opacity: 0.56;
 }
 
 .brand:focus-visible {
@@ -193,29 +176,12 @@ html[data-initial-view="editor"] .sticky-footer {
   outline-offset: 2px;
 }
 
-.brand-dot {
-  display: inline-block;
-  width: 0.4em;
-  height: 0.4em;
-  border-radius: 50%;
-  background: var(--brand-dot);
-  margin: 0 0.08em 0 0.02em;
-}
-
-.brand-art {
-  display: inline-block;
-  margin-left: 0.02em;
-  font-family: var(--brand-font-hand);
-  font-weight: 600;
-  font-size: 1.95em;
-
-  /* Zero line height keeps the oversized cursive out of the line box, so the
-     mark stays as tall as the caps around it. */
-  line-height: 0;
-  letter-spacing: 0;
-  text-transform: none;
-  transform: rotate(-5deg) translateY(0.02em);
-  transform-origin: 0 100%;
+.brand-logo {
+  display: block;
+  width: 121px;
+  height: 20px;
+  max-width: none;
+  flex-shrink: 0;
 }
 
 .visually-hidden {
@@ -1498,17 +1464,6 @@ body.is-editor-active .app-container {
     letter-spacing: 0.16em;
   }
 
-  /* Phone headers are narrow: the wordmark steps down so it can share the
-     landing header row with the study tag without wrapping. */
-  .brand {
-    font-size: 0.72rem;
-  }
-
-  /* The editor rail is narrower still. */
-  .sidebar-header .brand {
-    font-size: 0.68rem;
-  }
-
   .app-container {
     height: calc(100dvh - var(--footer-height));
   }
@@ -1608,11 +1563,6 @@ body.is-editor-active .app-container {
   .landing-header .brand-tag {
     font-size: 9px;
     letter-spacing: 0.12em;
-  }
-
-  .landing-header .brand {
-    font-size: 0.64rem;
-    letter-spacing: 0.1em;
   }
 }
 
@@ -1714,6 +1664,7 @@ body.is-editor-active .app-container {
      canvas column's right edge. The rail is content-box, so the padding alone
      widens it by the inset and the tools keep their 158px. */
   body.is-editor-active .sidebar {
+    min-width: calc(121px + 20px);
     width: min(158px, 42vw);
     flex: 0 0 min(158px, 42vw);
     padding: 10px 10px 10px calc(10px + env(safe-area-inset-top));
@@ -1733,12 +1684,12 @@ body.is-editor-active .app-container {
 
   body.is-editor-active .sidebar .sidebar-header {
     gap: 4px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     min-width: 0;
   }
 
   body.is-editor-active .sidebar .sidebar-header .brand-mark {
-    flex: 1 1 auto;
+    flex: 1 0 100%;
     min-width: 0;
     gap: 2px;
   }
@@ -1747,8 +1698,6 @@ body.is-editor-active .app-container {
      space and pushes the tilted "art" against the screen edge. Drop it here:
      the back button beside the mark carries the large target. */
   body.is-editor-active .sidebar .brand {
-    font-size: 0.6rem;
-    letter-spacing: 0.1em;
     padding: 0;
     margin: 0;
   }
