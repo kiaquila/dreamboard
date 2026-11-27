@@ -178,7 +178,7 @@ html[data-initial-view="editor"] .sticky-footer {
 
 .brand-logo {
   display: block;
-  width: 121px;
+  width: 118px;
   height: 20px;
   max-width: none;
   flex-shrink: 0;
@@ -1664,7 +1664,7 @@ body.is-editor-active .app-container {
      canvas column's right edge. The rail is content-box, so the padding alone
      widens it by the inset and the tools keep their 158px. */
   body.is-editor-active .sidebar {
-    min-width: calc(121px + 20px);
+    min-width: calc(118px + 20px);
     width: min(158px, 42vw);
     flex: 0 0 min(158px, 42vw);
     padding: 10px 10px 10px calc(10px + env(safe-area-inset-top));
